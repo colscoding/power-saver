@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><title>Web Bluetooth Power Meter</title><style>body{color:#fff;background-color:#121212;flex-direction:column;justify-content:center;align-items:center;height:100vh;margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;display:flex}.container{text-align:center;background:#1e1e1e;border-radius:16px;min-width:320px;padding:2rem 3rem;box-shadow:0 8px 24px #00000080}h1{color:#f39c12;margin-bottom:1rem;font-size:1.8rem}button{color:#121212;cursor:pointer;background-color:#f39c12;border:none;border-radius:8px;padding:14px 28px;font-size:16px;font-weight:700;transition:all .3s}button:hover{background-color:#e67e22;transform:translateY(-2px);box-shadow:0 4px 10px #f39c124d}button:disabled{color:#888;cursor:not-allowed;box-shadow:none;background-color:#555;transform:translateY(0)}.power-display{margin:2rem 0;padding:1rem}.power-display span{color:#fff;font-size:7rem;font-weight:700;line-height:1}.power-display small{color:#aaa;margin-left:8px;font-size:1.5rem}#status{color:#bbb;height:20px;margin-top:1rem;font-style:italic}#device-name{color:#f39c12;margin-top:8px;font-weight:700}</style><body>
+
+    <div class=container>
+        <h1>Cycling Power Meter 🚴</h1>
+        <div class=power-display>
+            <span id=power-value>--</span>
+            <small>Watts</small>
+        </div>
+        <button id=connectButton>Connect to Power Meter</button>
+        <p id=status>Disconnected</p>
+        <p id=device-name></p>
+    </div>
+
+    <script>let connectButton=document.getElementById("connectButton"),statusText=document.getElementById("status"),powerValueElement=document.getElementById("power-value"),deviceNameElement=document.getElementById("device-name"),powerMeterDevice=null,CYCLING_POWER_SERVICE_UUID="cycling_power",CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID="cycling_power_measurement";function handlePowerMeasurement(e){powerValueElement.textContent=parsePowerMeasurement(e.target.value)}function parsePowerMeasurement(e){return e.getInt16(2,!0)}function onDisconnected(){statusText.textContent="Device disconnected.",deviceNameElement.textContent="",powerValueElement.textContent="--",connectButton.disabled=!1,powerMeterDevice&&(powerMeterDevice.removeEventListener("gattserverdisconnected",onDisconnected),powerMeterDevice=null)}connectButton.addEventListener("click",async()=>{if(!navigator.bluetooth){statusText.textContent="Web Bluetooth API is not available.";return}try{statusText.textContent="Scanning for power meters...",powerMeterDevice=await navigator.bluetooth.requestDevice({filters:[{services:[CYCLING_POWER_SERVICE_UUID]}]}),statusText.textContent="Connecting to device...",deviceNameElement.textContent=`Device: ${powerMeterDevice.name||"Unknown Device"}`,powerMeterDevice.addEventListener("gattserverdisconnected",onDisconnected);let e=await powerMeterDevice.gatt.connect(),t=await e.getPrimaryService(CYCLING_POWER_SERVICE_UUID),n=await t.getCharacteristic("cycling_power_measurement");await n.startNotifications(),n.addEventListener("characteristicvaluechanged",handlePowerMeasurement),statusText.textContent="Connected and receiving data!",connectButton.disabled=!0}catch(e){statusText.textContent=`Error: ${e.message}`,console.error("Connection failed:",e),powerMeterDevice&&powerMeterDevice.removeEventListener("gattserverdisconnected",onDisconnected)}});</script>
+
+
+
