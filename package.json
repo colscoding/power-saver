@@ -1,0 +1,15 @@
+{
+  "name": "power-saver",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "parcel public/index.html --https",
+    "build": "parcel build power-saver.html --dist-dir docs --public-url ./"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "parcel": "^2.15.4"
+  }
+}

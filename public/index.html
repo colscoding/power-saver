@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluetooth Sensor Data Logger</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Bluetooth Sensor Data Logger</h1>
+        <button id="scanButton">Scan for Devices</button>
+        <div id="devices">
+            <h2>Found Devices</h2>
+            <ul id="deviceList"></ul>
+        </div>
+        <div id="sensorData">
+            <h2>Sensor Data</h2>
+            <pre id="dataContainer"></pre>
+        </div>
+        <button id="downloadButton" disabled>Download Data</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
