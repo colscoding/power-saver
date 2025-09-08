@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "parcel public/index.html --https",
-    "build": "parcel build power-saver.html --dist-dir docs --public-url ./"
+    "build": "parcel build power-saver/index.html --dist-dir docs --public-url ./"
   },
   "keywords": [],
   "author": "",
