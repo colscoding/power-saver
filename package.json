@@ -2,7 +2,7 @@
   "name": "power-saver",
   "version": "1.0.0",
   "scripts": {
-    "start": "parcel public/index.html --https",
+    "start": "parcel power-saver/index.html",
     "build": "parcel build power-saver/index.html --dist-dir docs --public-url ./"
   },
   "keywords": [],
