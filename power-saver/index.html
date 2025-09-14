@@ -91,6 +91,32 @@
             font-weight: bold;
             color: #f39c12;
         }
+
+        .hr-display {
+            margin: 2rem 0;
+        }
+
+        .hr-display span {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+
+        .hr-display small {
+            font-size: 1.5rem;
+            color: #5f6368;
+        }
+
+        #hrStatus {
+            margin-top: 1rem;
+            color: #5f6368;
+            height: 20px;
+        }
+
+        #hrDeviceName {
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 
@@ -103,12 +129,29 @@
             <small>Watts</small>
         </div>
         <button id="connectButton">Connect to Power Meter</button>
+
+        <p id="status">Disconnected</p>
+        <p id="device-name"></p>
+    </div>
+
+
+    <div class="container">
+        <h1>Heart Rate Monitor ❤️</h1>
+        <div class="hr-display">
+            <span id="hr-value">--</span>
+            <small>BPM</small>
+        </div>
+        <button id="hrConnectButton">Connect to Heart Rate Monitor</button>
+        <p id="hrStatus">Disconnected</p>
+        <p id="hrDeviceName"></p>
+    </div>
+
+    <div class="container">
+        <h1>Export Data 📊</h1>
         <div id="export-buttons" style="margin-top: 1rem; display: none;">
             <button id="exportJsonButton">Export JSON</button>
             <button id="exportCsvButton">Export CSV</button>
         </div>
-        <p id="status">Disconnected</p>
-        <p id="device-name"></p>
     </div>
 
     <script>
@@ -119,6 +162,7 @@
         const exportButtons = document.getElementById('export-buttons');
         const exportJsonButton = document.getElementById('exportJsonButton');
         const exportCsvButton = document.getElementById('exportCsvButton');
+        exportButtons.style.display = 'block';
 
         let powerData = [];
         let lastPowerValue = 0;
@@ -164,7 +208,7 @@
 
                 statusText.textContent = 'Connected and receiving data!';
                 connectButton.disabled = true;
-                exportButtons.style.display = 'block';
+                // exportButtons.style.display = 'block';
 
                 dataLoggerInterval = setInterval(() => {
                     powerData.push({
@@ -247,7 +291,6 @@
             deviceNameElement.textContent = '';
             powerValueElement.textContent = '--';
             connectButton.disabled = false;
-            exportButtons.style.display = 'none';
             if (dataLoggerInterval) {
                 clearInterval(dataLoggerInterval);
                 dataLoggerInterval = null;
@@ -257,6 +300,102 @@
                 powerMeterDevice = null;
             }
             lastPowerValue = 0;
+        }
+
+
+        const heartData = [];
+        let lastHeartRateValue = 0;
+        let hrDataLoggerInterval = null;
+
+        const hrConnectButton = document.getElementById('hrConnectButton');
+        const hrStatusText = document.getElementById('hrStatus');
+        const hrValue = document.getElementById('hr-value');
+        const hrDeviceName = document.getElementById('hrDeviceName');
+
+        let hrBluetoothDevice = null;
+
+        hrConnectButton.addEventListener('click', async () => {
+            if (!navigator.bluetooth) {
+                hrStatusText.textContent = 'Web Bluetooth API is not available.';
+                return;
+            }
+
+            try {
+                hrStatusText.textContent = 'Scanning for devices...';
+
+                // Filter for devices that advertise the 'heart_rate' service
+                hrBluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate'] }]
+                });
+
+                hrStatusText.textContent = 'Connecting to device...';
+                hrDeviceName.textContent = `Device: ${hrBluetoothDevice.name}`;
+
+                // Add a listener for when the device gets disconnected
+                hrBluetoothDevice.addEventListener('gattserverdisconnected', onDisconnectedHr);
+
+                const hrServer = await hrBluetoothDevice.gatt.connect();
+                const hrService = await hrServer.getPrimaryService('heart_rate');
+                const hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
+
+                // Start notifications to receive heart rate data
+                await hrCharacteristic.startNotifications();
+
+                hrCharacteristic.addEventListener('characteristicvaluechanged', handleHeartRateChanged);
+
+                hrStatusText.textContent = 'Connected!';
+                hrConnectButton.disabled = true;
+
+                hrDataLoggerInterval = setInterval(() => {
+                    heartData.push({
+                        timestamp: Date.now(),
+                        heartRate: lastHeartRateValue
+                    });
+                }, 100);
+
+            } catch (error) {
+                hrStatusText.textContent = `Error: ${error.message}`;
+                console.error('Connection failed:', error);
+            }
+        });
+
+        function handleHeartRateChanged(event) {
+            const value = event.target.value;
+            const heartRate = parseHeartRate(value);
+            hrValue.textContent = heartRate;
+            lastHeartRateValue = heartRate;
+        }
+
+        /**
+         * The heart rate measurement is a DataView object.
+         * The first byte is a flag, and the subsequent byte(s) are the heart rate value.
+         * We need to check the first bit of the flag to see if the value is 8-bit or 16-bit.
+         */
+        function parseHeartRate(value) {
+            const flags = value.getUint8(0);
+            // Check if the heart rate value format is UINT16 (bit 0 is 1) or UINT8 (bit 0 is 0)
+            const is16bit = (flags & 0x1);
+            if (is16bit) {
+                // If 16-bit, read 2 bytes starting from the second byte
+                return value.getUint16(1, /*littleEndian=*/true);
+            } else {
+                // If 8-bit, read 1 byte starting from the second byte
+                return value.getUint8(1);
+            }
+        }
+
+        function onDisconnectedHr() {
+            hrStatusText.textContent = 'Device disconnected.';
+            hrDeviceName.textContent = '';
+            hrValue.textContent = '--';
+            hrConnectButton.disabled = false;
+            hrBluetoothDevice = null;
+
+            if (hrDataLoggerInterval) {
+                clearInterval(hrDataLoggerInterval);
+                hrDataLoggerInterval = null;
+            }
+            lastHeartRateValue = 0;
         }
     </script>
 
