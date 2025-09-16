@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><title>Web Bluetooth Power Meter</title><style>body{color:#fff;background-color:#121212;flex-direction:column;justify-content:center;align-items:center;height:100vh;margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;display:flex}.container{text-align:center;background:#1e1e1e;border-radius:16px;min-width:320px;padding:2rem 3rem;box-shadow:0 8px 24px #00000080}h1{color:#f39c12;margin-bottom:1rem;font-size:1.8rem}button{color:#121212;cursor:pointer;background-color:#f39c12;border:none;border-radius:8px;padding:14px 28px;font-size:16px;font-weight:700;transition:all .3s}button:hover{background-color:#e67e22;transform:translateY(-2px);box-shadow:0 4px 10px #f39c124d}button:disabled{color:#888;cursor:not-allowed;box-shadow:none;background-color:#555;transform:translateY(0)}.power-display{margin:2rem 0;padding:1rem}.power-display span{color:#fff;font-size:7rem;font-weight:700;line-height:1}.power-display small{color:#aaa;margin-left:8px;font-size:1.5rem}#status{color:#bbb;height:20px;margin-top:1rem;font-style:italic}#device-name{color:#f39c12;margin-top:8px;font-weight:700}.hr-display{margin:2rem 0}.hr-display span{color:#d32f2f;font-size:6rem;font-weight:700}.hr-display small{color:#5f6368;font-size:1.5rem}.cadence-display{margin:2rem 0}.cadence-display span{color:#2980b9;font-size:6rem;font-weight:700}.cadence-display small{color:#5f6368;font-size:1.5rem}.speed-display{margin:2rem 0}.speed-display span{color:#27ae60;font-size:6rem;font-weight:700}.speed-display small{color:#5f6368;font-size:1.5rem}.distance-display{margin:1rem 0}.distance-display span{color:#27ae60;font-size:3rem;font-weight:700}.distance-display small{color:#5f6368;font-size:1.5rem}.advanced-metrics{justify-content:space-around;width:100%;margin:1rem 0;display:flex}.metric-box{flex-direction:column;align-items:center;display:flex}.metric-box span{font-size:2.5rem;font-weight:700}.metric-box small{color:#aaa;font-size:.9rem}#hrStatus{color:#5f6368;height:20px;margin-top:1rem}#hrDeviceName{color:#333;font-weight:700}</style><body>
+
+    <div class=container>
+        <h1>Cycling Data 🚴❤️</h1>
+        <div class=power-display>
+            <span id=power-value>--</span>
+            <small>Watts</small>
+        </div>
+        <div class=advanced-metrics>
+            <div class=metric-box>
+                <span id=balance-value>--</span>
+                <small>L/R Balance</small>
+            </div>
+            <div class=metric-box>
+                <span id=smoothness-value>--</span>
+                <small>Pedal Smoothness</small>
+            </div>
+            <div class=metric-box>
+                <span id=torque-value>--</span>
+                <small>Torque Effect.</small>
+            </div>
+        </div>
+        <div class=hr-display>
+            <span id=hr-value>--</span>
+            <small>BPM</small>
+        </div>
+        <div class=cadence-display>
+            <span id=cadence-value>--</span>
+            <small>RPM</small>
+        </div>
+        <div class=speed-display>
+            <span id=speed-value>--</span>
+            <small>km/h</small>
+        </div>
+        <div class=distance-display>
+            <span id=distance-value>--</span>
+            <small>km</small>
+        </div>
+        <p id=status>Disconnected</p>
+        <p id=device-name></p>
+        <p id=hrStatus style=display:none></p>
+        <p id=hrDeviceName style=display:none></p>
+        <p id=cadenceStatus style=display:none></p>
+        <p id=cadenceDeviceName style=display:none></p>
+    </div>
+
+    <div class=container>
+        <button id=connectButton>Connect to Power Meter</button>
+        <button id=hrConnectButton>Connect to Heart Rate Monitor</button>
+        <button id=speedCadenceConnectButton>Connect to Speed &amp; Cadence</button>
+        <div id=export-buttons style=margin-top:1rem;display:none>
+            <button id=exportJsonButton>Export JSON</button>
+            <button id=exportCsvButton>Export CSV</button>
+        </div>
+    </div>
+
+    <script src=power-saver.f7cf161b.js></script>
+
+
