@@ -6,241 +6,627 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Bluetooth Power Meter</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            height: 100vh;
             margin: 0;
-            background-color: #121212;
-            /* Dark theme */
+            padding: 20px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0c0c0c 100%);
             color: #ffffff;
         }
 
-        .container {
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        .header {
             text-align: center;
-            background: #1e1e1e;
-            padding: 2rem 3rem;
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            min-width: 320px;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, transparent 100%);
+        }
+
+        .power-card {
+            grid-column: 1;
+            grid-row: 1 / 3;
+            --accent-color: #f39c12;
+        }
+
+        .hr-card {
+            grid-column: 2;
+            grid-row: 1;
+            --accent-color: #e74c3c;
+        }
+
+        .cadence-card {
+            grid-column: 3;
+            grid-row: 1;
+            --accent-color: #3498db;
+        }
+
+        .speed-card {
+            grid-column: 2;
+            grid-row: 2;
+            --accent-color: #27ae60;
+        }
+
+        .distance-card {
+            grid-column: 3;
+            grid-row: 2;
+            --accent-color: #27ae60;
+        }
+
+        .controls-container {
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
         }
 
         h1 {
             color: #f39c12;
-            /* A cycling-friendly orange */
+            margin: 0 0 1rem 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-value {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 700;
+            color: var(--accent-color, #ffffff);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .power-card .metric-value {
+            font-size: clamp(4rem, 12vw, 8rem);
+        }
+
+        .metric-unit {
+            font-size: 1.2rem;
+            color: #aaaaaa;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-bottom: 1rem;
-            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .status-text {
+            margin-top: 1rem;
+            color: #bbbbbb;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .device-name {
+            margin-top: 0.5rem;
+            font-weight: 600;
+            color: var(--accent-color, #f39c12);
+            font-size: 0.9rem;
         }
 
         button {
-            background-color: #f39c12;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
             color: #121212;
-            font-weight: bold;
+            font-weight: 600;
             border: none;
-            padding: 14px 28px;
-            border-radius: 8px;
+            padding: 16px 32px;
+            border-radius: 12px;
             font-size: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin: 8px;
+            box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
         }
 
         button:hover {
-            background-color: #e67e22;
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+            box-shadow: 0 8px 24px rgba(243, 156, 18, 0.4);
         }
 
         button:disabled {
-            background-color: #555;
+            background: #555;
             color: #888;
             cursor: not-allowed;
             transform: translateY(0);
             box-shadow: none;
         }
 
-        .power-display {
-            margin: 2rem 0;
-            padding: 1rem;
+        button:disabled::before {
+            display: none;
         }
 
-        .power-display span {
-            font-size: 7rem;
-            font-weight: 700;
-            color: #ffffff;
-            line-height: 1;
+        .export-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
         }
 
-        .power-display small {
-            font-size: 1.5rem;
-            color: #aaaaaa;
-            margin-left: 8px;
+        .export-buttons button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            box-shadow: 0 4px 16px rgba(52, 152, 219, 0.3);
         }
 
-        #status {
-            margin-top: 1rem;
-            color: #bbbbbb;
-            height: 20px;
-            font-style: italic;
-        }
-
-        #device-name {
-            margin-top: 8px;
-            font-weight: bold;
-            color: #f39c12;
-        }
-
-        .hr-display {
-            margin: 2rem 0;
-        }
-
-        .hr-display span {
-            font-size: 6rem;
-            font-weight: bold;
-            color: #d32f2f;
-        }
-
-        .hr-display small {
-            font-size: 1.5rem;
-            color: #5f6368;
-        }
-
-        .cadence-display {
-            margin: 2rem 0;
-        }
-
-        .cadence-display span {
-            font-size: 6rem;
-            font-weight: bold;
-            color: #2980b9;
-        }
-
-        .cadence-display small {
-            font-size: 1.5rem;
-            color: #5f6368;
-        }
-
-        .speed-display {
-            margin: 2rem 0;
-        }
-
-        .speed-display span {
-            font-size: 6rem;
-            font-weight: bold;
-            color: #27ae60;
-        }
-
-        .speed-display small {
-            font-size: 1.5rem;
-            color: #5f6368;
-        }
-
-        .distance-display {
-            margin: 1rem 0;
-        }
-
-        .distance-display span {
-            font-size: 3rem;
-            font-weight: bold;
-            color: #27ae60;
-        }
-
-        .distance-display small {
-            font-size: 1.5rem;
-            color: #5f6368;
+        .export-buttons button:hover {
+            box-shadow: 0 8px 24px rgba(52, 152, 219, 0.4);
         }
 
         .advanced-metrics {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            margin: 1rem 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .metric-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .metric-box span {
-            font-size: 2.5rem;
-            font-weight: bold;
+        .metric-box .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
         }
 
-        .metric-box small {
-            font-size: 0.9rem;
+        .metric-box .label {
+            font-size: 0.8rem;
             color: #aaaaaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        #hrStatus {
-            margin-top: 1rem;
-            color: #5f6368;
-            height: 20px;
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto;
+            }
+
+            .power-card {
+                grid-column: 1 / 3;
+                grid-row: 1;
+            }
+
+            .hr-card {
+                grid-column: 1;
+                grid-row: 2;
+            }
+
+            .cadence-card {
+                grid-column: 2;
+                grid-row: 2;
+            }
+
+            .speed-card {
+                grid-column: 1;
+                grid-row: 3;
+            }
+
+            .distance-card {
+                grid-column: 2;
+                grid-row: 3;
+            }
         }
 
-        #hrDeviceName {
-            font-weight: bold;
-            color: #333;
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .dashboard {
+                gap: 16px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(5, auto);
+            }
+
+            .power-card,
+            .hr-card,
+            .cadence-card,
+            .speed-card,
+            .distance-card {
+                grid-column: 1;
+            }
+
+            .power-card {
+                grid-row: 1;
+            }
+
+            .hr-card {
+                grid-row: 2;
+            }
+
+            .cadence-card {
+                grid-row: 3;
+            }
+
+            .speed-card {
+                grid-row: 4;
+            }
+
+            .distance-card {
+                grid-row: 5;
+            }
+
+            .header,
+            .metric-card,
+            .controls-container {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .advanced-metrics {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin: 1rem 0;
+            }
+        }
+
+        /* Compact layout for very small screens */
+        @media (max-width: 400px) {
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto;
+                gap: 12px;
+            }
+
+            .power-card {
+                grid-column: 1 / 3;
+                grid-row: 1;
+            }
+
+            .hr-card {
+                grid-column: 1;
+                grid-row: 2;
+            }
+
+            .cadence-card {
+                grid-column: 2;
+                grid-row: 2;
+            }
+
+            .speed-card {
+                grid-column: 1;
+                grid-row: 3;
+            }
+
+            .distance-card {
+                grid-column: 2;
+                grid-row: 3;
+            }
+
+            .metric-card {
+                padding: 0.8rem;
+            }
+
+            .power-card {
+                padding: 1.2rem;
+            }
+
+            .advanced-metrics {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+                margin: 0.8rem 0 0.5rem 0;
+                padding: 0.8rem;
+            }
+
+            .metric-box .value {
+                font-size: 1.2rem;
+            }
+
+            .metric-box .label {
+                font-size: 0.65rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .header,
+            .metric-card,
+            .controls-container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+                margin: 0 0 0.5rem 0;
+            }
+
+            .metric-card {
+                padding: 1.2rem;
+                border-radius: 16px;
+            }
+
+            .metric-label {
+                font-size: 0.8rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .metric-unit {
+                font-size: 1rem;
+            }
+
+            .advanced-metrics {
+                margin: 1rem 0 0.5rem 0;
+                padding: 1rem;
+                gap: 8px;
+            }
+
+            .metric-box .value {
+                font-size: 1.4rem;
+            }
+
+            .metric-box .label {
+                font-size: 0.7rem;
+            }
+
+            button {
+                padding: 12px 24px;
+                font-size: 14px;
+                margin: 6px;
+                border-radius: 10px;
+            }
+
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .status-text {
+                font-size: 0.8rem;
+                margin-top: 0.5rem;
+            }
+
+            .device-name {
+                font-size: 0.8rem;
+                margin-top: 0.3rem;
+            }
+        }
+
+        /* Loading and Animation States */
+        .metric-value.loading {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .metric-card.connected::before {
+            background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, rgba(255, 255, 255, 0.3) 100%);
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.connected {
+            background: #27ae60;
+            box-shadow: 0 0 12px rgba(39, 174, 96, 0.5);
+        }
+
+        .status-indicator.connecting {
+            background: #f39c12;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        /* Improved scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Focus states for accessibility */
+        button:focus {
+            outline: 2px solid var(--accent-color, #f39c12);
+            outline-offset: 2px;
+        }
+
+        /* Dark mode enhancements */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            }
         }
     </style>
 </head>
 
 <body>
+    <div class="dashboard">
+        <div class="metrics-grid">
+            <div class="metric-card power-card">
+                <div class="status-indicator" id="power-status-indicator"></div>
+                <div class="metric-label">Power Output</div>
+                <div class="metric-value" id="power-value">--</div>
+                <div class="metric-unit">Watts</div>
+                <div class="advanced-metrics">
+                    <div class="metric-box">
+                        <div class="value" id="balance-value">--</div>
+                        <div class="label">L/R Balance</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="smoothness-value">--</div>
+                        <div class="label">Smoothness</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="torque-value">--</div>
+                        <div class="label">Torque Eff.</div>
+                    </div>
+                </div>
+                <div class="status-text" id="status">Disconnected</div>
+                <div class="device-name" id="device-name"></div>
+            </div>
 
-    <div class="container">
-        <h1>Cycling Data 🚴❤️</h1>
-        <div class="power-display">
-            <span id="power-value">--</span>
-            <small>Watts</small>
-        </div>
-        <div class="advanced-metrics">
-            <div class="metric-box">
-                <span id="balance-value">--</span>
-                <small>L/R Balance</small>
+            <div class="metric-card hr-card">
+                <div class="status-indicator" id="hr-status-indicator"></div>
+                <div class="metric-label">Heart Rate</div>
+                <div class="metric-value" id="hr-value">--</div>
+                <div class="metric-unit">BPM</div>
+                <div class="status-text" id="hrStatus" style="display: none;"></div>
+                <div class="device-name" id="hrDeviceName" style="display: none;"></div>
             </div>
-            <div class="metric-box">
-                <span id="smoothness-value">--</span>
-                <small>Pedal Smoothness</small>
-            </div>
-            <div class="metric-box">
-                <span id="torque-value">--</span>
-                <small>Torque Effect.</small>
-            </div>
-        </div>
-        <div class="hr-display">
-            <span id="hr-value">--</span>
-            <small>BPM</small>
-        </div>
-        <div class="cadence-display">
-            <span id="cadence-value">--</span>
-            <small>RPM</small>
-        </div>
-        <div class="speed-display">
-            <span id="speed-value">--</span>
-            <small>km/h</small>
-        </div>
-        <div class="distance-display">
-            <span id="distance-value">--</span>
-            <small>km</small>
-        </div>
-        <p id="status">Disconnected</p>
-        <p id="device-name"></p>
-        <p id="hrStatus" style="display: none;"></p>
-        <p id="hrDeviceName" style="display: none;"></p>
-        <p id="cadenceStatus" style="display: none;"></p>
-        <p id="cadenceDeviceName" style="display: none;"></p>
-    </div>
 
-    <div class="container">
-        <button id="connectButton">Connect to Power Meter</button>
-        <button id="hrConnectButton">Connect to Heart Rate Monitor</button>
-        <button id="speedCadenceConnectButton">Connect to Speed & Cadence</button>
-        <div id="export-buttons" style="margin-top: 1rem; display: none;">
-            <button id="exportJsonButton">Export JSON</button>
-            <button id="exportCsvButton">Export CSV</button>
+            <div class="metric-card cadence-card">
+                <div class="status-indicator" id="cadence-status-indicator"></div>
+                <div class="metric-label">Cadence</div>
+                <div class="metric-value" id="cadence-value">--</div>
+                <div class="metric-unit">RPM</div>
+                <div class="status-text" id="cadenceStatus" style="display: none;"></div>
+                <div class="device-name" id="cadenceDeviceName" style="display: none;"></div>
+            </div>
+
+            <div class="metric-card speed-card">
+                <div class="status-indicator" id="speed-status-indicator"></div>
+                <div class="metric-label">Speed</div>
+                <div class="metric-value" id="speed-value">--</div>
+                <div class="metric-unit">km/h</div>
+            </div>
+
+            <div class="metric-card distance-card">
+                <div class="status-indicator" id="distance-status-indicator"></div>
+                <div class="metric-label">Distance</div>
+                <div class="metric-value" id="distance-value">--</div>
+                <div class="metric-unit">km</div>
+            </div>
+        </div>
+
+        <div class="controls-container">
+            <button id="connectButton">Connect Power Meter</button>
+            <button id="hrConnectButton">Connect Heart Rate Monitor</button>
+            <button id="speedCadenceConnectButton">Connect Speed & Cadence</button>
+            <div class="export-buttons" id="export-buttons" style="display: none;">
+                <button id="exportJsonButton">Export JSON</button>
+                <button id="exportCsvButton">Export CSV</button>
+            </div>
         </div>
     </div>
 
