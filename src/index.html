@@ -124,7 +124,7 @@
         }
 
         .power-card .metric-value {
-            font-size: clamp(4rem, 12vw, 8rem);
+            font-size: clamp(6rem, 16vw, 12rem);
         }
 
         .metric-unit {
@@ -220,6 +220,83 @@
 
         .export-buttons button:hover {
             box-shadow: 0 8px 24px rgba(52, 152, 219, 0.4);
+        }
+
+        /* Toggle Button Styles */
+        .toggle-controls {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .toggle-button {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            padding: 12px 20px;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .toggle-button:hover {
+            box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
+            background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
+        }
+
+        .toggle-icon {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-button.collapsed .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Collapsible Sections */
+        .controls-container,
+        .export-section {
+            transition: all 0.4s ease-in-out;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            transition: all 0.4s ease-in-out;
+        }
+
+        .power-card .metric-value {
+            transition: font-size 0.4s ease-in-out;
+        }
+
+        .power-card {
+            transition: padding 0.4s ease-in-out;
+        }
+
+        .export-section {
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 1rem;
+        }
+
+        .export-section .export-buttons {
+            margin-top: 0;
+        }
+
+        /* Maximized power display when sections are hidden */
+        .dashboard.maximized .power-card .metric-value {
+            font-size: clamp(8rem, 20vw, 16rem);
+        }
+
+        .dashboard.maximized .power-card {
+            padding: 3rem;
+        }
+
+        .dashboard.maximized .metrics-grid {
+            gap: 30px;
         }
 
         .advanced-metrics {
@@ -460,6 +537,16 @@
                 align-items: center;
             }
 
+            .toggle-button {
+                font-size: 12px;
+                padding: 10px 16px;
+                min-width: 160px;
+            }
+
+            .dashboard.maximized .power-card .metric-value {
+                font-size: clamp(6rem, 18vw, 12rem);
+            }
+
             .status-text {
                 font-size: 0.8rem;
                 margin-top: 0.5rem;
@@ -551,6 +638,19 @@
             outline-offset: 2px;
         }
 
+        /* Status text inside button styling */
+        button .status-text {
+            margin-top: 0.5rem;
+            color: rgba(18, 18, 18, 0.7);
+            font-style: italic;
+            font-size: 0.8rem;
+            font-weight: 400;
+        }
+
+        button:disabled .status-text {
+            color: rgba(136, 136, 136, 0.8);
+        }
+
         /* Dark mode enhancements */
         @media (prefers-color-scheme: dark) {
             body {
@@ -568,21 +668,6 @@
                 <div class="metric-label">Power Output</div>
                 <div class="metric-value" id="power-value">--</div>
                 <div class="metric-unit">Watts</div>
-                <div class="advanced-metrics">
-                    <div class="metric-box">
-                        <div class="value" id="balance-value">--</div>
-                        <div class="label">L/R Balance</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="value" id="smoothness-value">--</div>
-                        <div class="label">Smoothness</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="value" id="torque-value">--</div>
-                        <div class="label">Torque Eff.</div>
-                    </div>
-                </div>
-                <div class="status-text" id="status">Disconnected</div>
                 <div class="device-name" id="device-name"></div>
             </div>
 
@@ -604,14 +689,14 @@
                 <div class="device-name" id="cadenceDeviceName" style="display: none;"></div>
             </div>
 
-            <div class="metric-card speed-card">
+            <div class="metric-card speed-card" style="display: none;">
                 <div class="status-indicator" id="speed-status-indicator"></div>
                 <div class="metric-label">Speed</div>
                 <div class="metric-value" id="speed-value">--</div>
                 <div class="metric-unit">km/h</div>
             </div>
 
-            <div class="metric-card distance-card">
+            <div class="metric-card distance-card" style="display: none;">
                 <div class="status-indicator" id="distance-status-indicator"></div>
                 <div class="metric-label">Distance</div>
                 <div class="metric-value" id="distance-value">--</div>
@@ -619,14 +704,54 @@
             </div>
         </div>
 
-        <div class="controls-container">
-            <button id="connectButton">Connect Power Meter</button>
+        <!-- Connect Controls Section -->
+        <div class="toggle-controls">
+            <button id="toggleConnectSection" class="toggle-button">
+                <span id="connectToggleText">Hide Connect Devices</span>
+                <span class="toggle-icon">▲</span>
+            </button>
+        </div>
+
+        <div class="controls-container" id="connectSection">
+            <button id="connectButton">
+                Connect Power Meter
+                <div class="status-text" id="status">Disconnected</div>
+            </button>
             <button id="hrConnectButton">Connect Heart Rate Monitor</button>
             <button id="speedCadenceConnectButton">Connect Speed & Cadence</button>
-            <div class="export-buttons" id="export-buttons" style="display: none;">
-                <button id="exportJsonButton">Export JSON</button>
-                <button id="exportCsvButton">Export CSV</button>
+        </div>
+
+        <!-- Export Controls Section -->
+        <div class="toggle-controls">
+            <button id="toggleExportSection" class="toggle-button">
+                <span id="exportToggleText">Show Export Data</span>
+                <span class="toggle-icon">▼</span>
+            </button>
+        </div>
+
+        <div class="export-section" id="exportSection" style="display: none;">
+            <div class="export-buttons" id="export-buttons">
+                <button id="exportJsonButton">Export Summary JSON</button>
+                <button id="exportCsvButton">Export Summary CSV</button>
+                <button id="exportRawJsonButton">Export Raw Measurements JSON</button>
+                <button id="exportRawCsvButton">Export Raw Measurements CSV</button>
             </div>
+        </div>
+    </div>
+
+
+    <div class="advanced-metrics" id="advanced-metrics" style="display: none;">
+        <div class="metric-box">
+            <div class="value" id="balance-value">--</div>
+            <div class="label">L/R Balance</div>
+        </div>
+        <div class="metric-box">
+            <div class="value" id="smoothness-value">--</div>
+            <div class="label">Smoothness</div>
+        </div>
+        <div class="metric-box">
+            <div class="value" id="torque-value">--</div>
+            <div class="label">Torque Eff.</div>
         </div>
     </div>
 
