@@ -57,12 +57,29 @@ const exportToggleText = document.getElementById('exportToggleText');
 const hamburgerBtn = document.getElementById('hamburgerButton');
 const menuDropdown = document.getElementById('menuDropdown');
 const powerAveragesToggle = document.getElementById('powerAveragesToggle');
+const powerMetricToggle = document.getElementById('powerMetricToggle');
+const heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
+const cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
+
+// Metric card elements
+const powerCard = document.querySelector('.power-card');
+const heartRateCard = document.querySelector('.hr-card');
+const cadenceCard = document.querySelector('.cadence-card');
 
 // Debug: Check if elements exist
 console.log('Hamburger elements:', {
     hamburgerBtn: hamburgerBtn,
     menuDropdown: menuDropdown,
-    powerAveragesToggle: powerAveragesToggle
+    powerAveragesToggle: powerAveragesToggle,
+    powerMetricToggle: powerMetricToggle,
+    heartRateMetricToggle: heartRateMetricToggle,
+    cadenceMetricToggle: cadenceMetricToggle
+});
+
+console.log('Metric card elements:', {
+    powerCard: powerCard,
+    heartRateCard: heartRateCard,
+    cadenceCard: cadenceCard
 });
 
 const balanceValueElement = document.getElementById('balance-value');
@@ -133,6 +150,84 @@ if (powerAveragesToggle && powerAveragesSection) {
     console.error('Power averages toggle elements not found:', {
         powerAveragesToggle: !!powerAveragesToggle,
         powerAveragesSection: !!powerAveragesSection
+    });
+}
+
+// Power metric toggle via hamburger menu
+if (powerMetricToggle && powerCard) {
+    let powerMetricVisible = true; // Start visible by default
+    powerMetricToggle.classList.add('active'); // Set initial active state
+
+    powerMetricToggle.addEventListener('click', function () {
+        console.log('Power metric toggle clicked');
+        powerMetricVisible = !powerMetricVisible;
+
+        if (powerMetricVisible) {
+            powerCard.style.display = 'block';
+            powerMetricToggle.classList.add('active');
+            console.log('Power metric shown');
+        } else {
+            powerCard.style.display = 'none';
+            powerMetricToggle.classList.remove('active');
+            console.log('Power metric hidden');
+        }
+    });
+} else {
+    console.error('Power metric toggle elements not found:', {
+        powerMetricToggle: !!powerMetricToggle,
+        powerCard: !!powerCard
+    });
+}
+
+// Heart rate metric toggle via hamburger menu
+if (heartRateMetricToggle && heartRateCard) {
+    let heartRateMetricVisible = true; // Start visible by default
+    heartRateMetricToggle.classList.add('active'); // Set initial active state
+
+    heartRateMetricToggle.addEventListener('click', function () {
+        console.log('Heart rate metric toggle clicked');
+        heartRateMetricVisible = !heartRateMetricVisible;
+
+        if (heartRateMetricVisible) {
+            heartRateCard.style.display = 'block';
+            heartRateMetricToggle.classList.add('active');
+            console.log('Heart rate metric shown');
+        } else {
+            heartRateCard.style.display = 'none';
+            heartRateMetricToggle.classList.remove('active');
+            console.log('Heart rate metric hidden');
+        }
+    });
+} else {
+    console.error('Heart rate metric toggle elements not found:', {
+        heartRateMetricToggle: !!heartRateMetricToggle,
+        heartRateCard: !!heartRateCard
+    });
+}
+
+// Cadence metric toggle via hamburger menu
+if (cadenceMetricToggle && cadenceCard) {
+    let cadenceMetricVisible = true; // Start visible by default
+    cadenceMetricToggle.classList.add('active'); // Set initial active state
+
+    cadenceMetricToggle.addEventListener('click', function () {
+        console.log('Cadence metric toggle clicked');
+        cadenceMetricVisible = !cadenceMetricVisible;
+
+        if (cadenceMetricVisible) {
+            cadenceCard.style.display = 'block';
+            cadenceMetricToggle.classList.add('active');
+            console.log('Cadence metric shown');
+        } else {
+            cadenceCard.style.display = 'none';
+            cadenceMetricToggle.classList.remove('active');
+            console.log('Cadence metric hidden');
+        }
+    });
+} else {
+    console.error('Cadence metric toggle elements not found:', {
+        cadenceMetricToggle: !!cadenceMetricToggle,
+        cadenceCard: !!cadenceCard
     });
 }
 

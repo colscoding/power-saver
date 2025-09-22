@@ -521,8 +521,8 @@
 
         .averages-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.2rem;
         }
 
         .average-card {
@@ -780,6 +780,31 @@
             }
         }
 
+        /* Tablet styles */
+        @media (max-width: 768px) and (min-width: 481px) {
+            .averages-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .average-card {
+                padding: 1rem;
+            }
+
+            .average-label {
+                font-size: 0.85rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .average-value {
+                font-size: 1.2rem;
+            }
+
+            .average-title {
+                font-size: 0.75rem;
+            }
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 8px;
@@ -906,29 +931,48 @@
             }
 
             .averages-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                margin: 0 -0.5rem;
             }
 
             .average-card {
-                padding: 1rem;
+                padding: 0.75rem;
+                border-radius: 12px;
             }
 
             .average-label {
-                font-size: 0.9rem;
-                margin-bottom: 0.75rem;
+                font-size: 0.8rem;
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+            }
+
+            .average-values {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .current-average,
+            .best-average {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             }
 
             .average-value {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
+                font-weight: 600;
             }
 
             .average-title {
-                font-size: 0.8rem;
+                font-size: 0.7rem;
+                flex: 1;
             }
 
             .average-unit {
-                font-size: 0.8rem;
+                font-size: 0.7rem;
+                margin-left: 0.25rem;
             }
         }
 
@@ -1060,6 +1104,24 @@
             <div class="menu-item" id="togglePowerAveragesMenuItem">
                 <span class="menu-item-text">Power Averages</span>
                 <div class="menu-toggle" id="powerAveragesToggle">
+                    <div class="menu-toggle-slider"></div>
+                </div>
+            </div>
+            <div class="menu-item" id="togglePowerMetricMenuItem">
+                <span class="menu-item-text">Power Metric</span>
+                <div class="menu-toggle" id="powerMetricToggle">
+                    <div class="menu-toggle-slider"></div>
+                </div>
+            </div>
+            <div class="menu-item" id="toggleHeartRateMetricMenuItem">
+                <span class="menu-item-text">Heart Rate Metric</span>
+                <div class="menu-toggle" id="heartRateMetricToggle">
+                    <div class="menu-toggle-slider"></div>
+                </div>
+            </div>
+            <div class="menu-item" id="toggleCadenceMetricMenuItem">
+                <span class="menu-item-text">Cadence Metric</span>
+                <div class="menu-toggle" id="cadenceMetricToggle">
                     <div class="menu-toggle-slider"></div>
                 </div>
             </div>
