@@ -24,35 +24,6 @@ async function releaseWakeLock() {
 
 // TCX Generation Functions
 /**
- * Simple XML formatter using native JavaScript
- * @param {string} xml - Raw XML string
- * @returns {string} Formatted XML with proper indentation
- */
-function formatXml(xml) {
-    const PADDING = '  '; // 2 spaces for indentation
-    const reg = /(>)(<)(\/*)/g;
-    let formatted = xml.replace(reg, '$1\n$2$3');
-
-    let pad = 0;
-    return formatted.split('\n').map(line => {
-        let indent = 0;
-        if (line.match(/.+<\/\w[^>]*>$/)) {
-            indent = 0;
-        } else if (line.match(/^<\/\w/) && pad > 0) {
-            pad -= 1;
-        } else if (line.match(/^<\w[^>]*[^\/]>.*$/)) {
-            indent = 1;
-        } else {
-            indent = 0;
-        }
-
-        const padding = PADDING.repeat(pad);
-        pad += indent;
-        return padding + line;
-    }).join('\n');
-}
-
-/**
  * Creates a trackpoint XML element for a single data point
  * @param {Object} dataPoint - Data point with time, power, heartRate, cadence
  * @returns {string} XML trackpoint string
@@ -159,7 +130,159 @@ function generateTcxString(powerData) {
   </Activities>
 </TrainingCenterDatabase>`;
 
-    return formatXml(rawXml);
+    return rawXml;
+}
+
+// Data Persistence Functions
+const SESSION_STORAGE_KEY = 'powerMeterSession';
+const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+/**
+ * Save current session data to localStorage
+ */
+function saveSessionData() {
+    try {
+        const sessionData = {
+            timestamp: Date.now(),
+            powerData: powerData,
+            heartData: heartData,
+            cadenceData: cadenceData,
+            rawPowerMeasurements: rawPowerMeasurements,
+            powerReadings: powerReadings,
+            powerAverages: powerAverages,
+            lastPowerValue: lastPowerValue,
+            lastHeartRateValue: lastHeartRateValue,
+            lastCadenceValue: lastCadenceValue,
+            sessionStartTime: sessionStartTime
+        };
+
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+        console.log('Session data saved to localStorage');
+    } catch (error) {
+        console.warn('Failed to save session data:', error);
+    }
+}
+
+/**
+ * Load session data from localStorage if available and recent
+ */
+function loadSessionData() {
+    try {
+        const savedData = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!savedData) return false;
+
+        const sessionData = JSON.parse(savedData);
+        const now = Date.now();
+
+        // Check if session is too old (older than 24 hours)
+        if (now - sessionData.timestamp > SESSION_TIMEOUT) {
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            console.log('Session data expired, removed from localStorage');
+            return false;
+        }
+
+        // Restore data arrays
+        if (sessionData.powerData) powerData.length = 0, powerData.push(...sessionData.powerData);
+        if (sessionData.heartData) heartData.length = 0, heartData.push(...sessionData.heartData);
+        if (sessionData.cadenceData) cadenceData.length = 0, cadenceData.push(...sessionData.cadenceData);
+        if (sessionData.rawPowerMeasurements) rawPowerMeasurements.length = 0, rawPowerMeasurements.push(...sessionData.rawPowerMeasurements);
+        if (sessionData.powerReadings) powerReadings.length = 0, powerReadings.push(...sessionData.powerReadings);
+
+        // Restore power averages
+        if (sessionData.powerAverages) {
+            Object.assign(powerAverages, sessionData.powerAverages);
+        }
+
+        // Restore last values
+        if (sessionData.lastPowerValue !== undefined) lastPowerValue = sessionData.lastPowerValue;
+        if (sessionData.lastHeartRateValue !== undefined) lastHeartRateValue = sessionData.lastHeartRateValue;
+        if (sessionData.lastCadenceValue !== undefined) lastCadenceValue = sessionData.lastCadenceValue;
+        if (sessionData.sessionStartTime !== undefined) sessionStartTime = sessionData.sessionStartTime;
+
+        console.log('Session data restored from localStorage');
+        console.log(`Restored ${powerData.length} power readings, ${heartData.length} heart rate readings, ${cadenceData.length} cadence readings`);
+
+        // Update displays with restored data
+        updateDisplaysFromRestoredData();
+
+        return true;
+    } catch (error) {
+        console.warn('Failed to load session data:', error);
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        return false;
+    }
+}
+
+/**
+ * Update displays after restoring session data
+ */
+function updateDisplaysFromRestoredData() {
+    // Update current metric values
+    powerValueElement.textContent = lastPowerValue || '--';
+    hrValueElement.textContent = lastHeartRateValue || '--';
+    cadenceValueElement.textContent = lastCadenceValue || '--';
+
+    // Update power averages display
+    updatePowerAveragesDisplay();
+
+    // Show session restoration notification
+    if (powerData.length > 0) {
+        showSessionRestoredNotification();
+    }
+}
+
+/**
+ * Show notification that session was restored
+ */
+function showSessionRestoredNotification() {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        z-index: 1000;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = `Session restored! ${powerData.length} data points recovered.`;
+
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    // Remove notification after 5 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+            if (style.parentNode) {
+                style.parentNode.removeChild(style);
+            }
+        }, 300);
+    }, 5000);
+}
+
+/**
+ * Clear session data from localStorage
+ */
+function clearSessionData() {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    console.log('Session data cleared from localStorage');
 }
 
 const connectButton = document.getElementById('connectButton');
@@ -172,6 +295,7 @@ const exportCsvButton = document.getElementById('exportCsvButton');
 const exportTcxButton = document.getElementById('exportTcxButton');
 const exportRawJsonButton = document.getElementById('exportRawJsonButton');
 const exportRawCsvButton = document.getElementById('exportRawCsvButton');
+const clearSessionButton = document.getElementById('clearSessionButton');
 
 // Power averages elements
 const avg10sCurrentElement = document.getElementById('avg10s-current');
@@ -525,6 +649,7 @@ updateDashboardLayout();
 let powerData = [];
 let rawPowerMeasurements = [];
 let lastPowerValue = 0;
+let sessionStartTime = null;
 
 // Power averaging data structures
 let powerReadings = [];  // Array to store timestamped power readings
@@ -605,6 +730,41 @@ function resetPowerAverages() {
     updatePowerAveragesDisplay();
 }
 
+/**
+ * Reset all session data (called when all devices disconnect)
+ */
+function resetAllSessionData() {
+    // Clear all data arrays
+    powerData.length = 0;
+    heartData.length = 0;
+    cadenceData.length = 0;
+    rawPowerMeasurements.length = 0;
+    powerReadings.length = 0;
+
+    // Reset power averages
+    for (const period of Object.keys(powerAverages)) {
+        powerAverages[period].current = 0;
+        powerAverages[period].best = 0;
+    }
+
+    // Reset last values
+    lastPowerValue = 0;
+    lastHeartRateValue = 0;
+    lastCadenceValue = 0;
+    sessionStartTime = null;
+
+    // Update displays
+    updatePowerAveragesDisplay();
+    powerValueElement.textContent = '--';
+    hrValueElement.textContent = '--';
+    cadenceValueElement.textContent = '--';
+
+    // Clear localStorage
+    clearSessionData();
+
+    console.log('All session data reset');
+}
+
 let lastHeartRateValue = 0;
 let lastCadenceValue = 0;
 let dataLoggerInterval = null;
@@ -670,6 +830,13 @@ connectButton.addEventListener('click', async () => {
         statusText.textContent = 'Connected and receiving data!';
         powerStatusIndicator.className = 'status-indicator connected';
         connectButton.disabled = true;
+
+        // Start session if this is the first connection
+        if (!sessionStartTime) {
+            sessionStartTime = Date.now();
+            console.log('Session started with first device connection');
+        }
+
         // exportButtons.style.display = 'block';
 
         dataLoggerInterval = setInterval(() => {
@@ -679,6 +846,11 @@ connectButton.addEventListener('click', async () => {
                 heartRate: lastHeartRateValue,
                 cadence: lastCadenceValue
             });
+
+            // Save session data every 10 seconds
+            if (powerData.length % 100 === 0) { // Every 100 readings = 10 seconds
+                saveSessionData();
+            }
         }, 100);
 
     } catch (error) {
@@ -814,6 +986,15 @@ exportTcxButton.addEventListener('click', () => {
     }
 });
 
+// Clear Session Data
+clearSessionButton.addEventListener('click', () => {
+    const confirmed = confirm('Are you sure you want to clear all session data? This action cannot be undone.');
+    if (confirmed) {
+        resetAllSessionData();
+        alert('Session data cleared successfully!');
+    }
+});
+
 
 function handlePowerMeasurement(event) {
     const value = event.target.value;
@@ -877,6 +1058,7 @@ function onDisconnected() {
 
 
 const heartData = [];
+const cadenceData = [];
 let hrDataLoggerInterval = null;
 
 const hrConnectButton = document.getElementById('hrConnectButton');
@@ -1054,3 +1236,29 @@ function onDisconnectedSpeedCadence() {
     speedCadenceBluetoothDevice = null;
     lastCadenceValue = 0;
 }
+
+// Initialize session on page load
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('Power Meter App initialized');
+
+    // Try to restore previous session
+    const sessionRestored = loadSessionData();
+    if (!sessionRestored) {
+        sessionStartTime = Date.now();
+        console.log('New session started');
+    }
+
+    // Save session data when page is about to be closed/refreshed
+    window.addEventListener('beforeunload', function () {
+        if (powerData.length > 0) {
+            saveSessionData();
+        }
+    });
+
+    // Save session data periodically (every 30 seconds as backup)
+    setInterval(() => {
+        if (powerData.length > 0) {
+            saveSessionData();
+        }
+    }, 30000);
+});
