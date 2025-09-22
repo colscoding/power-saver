@@ -1,82 +1,139 @@
-<!DOCTYPE html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><title>Web Bluetooth Power Meter</title><style>*{box-sizing:border-box}body{color:#fff;background:linear-gradient(135deg,#0c0c0c 0%,#1a1a1a 50%,#0c0c0c 100%);min-height:100vh;margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}.dashboard{grid-template-columns:1fr;gap:24px;max-width:1200px;margin:0 auto;display:grid}.header{text-align:center;background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;padding:2rem;box-shadow:0 8px 32px #0006}.metrics-grid{grid-template-rows:auto auto;grid-template-columns:2fr 1fr 1fr;gap:20px;display:grid}.metric-card{text-align:center;background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;padding:2rem;position:relative;overflow:hidden;box-shadow:0 8px 32px #0006}.metric-card:before{content:"";background:linear-gradient(90deg,var(--accent-color,#f39c12)0%,transparent 100%);height:3px;position:absolute;top:0;left:0;right:0}.power-card{--accent-color:#f39c12;grid-area:1/1/3}.hr-card{--accent-color:#e74c3c;grid-area:1/2}.cadence-card{--accent-color:#3498db;grid-area:1/3}.speed-card{--accent-color:#27ae60;grid-area:2/2}.distance-card{--accent-color:#27ae60;grid-area:2/3}.controls-container{text-align:center;background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;padding:2rem;box-shadow:0 8px 32px #0006}h1{color:#f39c12;-webkit-text-fill-color:transparent;background:linear-gradient(45deg,#f39c12,#e67e22) text;margin:0 0 1rem;font-size:2.5rem;font-weight:700}.metric-value{color:var(--accent-color,#fff);text-shadow:0 2px 10px #00000080;margin-bottom:.5rem;font-size:clamp(3rem,8vw,6rem);font-weight:700;line-height:1}.power-card .metric-value{font-size:clamp(6rem,16vw,12rem)}.metric-unit{color:#aaa;letter-spacing:.5px;font-size:1.2rem;font-weight:500}.metric-label{color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;font-size:.9rem;font-weight:600}.status-text{color:#bbb;margin-top:1rem;font-size:.9rem;font-style:italic}.device-name{color:var(--accent-color,#f39c12);margin-top:.5rem;font-size:.9rem;font-weight:600}button{color:#121212;cursor:pointer;background:linear-gradient(135deg,#f39c12 0%,#e67e22 100%);border:none;border-radius:12px;margin:8px;padding:16px 32px;font-size:16px;font-weight:600;transition:all .3s;position:relative;overflow:hidden;box-shadow:0 4px 16px #f39c124d}button:before{content:"";background:linear-gradient(90deg,#0000,#fff3,#0000);width:100%;height:100%;transition:left .5s;position:absolute;top:0;left:-100%}button:hover:before{left:100%}button:hover{transform:translateY(-2px);box-shadow:0 8px 24px #f39c1266}button:disabled{color:#888;cursor:not-allowed;box-shadow:none;background:#555;transform:translateY(0)}button:disabled:before{display:none}.export-buttons{flex-wrap:wrap;justify-content:center;gap:12px;margin-top:1.5rem;display:flex}.export-buttons button{background:linear-gradient(135deg,#3498db 0%,#2980b9 100%);box-shadow:0 4px 16px #3498db4d}.export-buttons button:hover{box-shadow:0 8px 24px #3498db66}.toggle-controls{text-align:center;margin:1rem 0}.toggle-button{background:linear-gradient(135deg,#9b59b6 0%,#8e44ad 100%);justify-content:center;align-items:center;gap:8px;min-width:200px;padding:12px 20px;font-size:14px;display:inline-flex;box-shadow:0 4px 16px #9b59b64d}.toggle-button:hover{background:linear-gradient(135deg,#a569bd 0%,#9b59b6 100%);box-shadow:0 8px 24px #9b59b666}.toggle-icon{font-size:12px;transition:transform .3s}.toggle-button.collapsed .toggle-icon{transform:rotate(180deg)}.controls-container,.export-section{transition:all .4s ease-in-out;overflow:hidden}.dashboard{transition:all .4s ease-in-out}.power-card .metric-value{transition:font-size .4s ease-in-out}.power-card{transition:padding .4s ease-in-out}.export-section{background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;margin-top:1rem;padding:2rem;box-shadow:0 8px 32px #0006}.export-section .export-buttons{margin-top:0}.dashboard.maximized .power-card .metric-value{font-size:clamp(8rem,20vw,16rem)}.dashboard.maximized .power-card{padding:3rem}.dashboard.maximized .metrics-grid{gap:30px}.advanced-metrics{background:#ffffff0d;border:1px solid #ffffff1a;border-radius:16px;grid-template-columns:repeat(3,1fr);gap:16px;margin:2rem 0;padding:1.5rem;display:grid}.metric-box{text-align:center;background:#ffffff0d;border:1px solid #ffffff1a;border-radius:12px;padding:1rem}.metric-box .value{color:#fff;margin-bottom:.5rem;font-size:1.8rem;font-weight:700}.metric-box .label{color:#aaa;text-transform:uppercase;letter-spacing:.5px;font-size:.8rem}@media (width<=1024px){.metrics-grid{grid-template-rows:auto auto auto;grid-template-columns:1fr 1fr}.power-card{grid-area:1/1/auto/3}.hr-card{grid-area:2/1}.cadence-card{grid-area:2/2}.speed-card{grid-area:3/1}.distance-card{grid-area:3/2}}@media (width<=768px){body{padding:12px}.dashboard{gap:16px}.metrics-grid{grid-template-rows:repeat(5,auto);grid-template-columns:1fr}.power-card,.hr-card,.cadence-card,.speed-card,.distance-card{grid-column:1}.power-card{grid-row:1}.hr-card{grid-row:2}.cadence-card{grid-row:3}.speed-card{grid-row:4}.distance-card{grid-row:5}.header,.metric-card,.controls-container{padding:1.5rem}h1{font-size:2rem}.advanced-metrics{grid-template-columns:1fr;gap:12px;margin:1rem 0}}@media (width<=400px){.metrics-grid{grid-template-rows:auto auto auto;grid-template-columns:1fr 1fr;gap:12px}.power-card{grid-area:1/1/auto/3}.hr-card{grid-area:2/1}.cadence-card{grid-area:2/2}.speed-card{grid-area:3/1}.distance-card{grid-area:3/2}.metric-card{padding:.8rem}.power-card{padding:1.2rem}.advanced-metrics{grid-template-columns:repeat(3,1fr);gap:6px;margin:.8rem 0 .5rem;padding:.8rem}.metric-box .value{font-size:1.2rem}.metric-box .label{font-size:.65rem}}@media (width<=480px){body{padding:8px}.header,.metric-card,.controls-container{padding:1rem}h1{margin:0 0 .5rem;font-size:1.6rem}.metric-card{border-radius:16px;padding:1.2rem}.metric-label{margin-bottom:.5rem;font-size:.8rem}.metric-unit{font-size:1rem}.advanced-metrics{gap:8px;margin:1rem 0 .5rem;padding:1rem}.metric-box .value{font-size:1.4rem}.metric-box .label{font-size:.7rem}button{border-radius:10px;margin:6px;padding:12px 24px;font-size:14px}.export-buttons{flex-direction:column;align-items:center}.toggle-button{min-width:160px;padding:10px 16px;font-size:12px}.dashboard.maximized .power-card .metric-value{font-size:clamp(6rem,18vw,12rem)}.status-text{margin-top:.5rem;font-size:.8rem}.device-name{margin-top:.3rem;font-size:.8rem}}.metric-value.loading{animation:2s ease-in-out infinite pulse}@keyframes pulse{0%,to{opacity:1}50%{opacity:.6}}.metric-card.connected:before{background:linear-gradient(90deg,var(--accent-color,#f39c12)0%,#ffffff4d 100%);animation:3s ease-in-out infinite glow}@keyframes glow{0%,to{opacity:1}50%{opacity:.7}}.status-indicator{background:#666;border-radius:50%;width:12px;height:12px;transition:all .3s;position:absolute;top:1rem;right:1rem}.status-indicator.connected{background:#27ae60;box-shadow:0 0 12px #27ae6080}.status-indicator.connecting{background:#f39c12;animation:1s ease-in-out infinite pulse}::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:#ffffff1a;border-radius:4px}::-webkit-scrollbar-thumb{background:#ffffff4d;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#ffffff80}button:focus{outline:2px solid var(--accent-color,#f39c12);outline-offset:2px}button .status-text{color:#121212b3;margin-top:.5rem;font-size:.8rem;font-style:italic;font-weight:400}button:disabled .status-text{color:#888c}@media (prefers-color-scheme:dark){body{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 50%,#0a0a0a 100%)}}</style><body>
-    <div class=dashboard>
-        <div class=metrics-grid>
-            <div class="metric-card power-card">
-                <div class=status-indicator id=power-status-indicator></div>
-                <div class=metric-label>Power Output</div>
-                <div class=metric-value id=power-value>--</div>
-                <div class=metric-unit>Watts</div>
-                <div class=device-name id=device-name></div>
+<!DOCTYPE html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><title>Web Bluetooth Power Meter</title><style>*{box-sizing:border-box}body{color:#fff;background:linear-gradient(135deg,#0c0c0c 0%,#1a1a1a 50%,#0c0c0c 100%);min-height:100vh;margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}.dashboard{grid-template-columns:1fr;gap:24px;max-width:1200px;margin:0 auto;display:grid}.header{text-align:center;background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;padding:2rem;box-shadow:0 8px 32px #0006}.metrics-grid{grid-template-rows:auto auto;grid-template-columns:2fr 1fr 1fr;gap:20px;display:grid}.metric-card{text-align:center;background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;padding:2rem;position:relative;overflow:hidden;box-shadow:0 8px 32px #0006}.metric-card:before{content:"";background:linear-gradient(90deg,var(--accent-color,#f39c12)0%,transparent 100%);height:3px;position:absolute;top:0;left:0;right:0}.power-card{--accent-color:#f39c12;grid-area:1/1/3}.hr-card{--accent-color:#e74c3c;grid-area:1/2}.cadence-card{--accent-color:#3498db;grid-area:1/3}.speed-card{--accent-color:#27ae60;grid-area:2/2}.distance-card{--accent-color:#27ae60;grid-area:2/3}.controls-container{text-align:center;background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;padding:2rem;box-shadow:0 8px 32px #0006}h1{color:#f39c12;-webkit-text-fill-color:transparent;background:linear-gradient(45deg,#f39c12,#e67e22) text;margin:0 0 1rem;font-size:2.5rem;font-weight:700}.metric-value{color:var(--accent-color,#fff);text-shadow:0 2px 10px #00000080;margin-bottom:.5rem;font-size:clamp(3rem,8vw,6rem);font-weight:700;line-height:1}.power-card .metric-value{font-size:clamp(6rem,16vw,12rem)}.metric-unit{color:#aaa;letter-spacing:.5px;font-size:.7rem;font-weight:500}.metric-label{color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;font-size:.9rem;font-weight:600}.status-text{color:#bbb;margin-top:1rem;font-size:.9rem;font-style:italic}.device-name{color:var(--accent-color,#f39c12);margin-top:.5rem;font-size:.9rem;font-weight:600}button{color:#121212;cursor:pointer;background:linear-gradient(135deg,#f39c12 0%,#e67e22 100%);border:none;border-radius:12px;margin:8px;padding:16px 32px;font-size:16px;font-weight:600;transition:all .3s;position:relative;overflow:hidden;box-shadow:0 4px 16px #f39c124d}button:before{content:"";background:linear-gradient(90deg,#0000,#fff3,#0000);width:100%;height:100%;transition:left .5s;position:absolute;top:0;left:-100%}button:hover:before{left:100%}button:hover{transform:translateY(-2px);box-shadow:0 8px 24px #f39c1266}button:disabled{color:#888;cursor:not-allowed;box-shadow:none;background:#555;transform:translateY(0)}button:disabled:before{display:none}.export-buttons{flex-wrap:wrap;justify-content:center;gap:12px;margin-top:1.5rem;display:flex}.export-buttons button{background:linear-gradient(135deg,#3498db 0%,#2980b9 100%);box-shadow:0 4px 16px #3498db4d}.export-buttons button:hover{box-shadow:0 8px 24px #3498db66}.toggle-controls{text-align:center;margin:1rem 0}.toggle-button{background:linear-gradient(135deg,#9b59b6 0%,#8e44ad 100%);justify-content:center;align-items:center;gap:8px;min-width:200px;padding:12px 20px;font-size:14px;display:inline-flex;box-shadow:0 4px 16px #9b59b64d}.toggle-button:hover{background:linear-gradient(135deg,#a569bd 0%,#9b59b6 100%);box-shadow:0 8px 24px #9b59b666}.toggle-icon{font-size:12px;transition:transform .3s}.toggle-button.collapsed .toggle-icon{transform:rotate(180deg)}.section-header{border-bottom:1px solid #ffffff1a;margin-bottom:1.5rem;padding-bottom:1rem}.section-toggle-button{background:linear-gradient(135deg,#9b59b6 0%,#8e44ad 100%);border-radius:12px;justify-content:center;align-items:center;gap:8px;width:100%;min-width:200px;padding:12px 20px;font-size:14px;display:inline-flex;box-shadow:0 4px 16px #9b59b64d}.section-toggle-button:hover{background:linear-gradient(135deg,#a569bd 0%,#9b59b6 100%);box-shadow:0 8px 24px #9b59b666}.section-toggle-button .toggle-icon{font-size:12px;transition:transform .3s}.section-toggle-button.collapsed .toggle-icon{transform:rotate(180deg)}.bottom-controls{flex-direction:column;gap:15px;margin-top:20px;display:flex}.hamburger-menu{z-index:1000;position:fixed;top:20px;right:20px}.hamburger-button{cursor:pointer;background:linear-gradient(135deg,#f39c12 0%,#e67e22 100%);border:none;border-radius:12px;justify-content:center;align-items:center;width:50px;height:50px;transition:all .3s;display:flex;box-shadow:0 4px 16px #f39c124d}.hamburger-button:hover{transform:translateY(-2px);box-shadow:0 8px 24px #f39c1266}.hamburger-icon{flex-direction:column;justify-content:space-between;width:20px;height:14px;display:flex}.hamburger-line{background:#121212;border-radius:1px;width:100%;height:2px;transition:all .3s}.hamburger-button.active .hamburger-line:first-child{transform:rotate(45deg)translate(5px,5px)}.hamburger-button.active .hamburger-line:nth-child(2){opacity:0}.hamburger-button.active .hamburger-line:nth-child(3){transform:rotate(-45deg)translate(7px,-6px)}.menu-dropdown{opacity:0;visibility:hidden;background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:12px;min-width:220px;transition:all .3s;position:absolute;top:60px;right:0;overflow:hidden;transform:translateY(-10px);box-shadow:0 8px 32px #0006}.menu-dropdown.active{opacity:1;visibility:visible;transform:translateY(0)}.menu-item{cursor:pointer;border-bottom:1px solid #ffffff1a;justify-content:space-between;align-items:center;padding:15px 20px;transition:background .3s;display:flex}.menu-item:last-child{border-bottom:none}.menu-item:hover{background:#ffffff0d}.menu-item-text{color:#fff;font-size:14px;font-weight:500}.menu-toggle{cursor:pointer;background:#555;border-radius:10px;width:40px;height:20px;transition:background .3s;position:relative}.menu-toggle.active{background:#f39c12}.menu-toggle-slider{background:#fff;border-radius:50%;width:16px;height:16px;transition:transform .3s;position:absolute;top:2px;left:2px}.menu-toggle.active .menu-toggle-slider{transform:translate(20px)}.controls-container.collapsed,.export-section.collapsed,.power-averages-section.collapsed{padding:1rem 2rem}.section-header.collapsed{border-bottom:none;margin-bottom:0;padding-bottom:0}.dashboard.has-collapsed-sections{grid-template-columns:1fr;gap:24px;display:grid}.collapsed-sections-row{flex-wrap:wrap;justify-content:center;gap:1rem;display:flex}.collapsed-sections-row .controls-container.collapsed,.collapsed-sections-row .export-section.collapsed,.collapsed-sections-row .power-averages-section.collapsed{flex:1;min-width:200px;max-width:300px;margin-top:0;padding:1rem}.collapsed-sections-row .section-toggle-button{width:100%;min-width:auto;padding:10px 16px;font-size:12px}.controls-container,.export-section{transition:all .4s ease-in-out;overflow:hidden}.dashboard{transition:all .4s ease-in-out}.power-card .metric-value{transition:font-size .4s ease-in-out}.power-card{transition:padding .4s ease-in-out}.export-section{background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;margin-top:1rem;padding:2rem;box-shadow:0 8px 32px #0006}.export-section .export-buttons{margin-top:0}.power-averages-section{background:linear-gradient(135deg,#1e1e1e 0%,#2a2a2a 100%);border:1px solid #ffffff1a;border-radius:20px;margin-top:1rem;padding:2rem;box-shadow:0 8px 32px #0006}.averages-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;display:grid}.average-card{text-align:center;background:#ffffff0d;border:1px solid #ffffff1a;border-radius:16px;padding:1.5rem}.average-label{color:#f39c12;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;font-size:1rem;font-weight:600}.average-values{flex-direction:column;gap:.75rem;display:flex}.current-average,.best-average{background:#ffffff05;border-radius:8px;justify-content:space-between;align-items:center;padding:.5rem;display:flex}.current-average{border-left:3px solid #3498db}.best-average{border-left:3px solid #e74c3c}.average-title{color:#aaa;font-size:.9rem;font-weight:500}.average-value{color:#fff;margin:0 .5rem;font-size:1.4rem;font-weight:700}.average-unit{color:#888;font-size:.9rem;font-weight:500}.dashboard.maximized .power-card .metric-value{font-size:clamp(8rem,20vw,16rem)}.dashboard.maximized .power-card{padding:3rem}.dashboard.maximized .metrics-grid{gap:30px}.advanced-metrics{background:#ffffff0d;border:1px solid #ffffff1a;border-radius:16px;grid-template-columns:repeat(3,1fr);gap:16px;margin:2rem 0;padding:1.5rem;display:grid}.metric-box{text-align:center;background:#ffffff0d;border:1px solid #ffffff1a;border-radius:12px;padding:1rem}.metric-box .value{color:#fff;margin-bottom:.5rem;font-size:1.8rem;font-weight:700}.metric-box .label{color:#aaa;text-transform:uppercase;letter-spacing:.5px;font-size:.8rem}@media (width<=1024px){.metrics-grid{grid-template-rows:auto auto auto;grid-template-columns:1fr 1fr}.power-card{grid-area:1/1/auto/3}.hr-card{grid-area:2/1}.cadence-card{grid-area:2/2}.speed-card{grid-area:3/1}.distance-card{grid-area:3/2}}@media (width<=768px){body{padding:12px}.dashboard{gap:16px}.metrics-grid{grid-template-rows:repeat(5,auto);grid-template-columns:1fr}.power-card,.hr-card,.cadence-card,.speed-card,.distance-card{grid-column:1}.power-card{grid-row:1}.hr-card{grid-row:2}.cadence-card{grid-row:3}.speed-card{grid-row:4}.distance-card{grid-row:5}.header,.metric-card,.controls-container{padding:1.5rem}h1{font-size:2rem}.advanced-metrics{grid-template-columns:1fr;gap:12px;margin:1rem 0}}@media (width<=400px){.metrics-grid{grid-template-rows:auto auto auto;grid-template-columns:1fr 1fr;gap:12px}.power-card{grid-area:1/1/auto/3}.hr-card{grid-area:2/1}.cadence-card{grid-area:2/2}.speed-card{grid-area:3/1}.distance-card{grid-area:3/2}.metric-card{padding:.8rem}.power-card{padding:1.2rem}.advanced-metrics{grid-template-columns:repeat(3,1fr);gap:6px;margin:.8rem 0 .5rem;padding:.8rem}.metric-box .value{font-size:1.2rem}.metric-box .label{font-size:.65rem}}@media (width<=480px){body{padding:8px}.header,.metric-card,.controls-container{padding:1rem}h1{margin:0 0 .5rem;font-size:1.6rem}.metric-card{border-radius:16px;padding:1.2rem}.metric-label{margin-bottom:.5rem;font-size:.8rem}.metric-unit{font-size:1rem}.advanced-metrics{gap:8px;margin:1rem 0 .5rem;padding:1rem}.metric-box .value{font-size:1.4rem}.metric-box .label{font-size:.7rem}button{border-radius:10px;margin:6px;padding:12px 24px;font-size:14px}.export-buttons{flex-direction:column;align-items:center}.toggle-button,.section-toggle-button{min-width:160px;padding:10px 16px;font-size:12px}.section-header{margin-bottom:1rem;padding-bottom:.75rem}.controls-container.collapsed,.export-section.collapsed,.power-averages-section.collapsed{padding:.75rem 1rem}.section-header.collapsed{margin-bottom:0;padding-bottom:0}.collapsed-sections-row{flex-direction:column;gap:.5rem}.collapsed-sections-row .controls-container.collapsed,.collapsed-sections-row .export-section.collapsed,.collapsed-sections-row .power-averages-section.collapsed{flex:none;min-width:auto;max-width:none;padding:.5rem}.collapsed-sections-row .section-toggle-button{padding:8px 12px;font-size:11px}.dashboard.maximized .power-card .metric-value{font-size:clamp(6rem,18vw,12rem)}.status-text{margin-top:.5rem;font-size:.8rem}.device-name{margin-top:.3rem;font-size:.8rem}.averages-grid{grid-template-columns:1fr;gap:1rem}.average-card{padding:1rem}.average-label{margin-bottom:.75rem;font-size:.9rem}.average-value{font-size:1.2rem}.average-title,.average-unit{font-size:.8rem}}.metric-value.loading{animation:2s ease-in-out infinite pulse}@keyframes pulse{0%,to{opacity:1}50%{opacity:.6}}.metric-card.connected:before{background:linear-gradient(90deg,var(--accent-color,#f39c12)0%,#ffffff4d 100%);animation:3s ease-in-out infinite glow}@keyframes glow{0%,to{opacity:1}50%{opacity:.7}}.status-indicator{background:#666;border-radius:50%;width:12px;height:12px;transition:all .3s;position:absolute;top:1rem;right:1rem}.status-indicator.connected{background:#27ae60;box-shadow:0 0 12px #27ae6080}.status-indicator.connecting{background:#f39c12;animation:1s ease-in-out infinite pulse}::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:#ffffff1a;border-radius:4px}::-webkit-scrollbar-thumb{background:#ffffff4d;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#ffffff80}button:focus{outline:2px solid var(--accent-color,#f39c12);outline-offset:2px}button .status-text{color:#121212b3;margin-top:.5rem;font-size:.8rem;font-style:italic;font-weight:400}button:disabled .status-text{color:#888c}button .device-name{color:#121212cc;margin-top:.3rem;font-size:.8rem;font-weight:600}button:disabled .device-name{color:#888888e6}@media (prefers-color-scheme:dark){body{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 50%,#0a0a0a 100%)}}</style><body>
+    
+    <div class=hamburger-menu>
+        <button class=hamburger-button id=hamburgerButton>
+            <div class=hamburger-icon>
+                <span class=hamburger-line></span>
+                <span class=hamburger-line></span>
+                <span class=hamburger-line></span>
             </div>
-
-            <div class="hr-card metric-card">
-                <div class=status-indicator id=hr-status-indicator></div>
-                <div class=metric-label>Heart Rate</div>
-                <div class=metric-value id=hr-value>--</div>
-                <div class=metric-unit>BPM</div>
-                <div class=status-text id=hrStatus style=display:none></div>
-                <div class=device-name id=hrDeviceName style=display:none></div>
-            </div>
-
-            <div class="cadence-card metric-card">
-                <div class=status-indicator id=cadence-status-indicator></div>
-                <div class=metric-label>Cadence</div>
-                <div class=metric-value id=cadence-value>--</div>
-                <div class=metric-unit>RPM</div>
-                <div class=status-text id=cadenceStatus style=display:none></div>
-                <div class=device-name id=cadenceDeviceName style=display:none></div>
-            </div>
-
-            <div class="metric-card speed-card" style=display:none>
-                <div class=status-indicator id=speed-status-indicator></div>
-                <div class=metric-label>Speed</div>
-                <div class=metric-value id=speed-value>--</div>
-                <div class=metric-unit>km/h</div>
-            </div>
-
-            <div class="distance-card metric-card" style=display:none>
-                <div class=status-indicator id=distance-status-indicator></div>
-                <div class=metric-label>Distance</div>
-                <div class=metric-value id=distance-value>--</div>
-                <div class=metric-unit>km</div>
-            </div>
-        </div>
-
-        
-        <div class=toggle-controls>
-            <button id=toggleConnectSection class=toggle-button>
-                <span id=connectToggleText>Hide Connect Devices</span>
-                <span class=toggle-icon>▲</span>
-            </button>
-        </div>
-
-        <div class=controls-container id=connectSection>
-            <button id=connectButton>
-                Connect Power Meter
-                <div class=status-text id=status>Disconnected</div>
-            </button>
-            <button id=hrConnectButton>Connect Heart Rate Monitor</button>
-            <button id=speedCadenceConnectButton>Connect Speed &amp; Cadence</button>
-        </div>
-
-        
-        <div class=toggle-controls>
-            <button id=toggleExportSection class=toggle-button>
-                <span id=exportToggleText>Show Export Data</span>
-                <span class=toggle-icon>▼</span>
-            </button>
-        </div>
-
-        <div class=export-section id=exportSection style=display:none>
-            <div class=export-buttons id=export-buttons>
-                <button id=exportJsonButton>Export Summary JSON</button>
-                <button id=exportCsvButton>Export Summary CSV</button>
-                <button id=exportRawJsonButton>Export Raw Measurements JSON</button>
-                <button id=exportRawCsvButton>Export Raw Measurements CSV</button>
+        </button>
+        <div class=menu-dropdown id=menuDropdown>
+            <div class=menu-item id=togglePowerAveragesMenuItem>
+                <span class=menu-item-text>Power Averages</span>
+                <div class=menu-toggle id=powerAveragesToggle>
+                    <div class=menu-toggle-slider></div>
+                </div>
             </div>
         </div>
     </div>
 
+    <div class=dashboard>
+        <div class=metrics-grid>
+            <div class="metric-card power-card">
+                <div class=status-indicator id=power-status-indicator></div>
+                <div class=metric-label>Power Output <span class=metric-unit>Watts</span></div>
+                <div class=metric-value id=power-value>--</div>
+            </div>
+
+            <div class="hr-card metric-card">
+                <div class=status-indicator id=hr-status-indicator></div>
+                <div class=metric-label>Heart Rate <span class=metric-unit>BPM</span></div>
+                <div class=metric-value id=hr-value>--</div>
+                <div class=status-text id=hrStatus style=display:none></div>
+            </div>
+
+            <div class="cadence-card metric-card">
+                <div class=status-indicator id=cadence-status-indicator></div>
+                <div class=metric-label>Cadence <span class=metric-unit>RPM</span></div>
+                <div class=metric-value id=cadence-value>--</div>
+                <div class=status-text id=cadenceStatus style=display:none></div>
+            </div>
+
+            <div class="metric-card speed-card" style=display:none>
+                <div class=status-indicator id=speed-status-indicator></div>
+                <div class=metric-label>Speed <span class=metric-unit>km/h</span></div>
+                <div class=metric-value id=speed-value>--</div>
+            </div>
+
+            <div class="distance-card metric-card" style=display:none>
+                <div class=status-indicator id=distance-status-indicator></div>
+                <div class=metric-label>Distance <span class=metric-unit>km</span></div>
+                <div class=metric-value id=distance-value>--</div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class=power-averages-section id=powerAveragesSection style=display:none>
+        <div class=averages-grid>
+            <div class=average-card>
+                <div class=average-label>10 Second Average</div>
+                <div class=average-values>
+                    <div class=current-average>
+                        <span class=average-title>Current:</span>
+                        <span class=average-value id=avg10s-current>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                    <div class=best-average>
+                        <span class=average-title>Best:</span>
+                        <span class=average-value id=avg10s-best>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                </div>
+            </div>
+            <div class=average-card>
+                <div class=average-label>30 Second Average</div>
+                <div class=average-values>
+                    <div class=current-average>
+                        <span class=average-title>Current:</span>
+                        <span class=average-value id=avg30s-current>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                    <div class=best-average>
+                        <span class=average-title>Best:</span>
+                        <span class=average-value id=avg30s-best>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                </div>
+            </div>
+            <div class=average-card>
+                <div class=average-label>1 Minute Average</div>
+                <div class=average-values>
+                    <div class=current-average>
+                        <span class=average-title>Current:</span>
+                        <span class=average-value id=avg1m-current>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                    <div class=best-average>
+                        <span class=average-title>Best:</span>
+                        <span class=average-value id=avg1m-best>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                </div>
+            </div>
+            <div class=average-card>
+                <div class=average-label>2 Minute Average</div>
+                <div class=average-values>
+                    <div class=current-average>
+                        <span class=average-title>Current:</span>
+                        <span class=average-value id=avg2m-current>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                    <div class=best-average>
+                        <span class=average-title>Best:</span>
+                        <span class=average-value id=avg2m-best>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                </div>
+            </div>
+            <div class=average-card>
+                <div class=average-label>4 Minute Average</div>
+                <div class=average-values>
+                    <div class=current-average>
+                        <span class=average-title>Current:</span>
+                        <span class=average-value id=avg4m-current>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                    <div class=best-average>
+                        <span class=average-title>Best:</span>
+                        <span class=average-value id=avg4m-best>--</span>
+                        <span class=average-unit>W</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class=advanced-metrics id=advanced-metrics style=display:none>
         <div class=metric-box>
@@ -93,6 +150,48 @@
         </div>
     </div>
 
-    <script src=power-saver.47c95d6b.js></script>
+    
+    <div class=bottom-controls>
+        
+        <div class=controls-container id=connectSection>
+            <div class=section-header>
+                <button id=toggleConnectSection class=section-toggle-button>
+                    <span id=connectToggleText>Hide Connect Devices</span>
+                    <span class=toggle-icon>▲</span>
+                </button>
+            </div>
+            <button id=connectButton>
+                Connect Power Meter
+                <div class=status-text id=status>Disconnected</div>
+                <div class=device-name id=device-name style=display:none></div>
+            </button>
+            <button id=hrConnectButton>
+                Connect Heart Rate Monitor
+                <div class=device-name id=hrDeviceName style=display:none></div>
+            </button>
+            <button id=speedCadenceConnectButton>
+                Connect Speed &amp; Cadence
+                <div class=device-name id=cadenceDeviceName style=display:none></div>
+            </button>
+        </div>
+
+        
+        <div class=export-section id=exportSection style=display:none>
+            <div class=section-header>
+                <button id=toggleExportSection class=section-toggle-button>
+                    <span id=exportToggleText>Hide Export Data</span>
+                    <span class=toggle-icon>▲</span>
+                </button>
+            </div>
+            <div class=export-buttons id=export-buttons>
+                <button id=exportJsonButton>Export Summary JSON</button>
+                <button id=exportCsvButton>Export Summary CSV</button>
+                <button id=exportRawJsonButton>Export Raw Measurements JSON</button>
+                <button id=exportRawCsvButton>Export Raw Measurements CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <script src=power-saver.f4dd0c02.js></script>
 
 

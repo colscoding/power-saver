@@ -32,13 +32,38 @@ const exportCsvButton = document.getElementById('exportCsvButton');
 const exportRawJsonButton = document.getElementById('exportRawJsonButton');
 const exportRawCsvButton = document.getElementById('exportRawCsvButton');
 
+// Power averages elements
+const avg10sCurrentElement = document.getElementById('avg10s-current');
+const avg10sBestElement = document.getElementById('avg10s-best');
+const avg30sCurrentElement = document.getElementById('avg30s-current');
+const avg30sBestElement = document.getElementById('avg30s-best');
+const avg1mCurrentElement = document.getElementById('avg1m-current');
+const avg1mBestElement = document.getElementById('avg1m-best');
+const avg2mCurrentElement = document.getElementById('avg2m-current');
+const avg2mBestElement = document.getElementById('avg2m-best');
+const avg4mCurrentElement = document.getElementById('avg4m-current');
+const avg4mBestElement = document.getElementById('avg4m-best');
+
 // Toggle elements
 const toggleConnectSection = document.getElementById('toggleConnectSection');
 const toggleExportSection = document.getElementById('toggleExportSection');
 const connectSection = document.getElementById('connectSection');
 const exportSection = document.getElementById('exportSection');
+const powerAveragesSection = document.getElementById('powerAveragesSection');
 const connectToggleText = document.getElementById('connectToggleText');
 const exportToggleText = document.getElementById('exportToggleText');
+
+// Hamburger menu elements
+const hamburgerBtn = document.getElementById('hamburgerButton');
+const menuDropdown = document.getElementById('menuDropdown');
+const powerAveragesToggle = document.getElementById('powerAveragesToggle');
+
+// Debug: Check if elements exist
+console.log('Hamburger elements:', {
+    hamburgerBtn: hamburgerBtn,
+    menuDropdown: menuDropdown,
+    powerAveragesToggle: powerAveragesToggle
+});
 
 const balanceValueElement = document.getElementById('balance-value');
 const smoothnessValueElement = document.getElementById('smoothness-value');
@@ -58,57 +83,243 @@ cadenceStatusIndicator.className = 'status-indicator';
 speedStatusIndicator.className = 'status-indicator';
 distanceStatusIndicator.className = 'status-indicator';
 
+// Only add event listeners if elements exist
+if (hamburgerBtn && menuDropdown) {
+    // Hamburger menu functionality
+    hamburgerBtn.addEventListener('click', function () {
+        console.log('Hamburger button clicked');
+        const isActive = menuDropdown.classList.contains('active');
+        if (isActive) {
+            menuDropdown.classList.remove('active');
+            console.log('Menu dropdown hidden');
+        } else {
+            menuDropdown.classList.add('active');
+            console.log('Menu dropdown shown');
+        }
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.hamburger-menu')) {
+            menuDropdown.classList.remove('active');
+        }
+    });
+} else {
+    console.error('Hamburger menu elements not found:', {
+        hamburgerBtn: !!hamburgerBtn,
+        menuDropdown: !!menuDropdown
+    });
+}
+
+if (powerAveragesToggle && powerAveragesSection) {
+    // Power averages toggle via hamburger menu
+    let powerAveragesVisible = false;
+    powerAveragesToggle.addEventListener('click', function () {
+        console.log('Power averages toggle clicked');
+        powerAveragesVisible = !powerAveragesVisible;
+
+        if (powerAveragesVisible) {
+            powerAveragesSection.style.display = 'block';
+            powerAveragesToggle.classList.add('active');
+            console.log('Power averages shown');
+        } else {
+            powerAveragesSection.style.display = 'none';
+            powerAveragesToggle.classList.remove('active');
+            console.log('Power averages hidden');
+        }
+        manageCollapsedSectionsLayout();
+    });
+} else {
+    console.error('Power averages toggle elements not found:', {
+        powerAveragesToggle: !!powerAveragesToggle,
+        powerAveragesSection: !!powerAveragesSection
+    });
+}
+
 // Toggle functionality for connect section
 toggleConnectSection.addEventListener('click', () => {
-    const isHidden = connectSection.style.display === 'none';
+    const connectButtons = connectSection.querySelectorAll('button:not(.section-toggle-button)');
+    const sectionHeader = connectSection.querySelector('.section-header');
+    const isHidden = connectButtons[0].style.display === 'none';
     if (isHidden) {
-        connectSection.style.display = 'block';
+        connectButtons.forEach(btn => btn.style.display = 'block');
         connectToggleText.textContent = 'Hide Connect Devices';
         toggleConnectSection.classList.remove('collapsed');
+        connectSection.classList.remove('collapsed');
+        sectionHeader.classList.remove('collapsed');
     } else {
-        connectSection.style.display = 'none';
+        connectButtons.forEach(btn => btn.style.display = 'none');
         connectToggleText.textContent = 'Show Connect Devices';
         toggleConnectSection.classList.add('collapsed');
+        connectSection.classList.add('collapsed');
+        sectionHeader.classList.add('collapsed');
     }
-    updateDashboardLayout();
+    // Don't call updateDashboardLayout for bottom controls
 });
 
 // Toggle functionality for export section
 toggleExportSection.addEventListener('click', () => {
-    const isHidden = exportSection.style.display === 'none';
+    const exportButtons = document.getElementById('export-buttons');
+    const sectionHeader = exportSection.querySelector('.section-header');
+    const isHidden = exportButtons.style.display === 'none';
     if (isHidden) {
         exportSection.style.display = 'block';
+        exportButtons.style.display = 'flex';
         exportToggleText.textContent = 'Hide Export Data';
         toggleExportSection.classList.remove('collapsed');
+        exportSection.classList.remove('collapsed');
+        sectionHeader.classList.remove('collapsed');
     } else {
-        exportSection.style.display = 'none';
+        exportButtons.style.display = 'none';
         exportToggleText.textContent = 'Show Export Data';
         toggleExportSection.classList.add('collapsed');
+        exportSection.classList.add('collapsed');
+        sectionHeader.classList.add('collapsed');
     }
-    updateDashboardLayout();
+    // Don't call updateDashboardLayout for bottom controls
 });
 
 // Function to update dashboard layout based on visible sections
 function updateDashboardLayout() {
     const dashboard = document.querySelector('.dashboard');
-    const connectHidden = connectSection.style.display === 'none';
-    const exportHidden = exportSection.style.display === 'none';
+    const powerAveragesHidden = powerAveragesSection && powerAveragesSection.style.display === 'none';
 
-    if (connectHidden && exportHidden) {
+    if (powerAveragesHidden) {
         dashboard.classList.add('maximized');
     } else {
         dashboard.classList.remove('maximized');
     }
+
+    // Manage horizontal layout for collapsed sections (excluding bottom controls)
+    manageCollapsedSectionsLayout();
 }
 
+// Function to manage horizontal layout of collapsed sections
+function manageCollapsedSectionsLayout() {
+    const dashboard = document.querySelector('.dashboard');
+
+    // Only manage power averages section for collapsed layout - 
+    // connect and export sections are now bottom controls and stay at bottom
+    const collapsedSections = [
+        powerAveragesSection.classList.contains('collapsed') ? powerAveragesSection : null
+    ].filter(section => section !== null);
+
+    // Remove any existing collapsed sections row
+    const existingRow = document.querySelector('.collapsed-sections-row');
+    if (existingRow) {
+        // Move sections back to their original positions
+        const sectionsInRow = existingRow.querySelectorAll('.power-averages-section');
+        sectionsInRow.forEach(section => {
+            // Insert sections back after the dashboard
+            dashboard.parentNode.insertBefore(section, dashboard.nextSibling);
+        });
+        existingRow.remove();
+    }
+
+    // Power averages section doesn't need horizontal grouping since it's the only
+    // section that can be managed this way now
+    dashboard.classList.remove('has-collapsed-sections');
+}
+
+// Initialize sections - bottom controls are always visible
+// Power averages section is controlled by hamburger menu
+const connectButtons = connectSection.querySelectorAll('button:not(.section-toggle-button)');
+connectButtons.forEach(btn => btn.style.display = 'block');
+
+const exportButtonsContainer = document.getElementById('export-buttons');
+
 // Initialize export section as collapsed
+exportSection.style.display = 'block';
+exportButtonsContainer.style.display = 'none';
 toggleExportSection.classList.add('collapsed');
+exportSection.classList.add('collapsed');
+exportSection.querySelector('.section-header').classList.add('collapsed');
+
+// Initialize power averages section as hidden (controlled by hamburger menu)
+powerAveragesSection.style.display = 'none';
+
 updateDashboardLayout();
 
 
 let powerData = [];
 let rawPowerMeasurements = [];
 let lastPowerValue = 0;
+
+// Power averaging data structures
+let powerReadings = [];  // Array to store timestamped power readings
+let powerAverages = {
+    '10s': { current: 0, best: 0 },
+    '30s': { current: 0, best: 0 },
+    '1m': { current: 0, best: 0 },
+    '2m': { current: 0, best: 0 },
+    '4m': { current: 0, best: 0 }
+};
+
+// Power averaging functions
+function addPowerReading(power) {
+    const now = Date.now();
+    powerReadings.push({ timestamp: now, power: power });
+
+    // Keep only the last 4 minutes of readings (plus some buffer)
+    const fourMinutesAgo = now - (5 * 60 * 1000); // 5 minutes to be safe
+    powerReadings = powerReadings.filter(reading => reading.timestamp > fourMinutesAgo);
+
+    // Calculate current averages
+    calculatePowerAverages();
+    updatePowerAveragesDisplay();
+}
+
+function calculatePowerAverages() {
+    const now = Date.now();
+    const periods = {
+        '10s': 10 * 1000,
+        '30s': 30 * 1000,
+        '1m': 60 * 1000,
+        '2m': 120 * 1000,
+        '4m': 240 * 1000
+    };
+
+    for (const [periodKey, periodMs] of Object.entries(periods)) {
+        const cutoffTime = now - periodMs;
+        const relevantReadings = powerReadings.filter(reading => reading.timestamp >= cutoffTime);
+
+        if (relevantReadings.length > 0) {
+            const sum = relevantReadings.reduce((total, reading) => total + reading.power, 0);
+            const average = Math.round(sum / relevantReadings.length);
+            powerAverages[periodKey].current = average;
+
+            // Update best if current is better
+            if (average > powerAverages[periodKey].best) {
+                powerAverages[periodKey].best = average;
+            }
+        } else {
+            powerAverages[periodKey].current = 0;
+        }
+    }
+}
+
+function updatePowerAveragesDisplay() {
+    avg10sCurrentElement.textContent = powerAverages['10s'].current || '--';
+    avg10sBestElement.textContent = powerAverages['10s'].best || '--';
+    avg30sCurrentElement.textContent = powerAverages['30s'].current || '--';
+    avg30sBestElement.textContent = powerAverages['30s'].best || '--';
+    avg1mCurrentElement.textContent = powerAverages['1m'].current || '--';
+    avg1mBestElement.textContent = powerAverages['1m'].best || '--';
+    avg2mCurrentElement.textContent = powerAverages['2m'].current || '--';
+    avg2mBestElement.textContent = powerAverages['2m'].best || '--';
+    avg4mCurrentElement.textContent = powerAverages['4m'].current || '--';
+    avg4mBestElement.textContent = powerAverages['4m'].best || '--';
+}
+
+function resetPowerAverages() {
+    powerReadings = [];
+    for (const period of Object.keys(powerAverages)) {
+        powerAverages[period].current = 0;
+        powerAverages[period].best = 0;
+    }
+    updatePowerAveragesDisplay();
+}
+
 let lastHeartRateValue = 0;
 let lastCadenceValue = 0;
 let lastSpeedValue = 0;
@@ -135,8 +346,9 @@ connectButton.addEventListener('click', async () => {
     powerData = [];
     rawPowerMeasurements = [];
     lastPowerValue = 0;
+    resetPowerAverages();
     if (dataLoggerInterval) {
-        clearInterval(dataLoggerInterval); Torque
+        clearInterval(dataLoggerInterval);
     }
 
     try {
@@ -328,6 +540,10 @@ function handlePowerMeasurement(event) {
     rawMeasurement.instantaneousPower = power;
     powerValueElement.textContent = power;
     lastPowerValue = power;
+
+    // Add power reading to averaging calculations
+    addPowerReading(power);
+
     offset += 2;
 
     // Reset optional values
@@ -445,6 +661,7 @@ function onDisconnected() {
     balanceValueElement.textContent = '--';
     smoothnessValueElement.textContent = '--';
     torqueValueElement.textContent = '--';
+    resetPowerAverages();
     connectButton.disabled = false;
     if (dataLoggerInterval) {
         clearInterval(dataLoggerInterval);
