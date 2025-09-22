@@ -22,6 +22,146 @@ async function releaseWakeLock() {
     }
 }
 
+// TCX Generation Functions
+/**
+ * Simple XML formatter using native JavaScript
+ * @param {string} xml - Raw XML string
+ * @returns {string} Formatted XML with proper indentation
+ */
+function formatXml(xml) {
+    const PADDING = '  '; // 2 spaces for indentation
+    const reg = /(>)(<)(\/*)/g;
+    let formatted = xml.replace(reg, '$1\n$2$3');
+
+    let pad = 0;
+    return formatted.split('\n').map(line => {
+        let indent = 0;
+        if (line.match(/.+<\/\w[^>]*>$/)) {
+            indent = 0;
+        } else if (line.match(/^<\/\w/) && pad > 0) {
+            pad -= 1;
+        } else if (line.match(/^<\w[^>]*[^\/]>.*$/)) {
+            indent = 1;
+        } else {
+            indent = 0;
+        }
+
+        const padding = PADDING.repeat(pad);
+        pad += indent;
+        return padding + line;
+    }).join('\n');
+}
+
+/**
+ * Creates a trackpoint XML element for a single data point
+ * @param {Object} dataPoint - Data point with time, power, heartRate, cadence
+ * @returns {string} XML trackpoint string
+ */
+function createTrackpoint(dataPoint) {
+    const translations = {
+        time: time => `<Time>${new Date(time).toISOString()}</Time>`,
+        heartRate: hr => `
+<HeartRateBpm>
+  <Value>${hr}</Value>
+</HeartRateBpm>
+            `.trim(),
+        cadence: cad => `<Cadence>${cad}</Cadence>`,
+        power: pw => `
+<Extensions>
+  <ns2:TPX>
+    <ns2:Watts>${pw}</ns2:Watts>
+  </ns2:TPX>
+</Extensions>
+            `.trim(),
+    }
+    const contents = Object.keys(translations).map(key => {
+        if (dataPoint[key] === undefined) return '';
+        return translations[key](dataPoint[key])
+    }).filter(x => x).join('\n');
+
+    return `
+<Trackpoint>
+  ${contents}
+</Trackpoint>
+`.trim();
+}
+
+/**
+ * Generates TCX XML string from power data for cycling activities
+ * @param {Array<Object>} powerData - Array of power measurement objects
+ * @returns {string} Complete TCX XML string
+ */
+function generateTcxString(powerData) {
+    // Validate input data
+    if (!Array.isArray(powerData) || powerData.length === 0) {
+        throw new Error("Input power data array is empty or invalid");
+    }
+
+    // Filter and normalize data
+    const validDataPoints = powerData.filter(dataPoint =>
+        dataPoint &&
+        typeof dataPoint === 'object' &&
+        dataPoint.timestamp !== undefined &&
+        !isNaN(new Date(dataPoint.timestamp).getTime())
+    );
+
+    if (validDataPoints.length === 0) {
+        throw new Error("No valid data points found");
+    }
+
+    // Transform data
+    const normalizeDataPoint = (item) => ({
+        time: item.timestamp,
+        ...(item.power !== undefined && { power: item.power }),
+        ...(item.heartRate !== undefined && { heartRate: item.heartRate }),
+        ...(item.cadence !== undefined && { cadence: item.cadence })
+    });
+
+    // Process data
+    let processedData = validDataPoints
+        .map(normalizeDataPoint)
+        .sort((a, b) => a.time - b.time);
+
+    // Remove leading/trailing entries without power
+    const isEmptyPower = (dataPoint) => !dataPoint.power || dataPoint.power <= 0;
+    while (processedData.length > 0 && isEmptyPower(processedData[0])) {
+        processedData.shift();
+    }
+    while (processedData.length > 0 && isEmptyPower(processedData[processedData.length - 1])) {
+        processedData.pop();
+    }
+
+    if (processedData.length === 0) {
+        throw new Error("No valid power data found after processing");
+    }
+
+    // Generate XML
+    const trackpoints = processedData.map(createTrackpoint).join('\n');
+    const startTime = processedData[0].time;
+    const startTimeISO = new Date(startTime).toISOString();
+
+    const rawXml = `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase
+  xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd"
+  xmlns:ns2="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>${startTimeISO}</Id>
+      <Name>Indoor Cycling</Name>
+      <Lap StartTime="${startTimeISO}">
+        <Track>
+        ${trackpoints}
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>`;
+
+    return formatXml(rawXml);
+}
+
 const connectButton = document.getElementById('connectButton');
 const statusText = document.getElementById('status');
 const powerValueElement = document.getElementById('power-value');
@@ -29,6 +169,7 @@ const deviceNameElement = document.getElementById('device-name');
 const exportButtons = document.getElementById('export-buttons');
 const exportJsonButton = document.getElementById('exportJsonButton');
 const exportCsvButton = document.getElementById('exportCsvButton');
+const exportTcxButton = document.getElementById('exportTcxButton');
 const exportRawJsonButton = document.getElementById('exportRawJsonButton');
 const exportRawCsvButton = document.getElementById('exportRawCsvButton');
 
@@ -43,6 +184,8 @@ const avg2mCurrentElement = document.getElementById('avg2m-current');
 const avg2mBestElement = document.getElementById('avg2m-best');
 const avg4mCurrentElement = document.getElementById('avg4m-current');
 const avg4mBestElement = document.getElementById('avg4m-best');
+const avg8mCurrentElement = document.getElementById('avg8m-current');
+const avg8mBestElement = document.getElementById('avg8m-best');
 
 // Toggle elements
 const toggleConnectSection = document.getElementById('toggleConnectSection');
@@ -60,6 +203,8 @@ const powerAveragesToggle = document.getElementById('powerAveragesToggle');
 const powerMetricToggle = document.getElementById('powerMetricToggle');
 const heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
 const cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
+const connectSectionToggle = document.getElementById('connectSectionToggle');
+const exportSectionToggle = document.getElementById('exportSectionToggle');
 
 // Metric card elements
 const powerCard = document.querySelector('.power-card');
@@ -73,7 +218,9 @@ console.log('Hamburger elements:', {
     powerAveragesToggle: powerAveragesToggle,
     powerMetricToggle: powerMetricToggle,
     heartRateMetricToggle: heartRateMetricToggle,
-    cadenceMetricToggle: cadenceMetricToggle
+    cadenceMetricToggle: cadenceMetricToggle,
+    connectSectionToggle: connectSectionToggle,
+    exportSectionToggle: exportSectionToggle
 });
 
 console.log('Metric card elements:', {
@@ -82,23 +229,15 @@ console.log('Metric card elements:', {
     cadenceCard: cadenceCard
 });
 
-const balanceValueElement = document.getElementById('balance-value');
-const smoothnessValueElement = document.getElementById('smoothness-value');
-const torqueValueElement = document.getElementById('torque-value');
-
 // Status indicator elements
 const powerStatusIndicator = document.getElementById('power-status-indicator');
 const hrStatusIndicator = document.getElementById('hr-status-indicator');
 const cadenceStatusIndicator = document.getElementById('cadence-status-indicator');
-const speedStatusIndicator = document.getElementById('speed-status-indicator');
-const distanceStatusIndicator = document.getElementById('distance-status-indicator');
 
 // Initialize all status indicators to disconnected state
 powerStatusIndicator.className = 'status-indicator';
 hrStatusIndicator.className = 'status-indicator';
 cadenceStatusIndicator.className = 'status-indicator';
-speedStatusIndicator.className = 'status-indicator';
-distanceStatusIndicator.className = 'status-indicator';
 
 // Only add event listeners if elements exist
 if (hamburgerBtn && menuDropdown) {
@@ -231,6 +370,58 @@ if (cadenceMetricToggle && cadenceCard) {
     });
 }
 
+// Connect section toggle via hamburger menu
+if (connectSectionToggle && connectSection) {
+    let connectSectionVisible = true; // Start visible by default
+    connectSectionToggle.classList.add('active'); // Set initial active state
+
+    connectSectionToggle.addEventListener('click', function () {
+        console.log('Connect section toggle clicked');
+        connectSectionVisible = !connectSectionVisible;
+
+        if (connectSectionVisible) {
+            connectSection.style.display = 'block';
+            connectSectionToggle.classList.add('active');
+            console.log('Connect section shown');
+        } else {
+            connectSection.style.display = 'none';
+            connectSectionToggle.classList.remove('active');
+            console.log('Connect section hidden');
+        }
+    });
+} else {
+    console.error('Connect section toggle elements not found:', {
+        connectSectionToggle: !!connectSectionToggle,
+        connectSection: !!connectSection
+    });
+}
+
+// Export section toggle via hamburger menu
+if (exportSectionToggle && exportSection) {
+    let exportSectionVisible = false; // Start hidden by default (as it currently is)
+    // exportSectionToggle starts inactive since export section is initially hidden
+
+    exportSectionToggle.addEventListener('click', function () {
+        console.log('Export section toggle clicked');
+        exportSectionVisible = !exportSectionVisible;
+
+        if (exportSectionVisible) {
+            exportSection.style.display = 'block';
+            exportSectionToggle.classList.add('active');
+            console.log('Export section shown');
+        } else {
+            exportSection.style.display = 'none';
+            exportSectionToggle.classList.remove('active');
+            console.log('Export section hidden');
+        }
+    });
+} else {
+    console.error('Export section toggle elements not found:', {
+        exportSectionToggle: !!exportSectionToggle,
+        exportSection: !!exportSection
+    });
+}
+
 // Toggle functionality for connect section
 toggleConnectSection.addEventListener('click', () => {
     const connectButtons = connectSection.querySelectorAll('button:not(.section-toggle-button)');
@@ -316,19 +507,14 @@ function manageCollapsedSectionsLayout() {
     dashboard.classList.remove('has-collapsed-sections');
 }
 
-// Initialize sections - bottom controls are always visible
-// Power averages section is controlled by hamburger menu
+// Initialize sections - connect section visible, export section hidden (controlled by hamburger menu)
 const connectButtons = connectSection.querySelectorAll('button:not(.section-toggle-button)');
 connectButtons.forEach(btn => btn.style.display = 'block');
 
 const exportButtonsContainer = document.getElementById('export-buttons');
 
-// Initialize export section as collapsed
-exportSection.style.display = 'block';
-exportButtonsContainer.style.display = 'none';
-toggleExportSection.classList.add('collapsed');
-exportSection.classList.add('collapsed');
-exportSection.querySelector('.section-header').classList.add('collapsed');
+// Initialize export section as hidden (controlled by hamburger menu)
+exportSection.style.display = 'none';
 
 // Initialize power averages section as hidden (controlled by hamburger menu)
 powerAveragesSection.style.display = 'none';
@@ -347,7 +533,8 @@ let powerAverages = {
     '30s': { current: 0, best: 0 },
     '1m': { current: 0, best: 0 },
     '2m': { current: 0, best: 0 },
-    '4m': { current: 0, best: 0 }
+    '4m': { current: 0, best: 0 },
+    '8m': { current: 0, best: 0 }
 };
 
 // Power averaging functions
@@ -355,9 +542,9 @@ function addPowerReading(power) {
     const now = Date.now();
     powerReadings.push({ timestamp: now, power: power });
 
-    // Keep only the last 4 minutes of readings (plus some buffer)
-    const fourMinutesAgo = now - (5 * 60 * 1000); // 5 minutes to be safe
-    powerReadings = powerReadings.filter(reading => reading.timestamp > fourMinutesAgo);
+    // Keep only the last 8 minutes of readings (plus some buffer)
+    const eightMinutesAgo = now - (9 * 60 * 1000); // 9 minutes to be safe
+    powerReadings = powerReadings.filter(reading => reading.timestamp > eightMinutesAgo);
 
     // Calculate current averages
     calculatePowerAverages();
@@ -371,7 +558,8 @@ function calculatePowerAverages() {
         '30s': 30 * 1000,
         '1m': 60 * 1000,
         '2m': 120 * 1000,
-        '4m': 240 * 1000
+        '4m': 240 * 1000,
+        '8m': 480 * 1000
     };
 
     for (const [periodKey, periodMs] of Object.entries(periods)) {
@@ -404,6 +592,8 @@ function updatePowerAveragesDisplay() {
     avg2mBestElement.textContent = powerAverages['2m'].best || '--';
     avg4mCurrentElement.textContent = powerAverages['4m'].current || '--';
     avg4mBestElement.textContent = powerAverages['4m'].best || '--';
+    avg8mCurrentElement.textContent = powerAverages['8m'].current || '--';
+    avg8mBestElement.textContent = powerAverages['8m'].best || '--';
 }
 
 function resetPowerAverages() {
@@ -417,11 +607,6 @@ function resetPowerAverages() {
 
 let lastHeartRateValue = 0;
 let lastCadenceValue = 0;
-let lastSpeedValue = 0;
-let lastBalanceValue = 0;
-let lastSmoothnessValue = 0;
-let lastTorqueValue = 0;
-let totalDistance = 0;
 let dataLoggerInterval = null;
 let powerMeterDevice = null;
 const CYCLING_POWER_SERVICE_UUID = 'cycling_power';
@@ -492,12 +677,7 @@ connectButton.addEventListener('click', async () => {
                 timestamp: Date.now(),
                 power: lastPowerValue,
                 heartRate: lastHeartRateValue,
-                cadence: lastCadenceValue,
-                speed: lastSpeedValue,
-                distance: totalDistance,
-                balance: lastBalanceValue,
-                smoothness: lastSmoothnessValue,
-                torque: lastTorqueValue
+                cadence: lastCadenceValue
             });
         }, 100);
 
@@ -532,9 +712,9 @@ exportJsonButton.addEventListener('click', () => {
 });
 
 exportCsvButton.addEventListener('click', () => {
-    let csvContent = 'timestamp,power,heartRate,cadence,speed,distance,balance,smoothness,torque\n';
+    let csvContent = 'timestamp,power,heartRate,cadence\n';
     powerData.forEach(row => {
-        csvContent += `${row.timestamp},${row.power},${row.heartRate},${row.cadence},${row.speed},${row.distance},${row.balance || ''},${row.smoothness || ''},${row.torque || ''}\n`;
+        csvContent += `${row.timestamp},${row.power},${row.heartRate},${row.cadence}\n`;
     });
 
     const blob = new Blob([csvContent], {
@@ -578,20 +758,10 @@ exportRawJsonButton.addEventListener('click', () => {
 
 // Export raw power measurements as CSV
 exportRawCsvButton.addEventListener('click', () => {
-    let csvContent = 'timestamp,flags,dataLength,instantaneousPower,pedalPowerBalance,accumulatedTorque,wheelRevolutions,wheelEventTime,crankRevolutions,crankEventTime,maxForceMagnitude,minForceMagnitude,maxTorqueMagnitude,topDeadSpotAngle,bottomDeadSpotAngle,accumulatedEnergy,torqueEffectiveness,pedalSmoothness,rawBytes\n';
+    let csvContent = 'timestamp,flags,dataLength,instantaneousPower,rawBytes\n';
 
     rawPowerMeasurements.forEach(measurement => {
-        const wheelRevs = measurement.wheelRevolutionData ? measurement.wheelRevolutionData.cumulativeWheelRevolutions : '';
-        const wheelTime = measurement.wheelRevolutionData ? measurement.wheelRevolutionData.lastWheelEventTime : '';
-        const crankRevs = measurement.crankRevolutionData ? measurement.crankRevolutionData.cumulativeCrankRevolutions : '';
-        const crankTime = measurement.crankRevolutionData ? measurement.crankRevolutionData.lastCrankEventTime : '';
-        const maxForce = measurement.extremeForceAngles ? measurement.extremeForceAngles.maximumForceMagnitude : '';
-        const minForce = measurement.extremeForceAngles ? measurement.extremeForceAngles.minimumForceMagnitude : '';
-        const maxTorque = measurement.extremeForceAngles ? measurement.extremeForceAngles.maximumTorqueMagnitude : '';
-        const topAngle = measurement.topBottomDeadSpotAngles ? measurement.topBottomDeadSpotAngles.topDeadSpotAngle : '';
-        const bottomAngle = measurement.topBottomDeadSpotAngles ? measurement.topBottomDeadSpotAngles.bottomDeadSpotAngle : '';
-
-        csvContent += `${measurement.timestamp},${measurement.flags},${measurement.dataLength},${measurement.instantaneousPower},${measurement.pedalPowerBalance || ''},${measurement.accumulatedTorque || ''},${wheelRevs},${wheelTime},${crankRevs},${crankTime},${maxForce},${minForce},${maxTorque},${topAngle},${bottomAngle},${measurement.accumulatedEnergy || ''},${measurement.torqueEffectiveness || ''},${measurement.pedalSmoothness || ''},"${measurement.rawBytes}"\n`;
+        csvContent += `${measurement.timestamp},${measurement.flags},${measurement.dataLength},${measurement.instantaneousPower},"${measurement.rawBytes}"\n`;
     });
 
     const blob = new Blob([csvContent], {
@@ -612,12 +782,44 @@ exportRawCsvButton.addEventListener('click', () => {
     URL.revokeObjectURL(url);
 });
 
+// Export TCX
+exportTcxButton.addEventListener('click', () => {
+    try {
+        if (powerData.length === 0) {
+            alert('No power data available to export.');
+            return;
+        }
+
+        const tcxContent = generateTcxString(powerData);
+
+        const blob = new Blob([tcxContent], {
+            type: 'application/xml;charset=utf-8;'
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        a.download = `power_data_${dateString}.tcx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error generating TCX:', error);
+        alert(`Error generating TCX file: ${error.message}`);
+    }
+});
+
 
 function handlePowerMeasurement(event) {
     const value = event.target.value;
     const timestamp = Date.now();
 
-    // Store raw measurement data for detailed analysis
+    // Store simplified raw measurement data
     const rawMeasurement = {
         timestamp: timestamp,
         flags: value.getUint16(0, true),
@@ -639,100 +841,7 @@ function handlePowerMeasurement(event) {
     // Add power reading to averaging calculations
     addPowerReading(power);
 
-    offset += 2;
-
-    // Reset optional values
-    balanceValueElement.textContent = '--';
-    lastBalanceValue = 0;
-    smoothnessValueElement.textContent = '--';
-    lastSmoothnessValue = 0;
-    torqueValueElement.textContent = '--';
-    lastTorqueValue = 0;
-
-    // Initialize all optional fields
-    rawMeasurement.pedalPowerBalance = null;
-    rawMeasurement.accumulatedTorque = null;
-    rawMeasurement.wheelRevolutionData = null;
-    rawMeasurement.crankRevolutionData = null;
-    rawMeasurement.extremeForceAngles = null;
-    rawMeasurement.topBottomDeadSpotAngles = null;
-    rawMeasurement.accumulatedEnergy = null;
-    rawMeasurement.torqueEffectiveness = null;
-    rawMeasurement.pedalSmoothness = null;
-
-    // Check for Pedal Power Balance (Flag bit 0)
-    if (flags & 0x0001) {
-        const balance = value.getUint8(offset);
-        rawMeasurement.pedalPowerBalance = balance;
-        // Balance is percentage of power from the right pedal
-        balanceValueElement.textContent = `${100 - balance}/${balance}`;
-        lastBalanceValue = balance;
-        offset += 1;
-    }
-
-    // Accumulated Torque (Flag bit 2)
-    if (flags & 0x0004) {
-        rawMeasurement.accumulatedTorque = value.getUint16(offset, true);
-        offset += 2;
-    }
-
-    // Wheel Revolution Data (Flag bits 4 & 5)
-    if (flags & 0x0010) {
-        rawMeasurement.wheelRevolutionData = {
-            cumulativeWheelRevolutions: value.getUint32(offset, true),
-            lastWheelEventTime: value.getUint16(offset + 4, true)
-        };
-        offset += 6;
-    }
-
-    // Crank Revolution Data (Flag bit 6)
-    if (flags & 0x0020) {
-        rawMeasurement.crankRevolutionData = {
-            cumulativeCrankRevolutions: value.getUint16(offset, true),
-            lastCrankEventTime: value.getUint16(offset + 2, true)
-        };
-        offset += 4;
-    }
-
-    // Extreme Force/Angle Magnitudes (Flag bits 7 & 8)
-    if (flags & 0x0080) {
-        rawMeasurement.extremeForceAngles = {
-            maximumForceMagnitude: value.getInt16(offset, true),
-            minimumForceMagnitude: value.getInt16(offset + 2, true),
-            maximumTorqueMagnitude: value.getInt16(offset + 4, true)
-        };
-        offset += 6;
-    }
-
-    // Top/Bottom Dead Spot Angles (Flag bits 9 & 10)
-    if (flags & 0x0200) {
-        rawMeasurement.topBottomDeadSpotAngles = {
-            topDeadSpotAngle: value.getUint16(offset, true),
-            bottomDeadSpotAngle: value.getUint16(offset + 2, true)
-        };
-        offset += 4;
-    }
-
-    // Accumulated Energy (Flag bit 11)
-    if (flags & 0x0800) {
-        rawMeasurement.accumulatedEnergy = value.getUint16(offset, true);
-        offset += 2;
-    }
-
-    // Check for Torque Effectiveness and Pedal Smoothness (Flag bit 12)
-    if (flags & 0x1000) {
-        const torqueEffectiveness = value.getUint8(offset) / 2; // In percent
-        const pedalSmoothness = value.getUint8(offset + 2) / 2; // In percent
-        rawMeasurement.torqueEffectiveness = torqueEffectiveness;
-        rawMeasurement.pedalSmoothness = pedalSmoothness;
-        torqueValueElement.textContent = torqueEffectiveness.toFixed(1);
-        smoothnessValueElement.textContent = pedalSmoothness.toFixed(1);
-        lastTorqueValue = torqueEffectiveness;
-        lastSmoothnessValue = pedalSmoothness;
-        offset += 4; // 2 bytes for TE, 2 bytes for PS
-    }
-
-    // Store the complete raw measurement
+    // Store the simplified raw measurement
     rawPowerMeasurements.push(rawMeasurement);
 }
 /**
@@ -753,9 +862,6 @@ function onDisconnected() {
     powerStatusIndicator.className = 'status-indicator';
     deviceNameElement.textContent = '';
     powerValueElement.textContent = '--';
-    balanceValueElement.textContent = '--';
-    smoothnessValueElement.textContent = '--';
-    torqueValueElement.textContent = '--';
     resetPowerAverages();
     connectButton.disabled = false;
     if (dataLoggerInterval) {
@@ -767,9 +873,6 @@ function onDisconnected() {
         powerMeterDevice = null;
     }
     lastPowerValue = 0;
-    lastBalanceValue = 0;
-    lastSmoothnessValue = 0;
-    lastTorqueValue = 0;
 }
 
 
@@ -864,12 +967,9 @@ function onDisconnectedHr() {
 
 const speedCadenceConnectButton = document.getElementById('speedCadenceConnectButton');
 const cadenceValueElement = document.getElementById('cadence-value');
-const speedValueElement = document.getElementById('speed-value');
-const distanceValueElement = document.getElementById('distance-value');
 const cadenceStatusText = document.getElementById('cadenceStatus');
 const cadenceDeviceName = document.getElementById('cadenceDeviceName');
 let speedCadenceBluetoothDevice = null;
-const WHEEL_CIRCUMFERENCE = 2.105; // meters, for a 700x25c tire
 
 speedCadenceConnectButton.addEventListener('click', async () => {
     await requestWakeLock();
@@ -881,7 +981,6 @@ speedCadenceConnectButton.addEventListener('click', async () => {
     try {
         cadenceStatusText.textContent = 'Scanning for sensors...';
         cadenceStatusIndicator.className = 'status-indicator connecting';
-        speedStatusIndicator.className = 'status-indicator connecting';
 
         speedCadenceBluetoothDevice = await navigator.bluetooth.requestDevice({
             filters: [{
@@ -903,19 +1002,15 @@ speedCadenceConnectButton.addEventListener('click', async () => {
 
         cadenceStatusText.textContent = 'Connected!';
         cadenceStatusIndicator.className = 'status-indicator connected';
-        speedStatusIndicator.className = 'status-indicator connected';
         speedCadenceConnectButton.disabled = true;
 
     } catch (error) {
         cadenceStatusText.textContent = `Error: ${error.message}`;
         cadenceStatusIndicator.className = 'status-indicator';
-        speedStatusIndicator.className = 'status-indicator';
         console.error('Speed/Cadence connection failed:', error);
     }
 });
 
-let lastWheelRevs = 0;
-let lastWheelTime = 0;
 let lastCrankRevs = 0;
 let lastCrankTime = 0;
 
@@ -927,25 +1022,9 @@ function handleSpeedCadenceMeasurement(event) {
     const wheelRevsPresent = (flags & 0x01);
     const crankRevsPresent = (flags & 0x02);
 
+    // Skip wheel revolution data since we don't need speed/distance
     if (wheelRevsPresent) {
-        const cumulativeWheelRevolutions = value.getUint32(offset, true);
-        const lastWheelEventTime = value.getUint16(offset + 4, true); // 1/1024 seconds
-        offset += 6;
-
-        if (lastWheelRevs > 0) {
-            const revs = cumulativeWheelRevolutions - lastWheelRevs;
-            const time = (lastWheelEventTime - lastWheelTime) / 1024; // in seconds
-            if (time > 0) {
-                const distance = revs * WHEEL_CIRCUMFERENCE; // meters
-                totalDistance += distance / 1000; // km
-                const speed = (distance / time) * 3.6; // km/h
-                speedValueElement.textContent = Math.round(speed);
-                lastSpeedValue = Math.round(speed);
-                distanceValueElement.textContent = totalDistance.toFixed(2);
-            }
-        }
-        lastWheelRevs = cumulativeWheelRevolutions;
-        lastWheelTime = lastWheelEventTime;
+        offset += 6; // Skip wheel data
     }
 
     if (crankRevsPresent) {
@@ -969,12 +1048,9 @@ function handleSpeedCadenceMeasurement(event) {
 function onDisconnectedSpeedCadence() {
     cadenceStatusText.textContent = 'Device disconnected.';
     cadenceStatusIndicator.className = 'status-indicator';
-    speedStatusIndicator.className = 'status-indicator';
     cadenceDeviceName.textContent = '';
     cadenceValueElement.textContent = '--';
-    speedValueElement.textContent = '--';
     speedCadenceConnectButton.disabled = false;
     speedCadenceBluetoothDevice = null;
     lastCadenceValue = 0;
-    lastSpeedValue = 0;
 }

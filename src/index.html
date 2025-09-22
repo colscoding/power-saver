@@ -82,18 +82,6 @@
             --accent-color: #3498db;
         }
 
-        .speed-card {
-            grid-column: 2;
-            grid-row: 2;
-            --accent-color: #27ae60;
-        }
-
-        .distance-card {
-            grid-column: 3;
-            grid-row: 2;
-            --accent-color: #27ae60;
-        }
-
         .controls-container {
             background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
             padding: 2rem;
@@ -115,32 +103,47 @@
         }
 
         .metric-value {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 700;
+            font-size: clamp(4rem, 8vw, 6rem);
+            font-weight: 1000;
             color: var(--accent-color, #ffffff);
             line-height: 1;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.1rem;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
 
         .power-card .metric-value {
             font-size: clamp(6rem, 16vw, 12rem);
         }
 
-        .metric-unit {
-            font-size: 0.7rem;
-            color: #aaaaaa;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-        }
-
         .metric-label {
-            font-size: 0.9rem;
+            font-size: 0.5rem;
             color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 1rem;
             font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .metric-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .metric-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .metric-unit {
+            font-size: 0.4rem;
+            color: #aaaaaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
         }
 
         .status-text {
@@ -598,17 +601,6 @@
             gap: 30px;
         }
 
-        .advanced-metrics {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin: 2rem 0;
-            padding: 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
         .metric-box {
             text-align: center;
             padding: 1rem;
@@ -675,14 +667,12 @@
 
             .metrics-grid {
                 grid-template-columns: 1fr;
-                grid-template-rows: repeat(5, auto);
+                grid-template-rows: repeat(3, auto);
             }
 
             .power-card,
             .hr-card,
-            .cadence-card,
-            .speed-card,
-            .distance-card {
+            .cadence-card {
                 grid-column: 1;
             }
 
@@ -696,14 +686,6 @@
 
             .cadence-card {
                 grid-row: 3;
-            }
-
-            .speed-card {
-                grid-row: 4;
-            }
-
-            .distance-card {
-                grid-row: 5;
             }
 
             .header,
@@ -727,7 +709,7 @@
         @media (max-width: 400px) {
             .metrics-grid {
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto;
+                grid-template-rows: auto auto;
                 gap: 12px;
             }
 
@@ -746,37 +728,12 @@
                 grid-row: 2;
             }
 
-            .speed-card {
-                grid-column: 1;
-                grid-row: 3;
-            }
-
-            .distance-card {
-                grid-column: 2;
-                grid-row: 3;
-            }
-
             .metric-card {
                 padding: 0.8rem;
             }
 
             .power-card {
                 padding: 1.2rem;
-            }
-
-            .advanced-metrics {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 6px;
-                margin: 0.8rem 0 0.5rem 0;
-                padding: 0.8rem;
-            }
-
-            .metric-box .value {
-                font-size: 1.2rem;
-            }
-
-            .metric-box .label {
-                font-size: 0.65rem;
             }
         }
 
@@ -827,18 +784,15 @@
             }
 
             .metric-label {
-                font-size: 0.8rem;
-                margin-bottom: 0.5rem;
+                font-size: 0.6rem;
             }
 
             .metric-unit {
-                font-size: 1rem;
+                font-size: 0.5rem;
             }
 
-            .advanced-metrics {
-                margin: 1rem 0 0.5rem 0;
-                padding: 1rem;
-                gap: 8px;
+            .metric-row {
+                gap: 1rem;
             }
 
             .metric-box .value {
@@ -1125,6 +1079,18 @@
                     <div class="menu-toggle-slider"></div>
                 </div>
             </div>
+            <div class="menu-item" id="toggleConnectSectionMenuItem">
+                <span class="menu-item-text">Connect Devices</span>
+                <div class="menu-toggle" id="connectSectionToggle">
+                    <div class="menu-toggle-slider"></div>
+                </div>
+            </div>
+            <div class="menu-item" id="toggleExportSectionMenuItem">
+                <span class="menu-item-text">Export Data</span>
+                <div class="menu-toggle" id="exportSectionToggle">
+                    <div class="menu-toggle-slider"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1132,34 +1098,37 @@
         <div class="metrics-grid">
             <div class="metric-card power-card">
                 <div class="status-indicator" id="power-status-indicator"></div>
-                <div class="metric-label">Power Output <span class="metric-unit">Watts</span></div>
-                <div class="metric-value" id="power-value">--</div>
+                <div class="metric-row">
+                    <div class="metric-value" id="power-value">--</div>
+                    <div class="metric-info">
+                        <div class="metric-label">Power Output</div>
+                        <div class="metric-unit">Watts</div>
+                    </div>
+                </div>
             </div>
 
             <div class="metric-card hr-card">
                 <div class="status-indicator" id="hr-status-indicator"></div>
-                <div class="metric-label">Heart Rate <span class="metric-unit">BPM</span></div>
-                <div class="metric-value" id="hr-value">--</div>
+                <div class="metric-row">
+                    <div class="metric-value" id="hr-value">--</div>
+                    <div class="metric-info">
+                        <div class="metric-label">Heart Rate</div>
+                        <div class="metric-unit">BPM</div>
+                    </div>
+                </div>
                 <div class="status-text" id="hrStatus" style="display: none;"></div>
             </div>
 
             <div class="metric-card cadence-card">
                 <div class="status-indicator" id="cadence-status-indicator"></div>
-                <div class="metric-label">Cadence <span class="metric-unit">RPM</span></div>
-                <div class="metric-value" id="cadence-value">--</div>
+                <div class="metric-row">
+                    <div class="metric-value" id="cadence-value">--</div>
+                    <div class="metric-info">
+                        <div class="metric-label">Cadence</div>
+                        <div class="metric-unit">RPM</div>
+                    </div>
+                </div>
                 <div class="status-text" id="cadenceStatus" style="display: none;"></div>
-            </div>
-
-            <div class="metric-card speed-card" style="display: none;">
-                <div class="status-indicator" id="speed-status-indicator"></div>
-                <div class="metric-label">Speed <span class="metric-unit">km/h</span></div>
-                <div class="metric-value" id="speed-value">--</div>
-            </div>
-
-            <div class="metric-card distance-card" style="display: none;">
-                <div class="status-indicator" id="distance-status-indicator"></div>
-                <div class="metric-label">Distance <span class="metric-unit">km</span></div>
-                <div class="metric-value" id="distance-value">--</div>
             </div>
         </div>
     </div>
@@ -1242,23 +1211,25 @@
                     </div>
                 </div>
             </div>
+            <div class="average-card">
+                <div class="average-label">8 Minute Average</div>
+                <div class="average-values">
+                    <div class="current-average">
+                        <span class="average-title">Current:</span>
+                        <span class="average-value" id="avg8m-current">--</span>
+                        <span class="average-unit">W</span>
+                    </div>
+                    <div class="best-average">
+                        <span class="average-title">Best:</span>
+                        <span class="average-value" id="avg8m-best">--</span>
+                        <span class="average-unit">W</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="advanced-metrics" id="advanced-metrics" style="display: none;">
-        <div class="metric-box">
-            <div class="value" id="balance-value">--</div>
-            <div class="label">L/R Balance</div>
-        </div>
-        <div class="metric-box">
-            <div class="value" id="smoothness-value">--</div>
-            <div class="label">Smoothness</div>
-        </div>
-        <div class="metric-box">
-            <div class="value" id="torque-value">--</div>
-            <div class="label">Torque Eff.</div>
-        </div>
-    </div>
+
 
     <!-- Bottom Controls - Always Visible -->
     <div class="bottom-controls">
@@ -1296,6 +1267,7 @@
             <div class="export-buttons" id="export-buttons">
                 <button id="exportJsonButton">Export Summary JSON</button>
                 <button id="exportCsvButton">Export Summary CSV</button>
+                <button id="exportTcxButton">Export TCX</button>
                 <button id="exportRawJsonButton">Export Raw Measurements JSON</button>
                 <button id="exportRawCsvButton">Export Raw Measurements CSV</button>
             </div>
