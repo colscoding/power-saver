@@ -5,9 +5,8 @@ async function requestWakeLock() {
     if ('wakeLock' in navigator) {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
-            console.log('Screen Wake Lock is active.');
             wakeLock.addEventListener('release', () => {
-                console.log('Screen Wake Lock was released.');
+                // Wake lock was released
             });
         } catch (err) {
             console.error(`${err.name}, ${err.message}`);
@@ -157,7 +156,6 @@ function saveSessionData() {
         };
 
         localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
-        console.log('Session data saved to localStorage');
     } catch (error) {
         console.warn('Failed to save session data:', error);
     }
@@ -178,7 +176,6 @@ function loadSessionData() {
         // Check if session is too old (older than 24 hours)
         if (now - sessionData.timestamp > SESSION_TIMEOUT) {
             localStorage.removeItem(SESSION_STORAGE_KEY);
-            console.log('Session data expired, removed from localStorage');
             return null;
         }
 
@@ -212,10 +209,6 @@ function restoreSessionData(sessionData) {
         if (sessionData.lastHeartRateValue !== undefined) lastHeartRateValue = sessionData.lastHeartRateValue;
         if (sessionData.lastCadenceValue !== undefined) lastCadenceValue = sessionData.lastCadenceValue;
         if (sessionData.sessionStartTime !== undefined) sessionStartTime = sessionData.sessionStartTime;
-
-        console.log('Session data restored from localStorage');
-        console.log(`Restored ${powerData.length} power readings, ${heartData.length} heart rate readings, ${cadenceData.length} cadence readings`);
-        console.log('Power averages restored:', powerAverages);
 
         // Update displays with restored data
         updateDisplaysFromRestoredData();
@@ -296,7 +289,6 @@ function showSessionRestoredNotification() {
  */
 function clearSessionData() {
     localStorage.removeItem(SESSION_STORAGE_KEY);
-    console.log('Session data cleared from localStorage');
 }
 
 const connectButton = document.getElementById('connectButton');
@@ -349,24 +341,6 @@ const powerCard = document.querySelector('.power-card');
 const heartRateCard = document.querySelector('.hr-card');
 const cadenceCard = document.querySelector('.cadence-card');
 
-// Debug: Check if elements exist
-console.log('Hamburger elements:', {
-    hamburgerBtn: hamburgerBtn,
-    menuDropdown: menuDropdown,
-    powerAveragesToggle: powerAveragesToggle,
-    powerMetricToggle: powerMetricToggle,
-    heartRateMetricToggle: heartRateMetricToggle,
-    cadenceMetricToggle: cadenceMetricToggle,
-    connectSectionToggle: connectSectionToggle,
-    exportSectionToggle: exportSectionToggle
-});
-
-console.log('Metric card elements:', {
-    powerCard: powerCard,
-    heartRateCard: heartRateCard,
-    cadenceCard: cadenceCard
-});
-
 // Status indicator elements
 const powerStatusIndicator = document.getElementById('power-status-indicator');
 const hrStatusIndicator = document.getElementById('hr-status-indicator');
@@ -381,14 +355,11 @@ cadenceStatusIndicator.className = 'status-indicator';
 if (hamburgerBtn && menuDropdown) {
     // Hamburger menu functionality
     hamburgerBtn.addEventListener('click', function () {
-        console.log('Hamburger button clicked');
         const isActive = menuDropdown.classList.contains('active');
         if (isActive) {
             menuDropdown.classList.remove('active');
-            console.log('Menu dropdown hidden');
         } else {
             menuDropdown.classList.add('active');
-            console.log('Menu dropdown shown');
         }
     });
 
@@ -409,17 +380,14 @@ if (powerAveragesToggle && powerAveragesSection) {
     // Power averages toggle via hamburger menu
     let powerAveragesVisible = false;
     powerAveragesToggle.addEventListener('click', function () {
-        console.log('Power averages toggle clicked');
         powerAveragesVisible = !powerAveragesVisible;
 
         if (powerAveragesVisible) {
             powerAveragesSection.style.display = 'block';
             powerAveragesToggle.classList.add('active');
-            console.log('Power averages shown');
         } else {
             powerAveragesSection.style.display = 'none';
             powerAveragesToggle.classList.remove('active');
-            console.log('Power averages hidden');
         }
         manageCollapsedSectionsLayout();
     });
@@ -436,17 +404,14 @@ if (powerMetricToggle && powerCard) {
     powerMetricToggle.classList.add('active'); // Set initial active state
 
     powerMetricToggle.addEventListener('click', function () {
-        console.log('Power metric toggle clicked');
         powerMetricVisible = !powerMetricVisible;
 
         if (powerMetricVisible) {
             powerCard.style.display = 'block';
             powerMetricToggle.classList.add('active');
-            console.log('Power metric shown');
         } else {
             powerCard.style.display = 'none';
             powerMetricToggle.classList.remove('active');
-            console.log('Power metric hidden');
         }
     });
 } else {
@@ -462,17 +427,14 @@ if (heartRateMetricToggle && heartRateCard) {
     heartRateMetricToggle.classList.add('active'); // Set initial active state
 
     heartRateMetricToggle.addEventListener('click', function () {
-        console.log('Heart rate metric toggle clicked');
         heartRateMetricVisible = !heartRateMetricVisible;
 
         if (heartRateMetricVisible) {
             heartRateCard.style.display = 'block';
             heartRateMetricToggle.classList.add('active');
-            console.log('Heart rate metric shown');
         } else {
             heartRateCard.style.display = 'none';
             heartRateMetricToggle.classList.remove('active');
-            console.log('Heart rate metric hidden');
         }
     });
 } else {
@@ -488,17 +450,14 @@ if (cadenceMetricToggle && cadenceCard) {
     cadenceMetricToggle.classList.add('active'); // Set initial active state
 
     cadenceMetricToggle.addEventListener('click', function () {
-        console.log('Cadence metric toggle clicked');
         cadenceMetricVisible = !cadenceMetricVisible;
 
         if (cadenceMetricVisible) {
             cadenceCard.style.display = 'block';
             cadenceMetricToggle.classList.add('active');
-            console.log('Cadence metric shown');
         } else {
             cadenceCard.style.display = 'none';
             cadenceMetricToggle.classList.remove('active');
-            console.log('Cadence metric hidden');
         }
     });
 } else {
@@ -514,17 +473,14 @@ if (connectSectionToggle && connectSection) {
     connectSectionToggle.classList.add('active'); // Set initial active state
 
     connectSectionToggle.addEventListener('click', function () {
-        console.log('Connect section toggle clicked');
         connectSectionVisible = !connectSectionVisible;
 
         if (connectSectionVisible) {
             connectSection.style.display = 'block';
             connectSectionToggle.classList.add('active');
-            console.log('Connect section shown');
         } else {
             connectSection.style.display = 'none';
             connectSectionToggle.classList.remove('active');
-            console.log('Connect section hidden');
         }
     });
 } else {
@@ -540,17 +496,14 @@ if (exportSectionToggle && exportSection) {
     // exportSectionToggle starts inactive since export section is initially hidden
 
     exportSectionToggle.addEventListener('click', function () {
-        console.log('Export section toggle clicked');
         exportSectionVisible = !exportSectionVisible;
 
         if (exportSectionVisible) {
             exportSection.style.display = 'block';
             exportSectionToggle.classList.add('active');
-            console.log('Export section shown');
         } else {
             exportSection.style.display = 'none';
             exportSectionToggle.classList.remove('active');
-            console.log('Export section hidden');
         }
     });
 } else {
@@ -775,8 +728,6 @@ function resetAllSessionData() {
 
     // Clear localStorage
     clearSessionData();
-
-    console.log('All session data reset');
 }
 
 let lastHeartRateValue = 0;
@@ -829,11 +780,10 @@ connectButton.addEventListener('click', async () => {
         try {
             const featureCharacteristic = await service.getCharacteristic(CYCLING_POWER_FEATURE_CHARACTERISTIC_UUID);
             const features = await featureCharacteristic.readValue();
-            console.log(`Power Features: ${features.getUint32(0, true)}`);
             // This value can be used to determine what the power meter supports,
             // but for now we just parse what's in the measurement characteristic.
         } catch (e) {
-            console.log('Cycling Power Feature characteristic not found.');
+            // Cycling Power Feature characteristic not found
         }
 
         // Subscribe to power measurement notifications
@@ -848,7 +798,6 @@ connectButton.addEventListener('click', async () => {
         // Start session if this is the first connection
         if (!sessionStartTime) {
             sessionStartTime = Date.now();
-            console.log('Session started with first device connection');
         }
 
         // exportButtons.style.display = 'block';
@@ -1309,8 +1258,6 @@ function showRestorationDialog(sessionData) {
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log('Power Meter App initialized');
-
     // Try to load previous session data
     const sessionData = loadSessionData();
     if (sessionData) {
@@ -1318,14 +1265,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         const shouldRestore = await showRestorationDialog(sessionData);
         if (shouldRestore) {
             restoreSessionData(sessionData);
-            console.log('Previous session restored');
         } else {
             sessionStartTime = Date.now();
-            console.log('New session started (previous session discarded)');
         }
     } else {
         sessionStartTime = Date.now();
-        console.log('New session started');
     }
 
     // Save session data when page is about to be closed/refreshed
