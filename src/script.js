@@ -105,9 +105,61 @@ function generateTcxString(powerData) {
         throw new Error("No valid power data found after processing");
     }
 
+    // Calculate exercise statistics
+    const validPowerReadings = processedData.filter(d => d.power && d.power > 0).map(d => parseFloat(d.power));
+    const avgPower = validPowerReadings.length > 0 ? Math.round(validPowerReadings.reduce((a, b) => a + b, 0) / validPowerReadings.length) : 0;
+    const maxPower = validPowerReadings.length > 0 ? Math.max(...validPowerReadings) : 0;
+
+    const startTime = processedData[0].time;
+    const endTime = processedData[processedData.length - 1].time;
+    const duration = Math.round((endTime - startTime) / 1000 / 60); // duration in minutes
+
+    // Generate activity notes with exercise description and power averages
+    const exerciseDescription = "Indoor cycling session recorded with Power Saver app.";
+
+    let powerAveragesText = "";
+    if (typeof powerAverages !== 'undefined' && powerAverages) {
+        const averagesList = [];
+
+        if (powerAverages['10s'] && powerAverages['10s'].best > 0) {
+            averagesList.push(`10s: ${powerAverages['10s'].best}W`);
+        }
+        if (powerAverages['30s'] && powerAverages['30s'].best > 0) {
+            averagesList.push(`30s: ${powerAverages['30s'].best}W`);
+        }
+        if (powerAverages['1m'] && powerAverages['1m'].best > 0) {
+            averagesList.push(`1min: ${powerAverages['1m'].best}W`);
+        }
+        if (powerAverages['2m'] && powerAverages['2m'].best > 0) {
+            averagesList.push(`2min: ${powerAverages['2m'].best}W`);
+        }
+        if (powerAverages['4m'] && powerAverages['4m'].best > 0) {
+            averagesList.push(`4min: ${powerAverages['4m'].best}W`);
+        }
+        if (powerAverages['8m'] && powerAverages['8m'].best > 0) {
+            averagesList.push(`8min: ${powerAverages['8m'].best}W`);
+        }
+
+        if (averagesList.length > 0) {
+            powerAveragesText = `\n\nBest Power Averages: ${averagesList.join(', ')}`;
+        }
+    }
+
+    const sessionStats = `\nSession Stats: Duration: ${duration} min, Avg Power: ${avgPower}W, Max Power: ${maxPower}W`;
+    const activityNotes = exerciseDescription + sessionStats + powerAveragesText;
+
+    // Helper function to escape XML special characters
+    const escapeXml = (text) => {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    };
+
     // Generate XML
     const trackpoints = processedData.map(createTrackpoint).join('\n');
-    const startTime = processedData[0].time;
     const startTimeISO = new Date(startTime).toISOString();
 
     const rawXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -120,6 +172,7 @@ function generateTcxString(powerData) {
     <Activity Sport="Biking">
       <Id>${startTimeISO}</Id>
       <Name>Indoor Cycling</Name>
+      <Notes>${escapeXml(activityNotes)}</Notes>
       <Lap StartTime="${startTimeISO}">
         <Track>
         ${trackpoints}
