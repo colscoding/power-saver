@@ -165,11 +165,12 @@ function saveSessionData() {
 
 /**
  * Load session data from localStorage if available and recent
+ * Returns the session data object if available, null if not
  */
 function loadSessionData() {
     try {
         const savedData = localStorage.getItem(SESSION_STORAGE_KEY);
-        if (!savedData) return false;
+        if (!savedData) return null;
 
         const sessionData = JSON.parse(savedData);
         const now = Date.now();
@@ -178,9 +179,22 @@ function loadSessionData() {
         if (now - sessionData.timestamp > SESSION_TIMEOUT) {
             localStorage.removeItem(SESSION_STORAGE_KEY);
             console.log('Session data expired, removed from localStorage');
-            return false;
+            return null;
         }
 
+        return sessionData;
+    } catch (error) {
+        console.warn('Failed to load session data:', error);
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        return null;
+    }
+}
+
+/**
+ * Apply session data to restore the session
+ */
+function restoreSessionData(sessionData) {
+    try {
         // Restore data arrays
         if (sessionData.powerData) powerData.length = 0, powerData.push(...sessionData.powerData);
         if (sessionData.heartData) heartData.length = 0, heartData.push(...sessionData.heartData);
@@ -188,7 +202,7 @@ function loadSessionData() {
         if (sessionData.rawPowerMeasurements) rawPowerMeasurements.length = 0, rawPowerMeasurements.push(...sessionData.rawPowerMeasurements);
         if (sessionData.powerReadings) powerReadings.length = 0, powerReadings.push(...sessionData.powerReadings);
 
-        // Restore power averages
+        // Restore power averages completely
         if (sessionData.powerAverages) {
             Object.assign(powerAverages, sessionData.powerAverages);
         }
@@ -201,14 +215,14 @@ function loadSessionData() {
 
         console.log('Session data restored from localStorage');
         console.log(`Restored ${powerData.length} power readings, ${heartData.length} heart rate readings, ${cadenceData.length} cadence readings`);
+        console.log('Power averages restored:', powerAverages);
 
         // Update displays with restored data
         updateDisplaysFromRestoredData();
 
         return true;
     } catch (error) {
-        console.warn('Failed to load session data:', error);
-        localStorage.removeItem(SESSION_STORAGE_KEY);
+        console.warn('Failed to restore session data:', error);
         return false;
     }
 }
@@ -1238,12 +1252,78 @@ function onDisconnectedSpeedCadence() {
 }
 
 // Initialize session on page load
-document.addEventListener('DOMContentLoaded', function () {
+/**
+ * Show restoration dialog to let user choose
+ */
+function showRestorationDialog(sessionData) {
+    return new Promise((resolve) => {
+        // Create modal backdrop
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop';
+
+        // Create modal dialog
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+
+        // Get session info
+        const sessionAge = Math.round((Date.now() - sessionData.timestamp) / (1000 * 60)); // minutes
+        const dataCount = (sessionData.powerData?.length || 0) + (sessionData.heartData?.length || 0) + (sessionData.cadenceData?.length || 0);
+
+        modal.innerHTML = `
+            <h3>Previous Session Found</h3>
+            <p>
+                A previous session was found from ${sessionAge} minutes ago with ${dataCount} data points.
+            </p>
+            <p>
+                Would you like to restore this session or start fresh?
+            </p>
+            <div class="modal-buttons">
+                <button id="startFresh" class="modal-button secondary">Start Fresh</button>
+                <button id="restoreSession" class="modal-button primary">Restore Session</button>
+            </div>
+        `;
+
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+
+        // Handle button clicks
+        modal.querySelector('#startFresh').addEventListener('click', () => {
+            document.body.removeChild(backdrop);
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            resolve(false);
+        });
+
+        modal.querySelector('#restoreSession').addEventListener('click', () => {
+            document.body.removeChild(backdrop);
+            resolve(true);
+        });
+
+        // Handle backdrop click
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) {
+                document.body.removeChild(backdrop);
+                resolve(false);
+            }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
     console.log('Power Meter App initialized');
 
-    // Try to restore previous session
-    const sessionRestored = loadSessionData();
-    if (!sessionRestored) {
+    // Try to load previous session data
+    const sessionData = loadSessionData();
+    if (sessionData) {
+        // Show restoration dialog
+        const shouldRestore = await showRestorationDialog(sessionData);
+        if (shouldRestore) {
+            restoreSessionData(sessionData);
+            console.log('Previous session restored');
+        } else {
+            sessionStartTime = Date.now();
+            console.log('New session started (previous session discarded)');
+        }
+    } else {
         sessionStartTime = Date.now();
         console.log('New session started');
     }
