@@ -1353,6 +1353,15 @@ speedCadenceConnectButton.addEventListener('click', async () => {
         cadenceStatusText.textContent = 'Scanning for sensors...';
         cadenceStatusIndicator.className = 'status-indicator connecting';
 
+        // Reset cadence variables for clean start
+        if (cadenceResetTimer) {
+            clearTimeout(cadenceResetTimer);
+            cadenceResetTimer = null;
+        }
+        lastCrankRevs = 0;
+        lastCrankTime = 0;
+        lastCadenceValue = 0;
+
         speedCadenceBluetoothDevice = await navigator.bluetooth.requestDevice({
             filters: [{
                 services: [CYCLING_CADENCE_SERVICE_UUID]
@@ -1384,6 +1393,7 @@ speedCadenceConnectButton.addEventListener('click', async () => {
 
 let lastCrankRevs = 0;
 let lastCrankTime = 0;
+let cadenceResetTimer = null;
 
 function handleSpeedCadenceMeasurement(event) {
     const value = event.target.value;
@@ -1409,6 +1419,18 @@ function handleSpeedCadenceMeasurement(event) {
                 const cadence = (revs / time) * 60; // RPM
                 cadenceValueElement.textContent = Math.round(cadence);
                 lastCadenceValue = Math.round(cadence);
+
+                // Clear any existing reset timer
+                if (cadenceResetTimer) {
+                    clearTimeout(cadenceResetTimer);
+                }
+
+                // Set timer to reset cadence to 0 if no new data comes in for 3 seconds
+                cadenceResetTimer = setTimeout(() => {
+                    cadenceValueElement.textContent = '0';
+                    lastCadenceValue = 0;
+                    cadenceResetTimer = null;
+                }, 3000);
             }
         }
         lastCrankRevs = cumulativeCrankRevolutions;
@@ -1424,6 +1446,14 @@ function onDisconnectedSpeedCadence() {
     speedCadenceConnectButton.disabled = false;
     speedCadenceBluetoothDevice = null;
     lastCadenceValue = 0;
+
+    // Clear cadence reset timer and reset variables
+    if (cadenceResetTimer) {
+        clearTimeout(cadenceResetTimer);
+        cadenceResetTimer = null;
+    }
+    lastCrankRevs = 0;
+    lastCrankTime = 0;
 }
 
 // Initialize session on page load
