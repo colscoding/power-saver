@@ -225,6 +225,31 @@
             box-shadow: 0 8px 24px rgba(52, 152, 219, 0.4);
         }
 
+        /* Strava Button Specific Styling */
+        #syncToStravaButton {
+            background: linear-gradient(135deg, #fc4c02 0%, #e8440b 100%) !important;
+            box-shadow: 0 4px 16px rgba(252, 76, 2, 0.3) !important;
+            color: white !important;
+            font-weight: 600;
+            position: relative;
+        }
+
+        #syncToStravaButton:hover {
+            box-shadow: 0 8px 24px rgba(252, 76, 2, 0.4) !important;
+            transform: translateY(-2px);
+        }
+
+        #syncToStravaButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #syncToStravaButton::before {
+            content: "🚴";
+            margin-right: 8px;
+        }
+
         /* Toggle Button Styles */
         .toggle-controls {
             text-align: center;
@@ -1118,6 +1143,86 @@
             background: linear-gradient(135deg, #0088dd 0%, #0066aa 100%);
             transform: translateY(-1px);
         }
+
+        /* Strava Configuration Modal Specific Styles */
+        .strava-config-modal {
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .config-instructions {
+            background: rgba(252, 76, 2, 0.1);
+            border: 1px solid rgba(252, 76, 2, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .config-instructions ol {
+            margin: 0.5rem 0;
+            padding-left: 1.2rem;
+        }
+
+        .config-instructions ul {
+            margin: 0.5rem 0;
+            padding-left: 1.2rem;
+        }
+
+        .config-instructions li {
+            margin: 0.3rem 0;
+        }
+
+        .config-instructions code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .config-instructions a {
+            color: #fc4c02;
+            text-decoration: none;
+        }
+
+        .config-instructions a:hover {
+            text-decoration: underline;
+        }
+
+        .config-input {
+            margin: 1.5rem 0;
+        }
+
+        .config-input label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #fc4c02;
+        }
+
+        .config-input input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .config-input input:focus {
+            outline: none;
+            border-color: #fc4c02;
+            box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.2);
+        }
+
+        .input-hint {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 
@@ -1167,6 +1272,9 @@
                 <div class="menu-toggle" id="exportSectionToggle">
                     <div class="menu-toggle-slider"></div>
                 </div>
+            </div>
+            <div class="menu-item" id="stravaSettingsMenuItem">
+                <span class="menu-item-text">🚴 Strava Settings</span>
             </div>
         </div>
     </div>
@@ -1347,6 +1455,7 @@
                 <button id="exportTcxButton">Export TCX</button>
                 <button id="exportRawJsonButton">Export Raw Measurements JSON</button>
                 <button id="exportRawCsvButton">Export Raw Measurements CSV</button>
+                <button id="syncToStravaButton" style="background: #fc4c02; color: white;">Sync to Strava</button>
                 <button id="clearSessionButton" style="background: #f44336; margin-top: 1rem;">Clear Session
                     Data</button>
             </div>

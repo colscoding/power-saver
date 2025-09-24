@@ -1,3 +1,120 @@
+// Strava Integration Configuration
+// Client ID is now configurable from the web interface and stored in browser
+// SECURITY: This uses OAuth implicit flow - secure for client-side apps
+// No client secret needed (and shouldn't be in frontend code!)
+// For production apps, consider using a backend proxy for enhanced security
+
+// Get Strava Client ID from localStorage or return null if not configured
+function getStravaClientId() {
+    return localStorage.getItem('stravaClientId');
+}
+
+// Set Strava Client ID in localStorage
+function setStravaClientId(clientId) {
+    localStorage.setItem('stravaClientId', clientId);
+}
+
+// Show Strava configuration dialog
+function showStravaConfigDialog() {
+    return new Promise((resolve) => {
+        // Create modal backdrop
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop';
+
+        // Create modal dialog
+        const modal = document.createElement('div');
+        modal.className = 'modal strava-config-modal';
+
+        modal.innerHTML = `
+            <h3>🚴 Configure Strava Integration</h3>
+            <div class="config-instructions">
+                <p><strong>To enable Strava sync functionality:</strong></p>
+                <ol>
+                    <li>Go to <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">https://www.strava.com/settings/api</a></li>
+                    <li>Click "Create & Manage Your App"</li>
+                    <li>Fill in the required information:
+                        <ul>
+                            <li><strong>Application Name:</strong> Your app name (e.g., "Power Meter")</li>
+                            <li><strong>Category:</strong> Choose appropriate category</li>
+                            <li><strong>Website:</strong> Your website URL</li>
+                            <li><strong>Authorization Callback Domain:</strong> <code>${window.location.hostname}</code></li>
+                        </ul>
+                    </li>
+                    <li>After creating the app, copy your <strong>Client ID</strong> and paste it below</li>
+                </ol>
+            </div>
+            <div class="config-input">
+                <label for="clientIdInput">Strava Client ID:</label>
+                <input type="text" id="clientIdInput" placeholder="Enter your Strava Client ID" />
+                <div class="input-hint">This will be stored securely in your browser</div>
+            </div>
+            <div class="modal-buttons">
+                <button id="cancelConfig" class="modal-button secondary">Cancel</button>
+                <button id="saveConfig" class="modal-button primary">Save & Connect</button>
+            </div>
+        `;
+
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+
+        const clientIdInput = modal.querySelector('#clientIdInput');
+        const saveButton = modal.querySelector('#saveConfig');
+        const cancelButton = modal.querySelector('#cancelConfig');
+
+        // Focus on input
+        clientIdInput.focus();
+
+        // Handle save button
+        saveButton.addEventListener('click', () => {
+            const clientId = clientIdInput.value.trim();
+            if (!clientId) {
+                alert('Please enter a valid Client ID');
+                return;
+            }
+
+            // Validate that it looks like a client ID (should be numeric)
+            if (!/^\d+$/.test(clientId)) {
+                alert('Client ID should be a numeric value');
+                return;
+            }
+
+            setStravaClientId(clientId);
+            document.body.removeChild(backdrop);
+            resolve(clientId);
+        });
+
+        // Handle cancel button
+        cancelButton.addEventListener('click', () => {
+            document.body.removeChild(backdrop);
+            resolve(null);
+        });
+
+        // Handle Enter key in input
+        clientIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveButton.click();
+            }
+        });
+
+        // Handle Escape key
+        document.addEventListener('keydown', function escapeHandler(e) {
+            if (e.key === 'Escape') {
+                document.removeEventListener('keydown', escapeHandler);
+                document.body.removeChild(backdrop);
+                resolve(null);
+            }
+        });
+
+        // Handle backdrop click
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) {
+                document.body.removeChild(backdrop);
+                resolve(null);
+            }
+        });
+    });
+}
+
 // Screen Wake Lock
 let wakeLock = null;
 
@@ -357,6 +474,7 @@ const exportCsvButton = document.getElementById('exportCsvButton');
 const exportTcxButton = document.getElementById('exportTcxButton');
 const exportRawJsonButton = document.getElementById('exportRawJsonButton');
 const exportRawCsvButton = document.getElementById('exportRawCsvButton');
+const syncToStravaButton = document.getElementById('syncToStravaButton');
 const clearSessionButton = document.getElementById('clearSessionButton');
 
 // Power averages elements
@@ -391,6 +509,7 @@ const heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
 const cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
 const connectSectionToggle = document.getElementById('connectSectionToggle');
 const exportSectionToggle = document.getElementById('exportSectionToggle');
+const stravaSettingsMenuItem = document.getElementById('stravaSettingsMenuItem');
 
 // Metric card elements
 const powerCard = document.querySelector('.power-card');
@@ -611,6 +730,19 @@ toggleExportSection.addEventListener('click', () => {
     }
     // Don't call updateDashboardLayout for bottom controls
 });
+
+// Strava Settings Menu Item
+if (stravaSettingsMenuItem) {
+    stravaSettingsMenuItem.addEventListener('click', async () => {
+        await showStravaConfigDialog();
+        // Update button status after potential configuration change
+        updateStravaButtonStatus();
+        // Close the menu
+        menuDropdown.classList.remove('active');
+    });
+} else {
+    console.error('Strava settings menu item not found');
+}
 
 // Function to update dashboard layout based on visible sections
 function updateDashboardLayout() {
@@ -1002,6 +1134,44 @@ exportTcxButton.addEventListener('click', () => {
     }
 });
 
+// Sync to Strava
+syncToStravaButton.addEventListener('click', async () => {
+    try {
+        if (powerData.length === 0) {
+            alert('No power data available to sync to Strava.');
+            return;
+        }
+
+        // Check if user is authenticated with Strava
+        const stravaAuth = getStravaAuthFromStorage();
+        if (!stravaAuth || !stravaAuth.access_token) {
+            // Redirect to Strava OAuth
+            await initiateStravaAuth();
+            return;
+        }
+
+        // Show loading state
+        syncToStravaButton.disabled = true;
+        syncToStravaButton.textContent = 'Syncing...';
+
+        // Generate TCX data for upload
+        const tcxContent = generateTcxString(powerData);
+
+        // Upload to Strava
+        await uploadToStrava(tcxContent, stravaAuth.access_token);
+
+        alert('Successfully synced to Strava!');
+
+    } catch (error) {
+        console.error('Error syncing to Strava:', error);
+        alert(`Error syncing to Strava: ${error.message}`);
+    } finally {
+        // Reset button state
+        syncToStravaButton.disabled = false;
+        updateStravaButtonStatus();
+    }
+});
+
 // Clear Session Data
 clearSessionButton.addEventListener('click', () => {
     const confirmed = confirm('Are you sure you want to clear all session data? This action cannot be undone.');
@@ -1313,6 +1483,128 @@ function showRestorationDialog(sessionData) {
     });
 }
 
+// Strava Integration Functions
+function getStravaAuthFromStorage() {
+    try {
+        const authData = localStorage.getItem('stravaAuth');
+        if (authData) {
+            const parsed = JSON.parse(authData);
+            // Check if token is expired (tokens typically last 6 hours)
+            if (parsed.expires_at && Date.now() > parsed.expires_at * 1000) {
+                localStorage.removeItem('stravaAuth');
+                return null;
+            }
+            return parsed;
+        }
+    } catch (error) {
+        console.error('Error reading Strava auth from storage:', error);
+    }
+    return null;
+}
+
+async function initiateStravaAuth() {
+    const clientId = getStravaClientId();
+
+    if (!clientId) {
+        // Show configuration dialog
+        const configuredClientId = await showStravaConfigDialog();
+        if (!configuredClientId) {
+            return; // User cancelled
+        }
+    }
+
+    // Get the client ID again (might have been just configured)
+    const finalClientId = getStravaClientId();
+
+    // Strava OAuth configuration using implicit flow (no client secret needed)
+    const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+    const scope = 'activity:write';
+
+    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${finalClientId}&response_type=token&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
+
+    // Store current state to return to after auth
+    localStorage.setItem('stravaAuthPending', 'true');
+
+    // Open Strava auth in new window
+    window.location.href = authUrl;
+}
+
+async function uploadToStrava(tcxContent, accessToken) {
+    try {
+        // Create a form data object for the file upload
+        const formData = new FormData();
+        const blob = new Blob([tcxContent], { type: 'application/xml' });
+        const now = new Date();
+        const filename = `power_data_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.tcx`;
+
+        formData.append('file', blob, filename);
+        formData.append('data_type', 'tcx');
+        formData.append('name', `Power Meter Session - ${now.toLocaleDateString()}`);
+        formData.append('description', 'Cycling session data from Web Bluetooth Power Meter');
+
+        const response = await fetch('https://www.strava.com/api/v3/uploads', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to upload to Strava');
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error uploading to Strava:', error);
+        throw error;
+    }
+}
+
+// Update Strava button text based on connection status
+function updateStravaButtonStatus() {
+    const syncToStravaButton = document.getElementById('syncToStravaButton');
+    if (!syncToStravaButton) return;
+
+    const stravaAuth = getStravaAuthFromStorage();
+    if (stravaAuth && stravaAuth.access_token) {
+        syncToStravaButton.textContent = '🚴 Sync to Strava';
+        syncToStravaButton.title = 'Connected to Strava - Click to sync your session';
+    } else {
+        syncToStravaButton.textContent = '🚴 Connect to Strava';
+        syncToStravaButton.title = 'Click to connect to Strava first';
+    }
+}
+
+// Check for Strava OAuth callback (implicit flow)
+function checkStravaCallback() {
+    // For implicit flow, token is in URL hash, not query params
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const expiresIn = hashParams.get('expires_in');
+    const scope = hashParams.get('scope');
+
+    if (accessToken && localStorage.getItem('stravaAuthPending')) {
+        // Store token data
+        const tokenData = {
+            access_token: accessToken,
+            expires_at: Math.floor(Date.now() / 1000) + parseInt(expiresIn || '21600'), // Default 6 hours
+            scope: scope
+        };
+
+        localStorage.setItem('stravaAuth', JSON.stringify(tokenData));
+        localStorage.removeItem('stravaAuthPending');
+
+        alert('Successfully connected to Strava!');
+        // Update button status
+        updateStravaButtonStatus();
+        // Clean up URL hash
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
     // Try to load previous session data
     const sessionData = loadSessionData();
@@ -1327,6 +1619,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     } else {
         sessionStartTime = Date.now();
     }
+
+    // Check for Strava callback on page load
+    checkStravaCallback();
+
+    // Update button status on page load
+    updateStravaButtonStatus();
 
     // Save session data when page is about to be closed/refreshed
     window.addEventListener('beforeunload', function () {
