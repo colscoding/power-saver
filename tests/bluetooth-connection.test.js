@@ -44,7 +44,7 @@ async function getBluetoothAvailability() {
     }
     try {
         return await navigator.bluetooth.getAvailability();
-    } catch (error) {
+    } catch {
         return false;
     }
 }

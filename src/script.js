@@ -14,6 +14,8 @@ async function requestWakeLock() {
     }
 }
 
+// Currently unused but may be needed for future functionality
+// eslint-disable-next-line no-unused-vars
 async function releaseWakeLock() {
     if (wakeLock !== null) {
         await wakeLock.release();
@@ -171,7 +173,7 @@ function generateTcxString(powerData) {
   <Activities>
     <Activity Sport="Biking">
       <Id>${startTimeISO}</Id>
-      <Name>Indoor Cycling</Name>
+      <Name>E Bike Indoor Cycling Trainer</Name>
       <Notes>${escapeXml(activityNotes)}</Notes>
       <Lap StartTime="${startTimeISO}">
         <Track>
@@ -347,8 +349,9 @@ function clearSessionData() {
 const connectButton = document.getElementById('connectButton');
 const statusText = document.getElementById('status');
 const powerValueElement = document.getElementById('power-value');
+const hrValueElement = document.getElementById('hr-value');
+const cadenceValueElement = document.getElementById('cadence-value');
 const deviceNameElement = document.getElementById('device-name');
-const exportButtons = document.getElementById('export-buttons');
 const exportJsonButton = document.getElementById('exportJsonButton');
 const exportCsvButton = document.getElementById('exportCsvButton');
 const exportTcxButton = document.getElementById('exportTcxButton');
@@ -630,9 +633,7 @@ function manageCollapsedSectionsLayout() {
 
     // Only manage power averages section for collapsed layout - 
     // connect and export sections are now bottom controls and stay at bottom
-    const collapsedSections = [
-        powerAveragesSection.classList.contains('collapsed') ? powerAveragesSection : null
-    ].filter(section => section !== null);
+    // Note: collapsedSections logic simplified since only power averages section is managed now
 
     // Remove any existing collapsed sections row
     const existingRow = document.querySelector('.collapsed-sections-row');
@@ -654,8 +655,6 @@ function manageCollapsedSectionsLayout() {
 // Initialize sections - connect section visible, export section hidden (controlled by hamburger menu)
 const connectButtons = connectSection.querySelectorAll('button:not(.section-toggle-button)');
 connectButtons.forEach(btn => btn.style.display = 'block');
-
-const exportButtonsContainer = document.getElementById('export-buttons');
 
 // Initialize export section as hidden (controlled by hamburger menu)
 exportSection.style.display = 'none';
@@ -832,10 +831,11 @@ connectButton.addEventListener('click', async () => {
         // Check for and subscribe to advanced power features if available
         try {
             const featureCharacteristic = await service.getCharacteristic(CYCLING_POWER_FEATURE_CHARACTERISTIC_UUID);
+            // eslint-disable-next-line no-unused-vars
             const features = await featureCharacteristic.readValue();
             // This value can be used to determine what the power meter supports,
             // but for now we just parse what's in the measurement characteristic.
-        } catch (e) {
+        } catch {
             // Cycling Power Feature characteristic not found
         }
 
@@ -1026,6 +1026,7 @@ function handlePowerMeasurement(event) {
 
     // The data is a DataView object with a flags field and the power value.
     // Ref: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.cycling_power_measurement.xml
+    // eslint-disable-next-line no-unused-vars
     const flags = value.getUint16(0, true);
     let offset = 2;
 
@@ -1046,7 +1047,9 @@ function handlePowerMeasurement(event) {
  * The data is a DataView object with a flags field and the power value.
  * The instantaneous power is a 16-bit signed integer starting at the 3rd byte (offset 2).
  * Ref: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.cycling_power_measurement.xml
+ * Currently unused but kept for potential future use.
  */
+// eslint-disable-next-line no-unused-vars
 function parsePowerMeasurement(value) {
     // The first 2 bytes are flags. The next 2 bytes are the instantaneous power.
     // The power value is a signed 16-bit integer (sint16)
@@ -1075,7 +1078,8 @@ function onDisconnected() {
 
 const heartData = [];
 const cadenceData = [];
-let hrDataLoggerInterval = null;
+// eslint-disable-next-line no-unused-vars
+let hrDataLoggerInterval = null; // Reserved for future HR data logging functionality
 
 const hrConnectButton = document.getElementById('hrConnectButton');
 const hrStatusText = document.getElementById('hrStatus');
@@ -1164,7 +1168,6 @@ function onDisconnectedHr() {
 }
 
 const speedCadenceConnectButton = document.getElementById('speedCadenceConnectButton');
-const cadenceValueElement = document.getElementById('cadence-value');
 const cadenceStatusText = document.getElementById('cadenceStatus');
 const cadenceDeviceName = document.getElementById('cadenceDeviceName');
 let speedCadenceBluetoothDevice = null;
