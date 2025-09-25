@@ -1,120 +1,3 @@
-// Strava Integration Configuration
-// Client ID is now configurable from the web interface and stored in browser
-// SECURITY: This uses OAuth implicit flow - secure for client-side apps
-// No client secret needed (and shouldn't be in frontend code!)
-// For production apps, consider using a backend proxy for enhanced security
-
-// Get Strava Client ID from localStorage or return null if not configured
-function getStravaClientId() {
-    return localStorage.getItem('stravaClientId');
-}
-
-// Set Strava Client ID in localStorage
-function setStravaClientId(clientId) {
-    localStorage.setItem('stravaClientId', clientId);
-}
-
-// Show Strava configuration dialog
-function showStravaConfigDialog() {
-    return new Promise((resolve) => {
-        // Create modal backdrop
-        const backdrop = document.createElement('div');
-        backdrop.className = 'modal-backdrop';
-
-        // Create modal dialog
-        const modal = document.createElement('div');
-        modal.className = 'modal strava-config-modal';
-
-        modal.innerHTML = `
-            <h3>🚴 Configure Strava Integration</h3>
-            <div class="config-instructions">
-                <p><strong>To enable Strava sync functionality:</strong></p>
-                <ol>
-                    <li>Go to <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">https://www.strava.com/settings/api</a></li>
-                    <li>Click "Create & Manage Your App"</li>
-                    <li>Fill in the required information:
-                        <ul>
-                            <li><strong>Application Name:</strong> Your app name (e.g., "Power Meter")</li>
-                            <li><strong>Category:</strong> Choose appropriate category</li>
-                            <li><strong>Website:</strong> Your website URL</li>
-                            <li><strong>Authorization Callback Domain:</strong> <code>${window.location.hostname}</code></li>
-                        </ul>
-                    </li>
-                    <li>After creating the app, copy your <strong>Client ID</strong> and paste it below</li>
-                </ol>
-            </div>
-            <div class="config-input">
-                <label for="clientIdInput">Strava Client ID:</label>
-                <input type="text" id="clientIdInput" placeholder="Enter your Strava Client ID" />
-                <div class="input-hint">This will be stored securely in your browser</div>
-            </div>
-            <div class="modal-buttons">
-                <button id="cancelConfig" class="modal-button secondary">Cancel</button>
-                <button id="saveConfig" class="modal-button primary">Save & Connect</button>
-            </div>
-        `;
-
-        backdrop.appendChild(modal);
-        document.body.appendChild(backdrop);
-
-        const clientIdInput = modal.querySelector('#clientIdInput');
-        const saveButton = modal.querySelector('#saveConfig');
-        const cancelButton = modal.querySelector('#cancelConfig');
-
-        // Focus on input
-        clientIdInput.focus();
-
-        // Handle save button
-        saveButton.addEventListener('click', () => {
-            const clientId = clientIdInput.value.trim();
-            if (!clientId) {
-                alert('Please enter a valid Client ID');
-                return;
-            }
-
-            // Validate that it looks like a client ID (should be numeric)
-            if (!/^\d+$/.test(clientId)) {
-                alert('Client ID should be a numeric value');
-                return;
-            }
-
-            setStravaClientId(clientId);
-            document.body.removeChild(backdrop);
-            resolve(clientId);
-        });
-
-        // Handle cancel button
-        cancelButton.addEventListener('click', () => {
-            document.body.removeChild(backdrop);
-            resolve(null);
-        });
-
-        // Handle Enter key in input
-        clientIdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                saveButton.click();
-            }
-        });
-
-        // Handle Escape key
-        document.addEventListener('keydown', function escapeHandler(e) {
-            if (e.key === 'Escape') {
-                document.removeEventListener('keydown', escapeHandler);
-                document.body.removeChild(backdrop);
-                resolve(null);
-            }
-        });
-
-        // Handle backdrop click
-        backdrop.addEventListener('click', (e) => {
-            if (e.target === backdrop) {
-                document.body.removeChild(backdrop);
-                resolve(null);
-            }
-        });
-    });
-}
-
 // Screen Wake Lock
 let wakeLock = null;
 
@@ -304,6 +187,279 @@ function generateTcxString(powerData) {
     return rawXml;
 }
 
+// Summary Image Generation Functions
+/**
+ * Generates a comprehensive summary image with power averages and timeline charts
+ * @returns {Promise<HTMLCanvasElement>} Canvas containing the summary image
+ */
+async function generateSummaryImage() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Calculate required height based on available data
+    let requiredHeight = 200; // Base height for title and headers
+
+    // Add height for power averages if available
+    if (Object.values(powerAverages).some(avg => avg.current > 0 || avg.best > 0)) {
+        requiredHeight += 200;
+    }
+
+    // Add height for each chart
+    const singleChartHeight = 350;
+    if (powerData.length > 0) requiredHeight += singleChartHeight;
+    if (heartData.length > 0) requiredHeight += singleChartHeight;
+    if (cadenceData.length > 0) requiredHeight += singleChartHeight;
+
+    // Set canvas size for high resolution export
+    const width = 1200;
+    const height = Math.max(600, requiredHeight);
+    canvas.width = width;
+    canvas.height = height;
+
+    // Set background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, width, height);
+
+    // Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Power Meter Summary', width / 2, 50);
+
+    // Date and time
+    ctx.font = '18px Arial, sans-serif';
+    ctx.fillStyle = '#cccccc';
+    const now = new Date();
+    ctx.fillText(now.toLocaleDateString() + ' ' + now.toLocaleTimeString(), width / 2, 80);
+
+    // Session duration
+    if (sessionStartTime && powerData.length > 0) {
+        const sessionEnd = powerData[powerData.length - 1].timestamp;
+        const duration = Math.round((sessionEnd - sessionStartTime) / 1000 / 60); // minutes
+        ctx.fillText(`Session Duration: ${duration} minutes`, width / 2, 105);
+    }
+
+    let yOffset = 130;
+
+    // Power Averages Section
+    if (Object.values(powerAverages).some(avg => avg.current > 0 || avg.best > 0)) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px Arial, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Power Averages', 50, yOffset);
+        yOffset += 40;
+
+        const avgData = [
+            { label: '10s', data: powerAverages['10s'] },
+            { label: '30s', data: powerAverages['30s'] },
+            { label: '1m', data: powerAverages['1m'] },
+            { label: '2m', data: powerAverages['2m'] },
+            { label: '4m', data: powerAverages['4m'] },
+            { label: '8m', data: powerAverages['8m'] }
+        ];
+
+        // Draw power averages table
+        ctx.font = '16px Arial, sans-serif';
+        ctx.fillStyle = '#cccccc';
+        ctx.fillText('Duration', 70, yOffset);
+        ctx.fillText('Current', 200, yOffset);
+        ctx.fillText('Best', 320, yOffset);
+        ctx.fillText('Duration', 470, yOffset);
+        ctx.fillText('Current', 600, yOffset);
+        ctx.fillText('Best', 720, yOffset);
+        yOffset += 30;
+
+        // Draw averages in two columns
+        for (let i = 0; i < avgData.length; i++) {
+            const avg = avgData[i];
+            const xBase = i < 3 ? 70 : 470;
+            const row = i < 3 ? i : i - 3;
+            const y = yOffset + row * 25;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(avg.label, xBase, y);
+            ctx.fillStyle = avg.data.current > 0 ? '#3498db' : '#666666';
+            ctx.fillText(avg.data.current + 'W', xBase + 130, y);
+            ctx.fillStyle = avg.data.best > 0 ? '#e74c3c' : '#666666';
+            ctx.fillText(avg.data.best + 'W', xBase + 250, y);
+        }
+
+        yOffset += 100;
+    }
+
+    // If no data is available, show a message
+    const hasData = powerData.length > 0 || heartData.length > 0 || cadenceData.length > 0;
+    if (!hasData) {
+        ctx.fillStyle = '#cccccc';
+        ctx.font = '24px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data recorded yet', width / 2, height / 2);
+        ctx.font = '16px Arial, sans-serif';
+        ctx.fillText('Start recording to see your activity summary', width / 2, height / 2 + 40);
+        return canvas;
+    }
+
+    // Charts section
+    const chartHeight = 300;
+    const chartWidth = width - 100;
+    const chartStartX = 50;
+
+    // Power Chart
+    if (powerData.length > 0) {
+        yOffset += 20;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px Arial, sans-serif';
+        ctx.fillText('Power Timeline', chartStartX, yOffset);
+        yOffset += 30;
+
+        drawTimelineChart(ctx, powerData, 'power', chartStartX, yOffset, chartWidth, chartHeight, '#3498db', 'W');
+        yOffset += chartHeight + 50;
+    }
+
+    // Heart Rate Chart
+    if (heartData.length > 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px Arial, sans-serif';
+        ctx.fillText('Heart Rate Timeline', chartStartX, yOffset);
+        yOffset += 30;
+
+        drawTimelineChart(ctx, heartData, 'heartRate', chartStartX, yOffset, chartWidth, chartHeight, '#e74c3c', 'BPM');
+        yOffset += chartHeight + 50;
+    }
+
+    // Cadence Chart
+    if (cadenceData.length > 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px Arial, sans-serif';
+        ctx.fillText('Cadence Timeline', chartStartX, yOffset);
+        yOffset += 30;
+
+        drawTimelineChart(ctx, cadenceData, 'cadence', chartStartX, yOffset, chartWidth, chartHeight, '#f39c12', 'RPM');
+        yOffset += chartHeight + 50;
+    }
+
+    return canvas;
+}
+
+/**
+ * Draws a timeline chart for the given data
+ */
+function drawTimelineChart(ctx, data, valueKey, x, y, width, height, color, unit) {
+    if (data.length === 0) return;
+
+    // Draw chart background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(x, y, width, height);
+
+    // Draw border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, width, height);
+
+    // Find min/max values for scaling
+    const values = data.map(d => d[valueKey]).filter(v => v > 0);
+    if (values.length === 0) return;
+
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const range = maxValue - minValue || 1;
+
+    // Draw Y-axis labels
+    ctx.fillStyle = '#cccccc';
+    ctx.font = '12px Arial, sans-serif';
+    ctx.textAlign = 'right';
+
+    for (let i = 0; i <= 4; i++) {
+        const value = Math.round(minValue + (range * i / 4));
+        const labelY = y + height - (height * i / 4);
+        ctx.fillText(value + unit, x - 10, labelY + 4);
+    }
+
+    // Draw chart line
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    let firstPoint = true;
+    for (let i = 0; i < data.length; i++) {
+        const point = data[i];
+        const value = point[valueKey];
+
+        if (value > 0) {
+            const chartX = x + (i / (data.length - 1)) * width;
+            const chartY = y + height - ((value - minValue) / range) * height;
+
+            if (firstPoint) {
+                ctx.moveTo(chartX, chartY);
+                firstPoint = false;
+            } else {
+                ctx.lineTo(chartX, chartY);
+            }
+        }
+    }
+
+    ctx.stroke();
+
+    // Draw data points
+    ctx.fillStyle = color;
+    for (let i = 0; i < data.length; i += Math.max(1, Math.floor(data.length / 50))) {
+        const point = data[i];
+        const value = point[valueKey];
+
+        if (value > 0) {
+            const chartX = x + (i / (data.length - 1)) * width;
+            const chartY = y + height - ((value - minValue) / range) * height;
+
+            ctx.beginPath();
+            ctx.arc(chartX, chartY, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+
+    // Draw grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+
+    // Horizontal grid lines
+    for (let i = 1; i < 4; i++) {
+        const gridY = y + (height * i / 4);
+        ctx.beginPath();
+        ctx.moveTo(x, gridY);
+        ctx.lineTo(x + width, gridY);
+        ctx.stroke();
+    }
+
+    // Add time axis labels
+    if (data.length > 1) {
+        ctx.fillStyle = '#cccccc';
+        ctx.font = '12px Arial, sans-serif';
+        ctx.textAlign = 'center';
+
+        const startTime = new Date(data[0].timestamp);
+        const endTime = new Date(data[data.length - 1].timestamp);
+
+        // Start time
+        ctx.fillText(startTime.toLocaleTimeString(), x, y + height + 20);
+
+        // End time
+        ctx.fillText(endTime.toLocaleTimeString(), x + width, y + height + 20);
+
+        // Middle time if session is long enough
+        if (data.length > 10) {
+            const middleTime = new Date(data[Math.floor(data.length / 2)].timestamp);
+            ctx.fillText(middleTime.toLocaleTimeString(), x + width / 2, y + height + 20);
+        }
+    }
+
+    // Add min/max annotations
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Max: ${maxValue}${unit}`, x + 10, y + 20);
+    ctx.fillText(`Min: ${minValue}${unit}`, x + 10, y + 35);
+    ctx.fillText(`Avg: ${Math.round(values.reduce((a, b) => a + b, 0) / values.length)}${unit}`, x + 10, y + 50);
+}
+
 // Data Persistence Functions
 const SESSION_STORAGE_KEY = 'powerMeterSession';
 const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -474,7 +630,7 @@ const exportCsvButton = document.getElementById('exportCsvButton');
 const exportTcxButton = document.getElementById('exportTcxButton');
 const exportRawJsonButton = document.getElementById('exportRawJsonButton');
 const exportRawCsvButton = document.getElementById('exportRawCsvButton');
-const syncToStravaButton = document.getElementById('syncToStravaButton');
+const exportImageButton = document.getElementById('exportImageButton');
 const clearSessionButton = document.getElementById('clearSessionButton');
 
 // Power averages elements
@@ -509,7 +665,7 @@ const heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
 const cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
 const connectSectionToggle = document.getElementById('connectSectionToggle');
 const exportSectionToggle = document.getElementById('exportSectionToggle');
-const stravaSettingsMenuItem = document.getElementById('stravaSettingsMenuItem');
+const loadDebugDataMenuItem = document.getElementById('loadDebugDataMenuItem');
 
 // Metric card elements
 const powerCard = document.querySelector('.power-card');
@@ -688,6 +844,19 @@ if (exportSectionToggle && exportSection) {
     });
 }
 
+// Debug data functionality
+if (loadDebugDataMenuItem) {
+    loadDebugDataMenuItem.addEventListener('click', function () {
+        loadDebugData();
+        // Close the menu after loading debug data
+        if (menuDropdown) {
+            menuDropdown.classList.remove('active');
+        }
+    });
+} else {
+    console.error('Load debug data menu item not found');
+}
+
 // Toggle functionality for connect section
 toggleConnectSection.addEventListener('click', () => {
     const connectButtons = connectSection.querySelectorAll('button:not(.section-toggle-button)');
@@ -730,19 +899,6 @@ toggleExportSection.addEventListener('click', () => {
     }
     // Don't call updateDashboardLayout for bottom controls
 });
-
-// Strava Settings Menu Item
-if (stravaSettingsMenuItem) {
-    stravaSettingsMenuItem.addEventListener('click', async () => {
-        await showStravaConfigDialog();
-        // Update button status after potential configuration change
-        updateStravaButtonStatus();
-        // Close the menu
-        menuDropdown.classList.remove('active');
-    });
-} else {
-    console.error('Strava settings menu item not found');
-}
 
 // Function to update dashboard layout based on visible sections
 function updateDashboardLayout() {
@@ -912,6 +1068,126 @@ function resetAllSessionData() {
 
     // Clear localStorage
     clearSessionData();
+}
+
+/**
+ * Load debug data with 1000 data points for testing
+ */
+function loadDebugData() {
+    console.log('Loading debug data...');
+
+    // Clear existing data first
+    resetAllSessionData();
+
+    // Set session start time to 1 hour ago
+    const now = Date.now();
+    sessionStartTime = now - (60 * 60 * 1000); // 1 hour ago
+
+    // Generate 1000 data points over 1 hour (one every 3.6 seconds)
+    const dataPointInterval = (60 * 60 * 1000) / 1000; // 3.6 seconds
+
+    for (let i = 0; i < 1000; i++) {
+        const timestamp = sessionStartTime + (i * dataPointInterval);
+
+        // Generate realistic power data (150-400W with some variation)
+        const basePower = 250;
+        const powerVariation = 150;
+        const powerNoise = (Math.random() - 0.5) * 50;
+        const powerWave = Math.sin(i / 100) * powerVariation;
+        const power = Math.max(0, Math.round(basePower + powerWave + powerNoise));
+
+        // Generate realistic heart rate data (120-180 BPM)
+        const baseHR = 150;
+        const hrVariation = 30;
+        const hrNoise = (Math.random() - 0.5) * 10;
+        const hrWave = Math.sin(i / 150) * hrVariation;
+        const heartRate = Math.max(60, Math.min(200, Math.round(baseHR + hrWave + hrNoise)));
+
+        // Generate realistic cadence data (70-110 RPM)
+        const baseCadence = 90;
+        const cadenceVariation = 20;
+        const cadenceNoise = (Math.random() - 0.5) * 8;
+        const cadenceWave = Math.sin(i / 80) * cadenceVariation;
+        const cadence = Math.max(0, Math.round(baseCadence + cadenceWave + cadenceNoise));
+
+        // Add to data arrays
+        powerData.push({ timestamp, power, heartRate, cadence });
+        heartData.push({ timestamp, heartRate });
+        cadenceData.push({ timestamp, cadence });
+
+        // Add power reading for averages calculation
+        powerReadings.push({ timestamp, power });
+
+        // Add raw measurement for TCX export
+        rawPowerMeasurements.push({
+            timestamp,
+            flags: 0,
+            rawBytes: '00 00 ' + power.toString(16).padStart(4, '0'),
+            dataLength: 4,
+            instantaneousPower: power
+        });
+    }
+
+    // Update last values to the most recent data point
+    const lastData = powerData[powerData.length - 1];
+    lastPowerValue = lastData.power;
+    lastHeartRateValue = lastData.heartRate;
+    lastCadenceValue = lastData.cadence;
+
+    // Calculate power averages for all the debug data
+    calculateAllPowerAverages();
+
+    // Update displays
+    powerValueElement.textContent = lastPowerValue;
+    hrValueElement.textContent = lastHeartRateValue;
+    cadenceValueElement.textContent = lastCadenceValue;
+    updatePowerAveragesDisplay();
+
+    // Save to localStorage
+    saveSessionData();
+
+    // Show success message
+    alert(`Debug data loaded successfully!\n1000 data points generated over 1 hour.\nPower: ${lastPowerValue}W, HR: ${lastHeartRateValue}BPM, Cadence: ${lastCadenceValue}RPM`);
+
+    console.log('Debug data loaded:', {
+        powerDataPoints: powerData.length,
+        heartDataPoints: heartData.length,
+        cadenceDataPoints: cadenceData.length
+    });
+}
+
+/**
+ * Calculate power averages for all periods based on current powerReadings
+ */
+function calculateAllPowerAverages() {
+    const periods = {
+        '10s': 10 * 1000,
+        '30s': 30 * 1000,
+        '1m': 60 * 1000,
+        '2m': 2 * 60 * 1000,
+        '4m': 4 * 60 * 1000,
+        '8m': 8 * 60 * 1000
+    };
+
+    const now = Date.now();
+
+    for (const [periodKey, duration] of Object.entries(periods)) {
+        const periodStart = now - duration;
+        const periodReadings = powerReadings.filter(reading => reading.timestamp >= periodStart);
+
+        if (periodReadings.length > 0) {
+            const averagePower = Math.round(
+                periodReadings.reduce((sum, reading) => sum + reading.power, 0) / periodReadings.length
+            );
+
+            powerAverages[periodKey].current = averagePower;
+
+            // Update best if this current average is better
+            if (averagePower > powerAverages[periodKey].best) {
+                powerAverages[periodKey].best = averagePower;
+            }
+        }
+    }
 }
 
 let lastHeartRateValue = 0;
@@ -1134,41 +1410,35 @@ exportTcxButton.addEventListener('click', () => {
     }
 });
 
-// Sync to Strava
-syncToStravaButton.addEventListener('click', async () => {
+// Export Summary Image
+exportImageButton.addEventListener('click', async () => {
     try {
-        if (powerData.length === 0) {
-            alert('No power data available to sync to Strava.');
+        if (powerData.length === 0 && heartData.length === 0 && cadenceData.length === 0) {
+            alert('No data available to export. Please record some activity first.');
             return;
         }
 
-        // Check if user is authenticated with Strava
-        const stravaAuth = getStravaAuthFromStorage();
-        if (!stravaAuth || !stravaAuth.access_token) {
-            // Redirect to Strava OAuth
-            await initiateStravaAuth();
-            return;
-        }
+        const canvas = await generateSummaryImage();
 
-        // Show loading state
-        syncToStravaButton.disabled = true;
-        syncToStravaButton.textContent = 'Syncing...';
-
-        // Generate TCX data for upload
-        const tcxContent = generateTcxString(powerData);
-
-        // Upload to Strava
-        await uploadToStrava(tcxContent, stravaAuth.access_token);
-
-        alert('Successfully synced to Strava!');
-
+        // Create download link
+        canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+            a.download = `power_meter_summary_${dateString}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
     } catch (error) {
-        console.error('Error syncing to Strava:', error);
-        alert(`Error syncing to Strava: ${error.message}`);
-    } finally {
-        // Reset button state
-        syncToStravaButton.disabled = false;
-        updateStravaButtonStatus();
+        console.error('Error generating summary image:', error);
+        alert(`Error generating summary image: ${error.message}`);
     }
 });
 
@@ -1513,128 +1783,6 @@ function showRestorationDialog(sessionData) {
     });
 }
 
-// Strava Integration Functions
-function getStravaAuthFromStorage() {
-    try {
-        const authData = localStorage.getItem('stravaAuth');
-        if (authData) {
-            const parsed = JSON.parse(authData);
-            // Check if token is expired (tokens typically last 6 hours)
-            if (parsed.expires_at && Date.now() > parsed.expires_at * 1000) {
-                localStorage.removeItem('stravaAuth');
-                return null;
-            }
-            return parsed;
-        }
-    } catch (error) {
-        console.error('Error reading Strava auth from storage:', error);
-    }
-    return null;
-}
-
-async function initiateStravaAuth() {
-    const clientId = getStravaClientId();
-
-    if (!clientId) {
-        // Show configuration dialog
-        const configuredClientId = await showStravaConfigDialog();
-        if (!configuredClientId) {
-            return; // User cancelled
-        }
-    }
-
-    // Get the client ID again (might have been just configured)
-    const finalClientId = getStravaClientId();
-
-    // Strava OAuth configuration using implicit flow (no client secret needed)
-    const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-    const scope = 'activity:write';
-
-    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${finalClientId}&response_type=token&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
-
-    // Store current state to return to after auth
-    localStorage.setItem('stravaAuthPending', 'true');
-
-    // Open Strava auth in new window
-    window.location.href = authUrl;
-}
-
-async function uploadToStrava(tcxContent, accessToken) {
-    try {
-        // Create a form data object for the file upload
-        const formData = new FormData();
-        const blob = new Blob([tcxContent], { type: 'application/xml' });
-        const now = new Date();
-        const filename = `power_data_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.tcx`;
-
-        formData.append('file', blob, filename);
-        formData.append('data_type', 'tcx');
-        formData.append('name', `Power Meter Session - ${now.toLocaleDateString()}`);
-        formData.append('description', 'Cycling session data from Web Bluetooth Power Meter');
-
-        const response = await fetch('https://www.strava.com/api/v3/uploads', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            },
-            body: formData
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to upload to Strava');
-        }
-
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Error uploading to Strava:', error);
-        throw error;
-    }
-}
-
-// Update Strava button text based on connection status
-function updateStravaButtonStatus() {
-    const syncToStravaButton = document.getElementById('syncToStravaButton');
-    if (!syncToStravaButton) return;
-
-    const stravaAuth = getStravaAuthFromStorage();
-    if (stravaAuth && stravaAuth.access_token) {
-        syncToStravaButton.textContent = '🚴 Sync to Strava';
-        syncToStravaButton.title = 'Connected to Strava - Click to sync your session';
-    } else {
-        syncToStravaButton.textContent = '🚴 Connect to Strava';
-        syncToStravaButton.title = 'Click to connect to Strava first';
-    }
-}
-
-// Check for Strava OAuth callback (implicit flow)
-function checkStravaCallback() {
-    // For implicit flow, token is in URL hash, not query params
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const expiresIn = hashParams.get('expires_in');
-    const scope = hashParams.get('scope');
-
-    if (accessToken && localStorage.getItem('stravaAuthPending')) {
-        // Store token data
-        const tokenData = {
-            access_token: accessToken,
-            expires_at: Math.floor(Date.now() / 1000) + parseInt(expiresIn || '21600'), // Default 6 hours
-            scope: scope
-        };
-
-        localStorage.setItem('stravaAuth', JSON.stringify(tokenData));
-        localStorage.removeItem('stravaAuthPending');
-
-        alert('Successfully connected to Strava!');
-        // Update button status
-        updateStravaButtonStatus();
-        // Clean up URL hash
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-}
-
 document.addEventListener('DOMContentLoaded', async function () {
     // Try to load previous session data
     const sessionData = loadSessionData();
@@ -1649,12 +1797,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     } else {
         sessionStartTime = Date.now();
     }
-
-    // Check for Strava callback on page load
-    checkStravaCallback();
-
-    // Update button status on page load
-    updateStravaButtonStatus();
 
     // Save session data when page is about to be closed/refreshed
     window.addEventListener('beforeunload', function () {
