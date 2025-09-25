@@ -436,6 +436,36 @@
             font-weight: 600;
         }
 
+        /* Info menu item specific styling */
+        #showInfoMenuItem {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+
+        #showInfoMenuItem:hover {
+            background: rgba(52, 152, 219, 0.2);
+        }
+
+        #showInfoMenuItem .menu-item-text {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        /* QR Code menu item specific styling */
+        #showQrCodeMenuItem {
+            background: rgba(155, 89, 182, 0.1);
+            border: 1px solid rgba(155, 89, 182, 0.3);
+        }
+
+        #showQrCodeMenuItem:hover {
+            background: rgba(155, 89, 182, 0.2);
+        }
+
+        #showQrCodeMenuItem .menu-item-text {
+            color: #9b59b6;
+            font-weight: 600;
+        }
+
         .menu-toggle {
             width: 40px;
             height: 20px;
@@ -1205,6 +1235,12 @@
             </div>
             <div class="menu-item" id="loadDebugDataMenuItem">
                 <span class="menu-item-text">🔧 Load Debug Data</span>
+            </div>
+            <div class="menu-item" id="showInfoMenuItem">
+                <span class="menu-item-text">ℹ️ App Info</span>
+            </div>
+            <div class="menu-item" id="showQrCodeMenuItem">
+                <span class="menu-item-text">📱 Share QR Code</span>
             </div>
         </div>
     </div>
