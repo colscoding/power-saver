@@ -1,1436 +1,1439 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Web Bluetooth Power Meter</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+      * {
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0c0c0c 100%);
-            color: #ffffff;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0c0c0c 100%);
+        color: #ffffff;
+      }
 
-        .dashboard {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
+      .dashboard {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
 
-        .header {
-            text-align: center;
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+      .header {
+        text-align: center;
+        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 20px;
+      }
+
+      .metric-card {
+        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, transparent 100%);
+      }
+
+      .power-card {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        --accent-color: #f39c12;
+      }
+
+      .hr-card {
+        grid-column: 2;
+        grid-row: 1;
+        --accent-color: #e74c3c;
+      }
+
+      .cadence-card {
+        grid-column: 3;
+        grid-row: 1;
+        --accent-color: #3498db;
+      }
+
+      .controls-container {
+        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+      }
+
+      h1 {
+        color: #f39c12;
+        margin: 0 0 1rem 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(45deg, #f39c12, #e67e22);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .metric-value {
+        font-size: clamp(4rem, 8vw, 6rem);
+        font-weight: 1000;
+        color: var(--accent-color, #ffffff);
+        line-height: 1;
+        margin-bottom: 0.1rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        text-align: center;
+      }
+
+      .power-card .metric-value {
+        font-size: clamp(6rem, 16vw, 12rem);
+      }
+
+      .metric-label {
+        font-size: 0.5rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .metric-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+      }
+
+      .metric-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+
+      .metric-unit {
+        font-size: 0.4rem;
+        color: #aaaaaa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+      }
+
+      .status-text {
+        margin-top: 1rem;
+        color: #bbbbbb;
+        font-style: italic;
+        font-size: 0.9rem;
+      }
+
+      .device-name {
+        margin-top: 0.5rem;
+        font-weight: 600;
+        color: var(--accent-color, #f39c12);
+        font-size: 0.9rem;
+      }
+
+      button {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        color: #121212;
+        font-weight: 600;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 8px;
+        box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      button:hover::before {
+        left: 100%;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(243, 156, 18, 0.4);
+      }
+
+      button:disabled {
+        background: #555;
+        color: #888;
+        cursor: not-allowed;
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      button:disabled::before {
+        display: none;
+      }
+
+      .export-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+      }
+
+      .export-buttons button {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        box-shadow: 0 4px 16px rgba(52, 152, 219, 0.3);
+      }
+
+      .export-buttons button:hover {
+        box-shadow: 0 8px 24px rgba(52, 152, 219, 0.4);
+      }
+
+      /* Export Image Button Specific Styling */
+      #exportImageButton {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%) !important;
+        box-shadow: 0 4px 16px rgba(230, 126, 34, 0.3) !important;
+        color: white !important;
+        font-weight: 600;
+        position: relative;
+      }
+
+      #exportImageButton:hover {
+        box-shadow: 0 8px 24px rgba(230, 126, 34, 0.4) !important;
+        transform: translateY(-2px);
+      }
+
+      #exportImageButton:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* Toggle Button Styles */
+      .toggle-controls {
+        text-align: center;
+        margin: 1rem 0;
+      }
+
+      .toggle-button {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        padding: 12px 20px;
+        min-width: 200px;
+        justify-content: center;
+      }
+
+      .toggle-button:hover {
+        box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
+        background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
+      }
+
+      .toggle-icon {
+        font-size: 12px;
+        transition: transform 0.3s ease;
+      }
+
+      .toggle-button.collapsed .toggle-icon {
+        transform: rotate(180deg);
+      }
+
+      /* Section Header Styles for integrated toggle buttons */
+      .section-header {
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 1rem;
+      }
+
+      .section-toggle-button {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        padding: 12px 20px;
+        min-width: 200px;
+        justify-content: center;
+        width: 100%;
+        border-radius: 12px;
+      }
+
+      .section-toggle-button:hover {
+        box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
+        background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
+      }
+
+      .section-toggle-button .toggle-icon {
+        font-size: 12px;
+        transition: transform 0.3s ease;
+      }
+
+      .section-toggle-button.collapsed .toggle-icon {
+        transform: rotate(180deg);
+      }
+
+      /* Bottom Controls Section */
+      .bottom-controls {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      /* Hamburger Menu Styles */
+      .hamburger-menu {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+
+      .hamburger-button {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
+        transition: all 0.3s ease;
+      }
+
+      .hamburger-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(243, 156, 18, 0.4);
+      }
+
+      .hamburger-icon {
+        display: flex;
+        flex-direction: column;
+        width: 20px;
+        height: 14px;
+        justify-content: space-between;
+      }
+
+      .hamburger-line {
+        width: 100%;
+        height: 2px;
+        background: #121212;
+        border-radius: 1px;
+        transition: all 0.3s ease;
+      }
+
+      .hamburger-button.active .hamburger-line:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+      }
+
+      .hamburger-button.active .hamburger-line:nth-child(2) {
+        opacity: 0;
+      }
+
+      .hamburger-button.active .hamburger-line:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -6px);
+      }
+
+      .menu-dropdown {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-width: 220px;
+        overflow: hidden;
+        transform: translateY(-10px);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .menu-dropdown.active {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .menu-item {
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        transition: background 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .menu-item:last-child {
+        border-bottom: none;
+      }
+
+      .menu-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .menu-item-text {
+        font-size: 14px;
+        color: #ffffff;
+        font-weight: 500;
+      }
+
+      /* Debug data menu item specific styling */
+      #loadDebugDataMenuItem {
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+      }
+
+      #loadDebugDataMenuItem:hover {
+        background: rgba(231, 76, 60, 0.2);
+      }
+
+      #loadDebugDataMenuItem .menu-item-text {
+        color: #e74c3c;
+        font-weight: 600;
+      }
+
+      /* Info menu item specific styling */
+      #showInfoMenuItem {
+        background: rgba(52, 152, 219, 0.1);
+        border: 1px solid rgba(52, 152, 219, 0.3);
+      }
+
+      #showInfoMenuItem:hover {
+        background: rgba(52, 152, 219, 0.2);
+      }
+
+      #showInfoMenuItem .menu-item-text {
+        color: #3498db;
+        font-weight: 600;
+      }
+
+      /* QR Code menu item specific styling */
+      #showQrCodeMenuItem {
+        background: rgba(155, 89, 182, 0.1);
+        border: 1px solid rgba(155, 89, 182, 0.3);
+      }
+
+      #showQrCodeMenuItem:hover {
+        background: rgba(155, 89, 182, 0.2);
+      }
+
+      #showQrCodeMenuItem .menu-item-text {
+        color: #9b59b6;
+        font-weight: 600;
+      }
+
+      .menu-toggle {
+        width: 40px;
+        height: 20px;
+        background: #555;
+        border-radius: 10px;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .menu-toggle.active {
+        background: #f39c12;
+      }
+
+      .menu-toggle-slider {
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.3s ease;
+      }
+
+      .menu-toggle.active .menu-toggle-slider {
+        transform: translateX(20px);
+      }
+
+      /* Collapsed section styles - reduce vertical space */
+      .controls-container.collapsed {
+        padding: 1rem 2rem;
+      }
+
+      .export-section.collapsed {
+        padding: 1rem 2rem;
+      }
+
+      .power-averages-section.collapsed {
+        padding: 1rem 2rem;
+      }
+
+      .section-header.collapsed {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+
+      /* Horizontal layout for collapsed sections */
+      .dashboard.has-collapsed-sections {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .collapsed-sections-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .collapsed-sections-row .controls-container.collapsed,
+      .collapsed-sections-row .export-section.collapsed,
+      .collapsed-sections-row .power-averages-section.collapsed {
+        flex: 1;
+        min-width: 200px;
+        max-width: 300px;
+        margin-top: 0;
+        padding: 1rem;
+      }
+
+      .collapsed-sections-row .section-toggle-button {
+        min-width: auto;
+        width: 100%;
+        font-size: 12px;
+        padding: 10px 16px;
+      }
+
+      /* Collapsible Sections */
+      .controls-container,
+      .export-section {
+        transition: all 0.4s ease-in-out;
+        overflow: hidden;
+      }
+
+      .dashboard {
+        transition: all 0.4s ease-in-out;
+      }
+
+      .power-card .metric-value {
+        transition: font-size 0.4s ease-in-out;
+      }
+
+      .power-card {
+        transition: padding 0.4s ease-in-out;
+      }
+
+      .export-section {
+        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 1rem;
+      }
+
+      .export-section .export-buttons {
+        margin-top: 0;
+      }
+
+      /* Power Averages Section */
+      .power-averages-section {
+        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 1rem;
+      }
+
+      .averages-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.2rem;
+      }
+
+      .average-card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+      }
+
+      .average-label {
+        font-size: 1rem;
+        color: #f39c12;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .average-values {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .current-average,
+      .best-average {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .current-average {
+        border-left: 3px solid #3498db;
+      }
+
+      .best-average {
+        border-left: 3px solid #e74c3c;
+      }
+
+      .average-title {
+        font-size: 0.9rem;
+        color: #aaaaaa;
+        font-weight: 500;
+      }
+
+      .average-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0 0.5rem;
+      }
+
+      .average-unit {
+        font-size: 0.9rem;
+        color: #888888;
+        font-weight: 500;
+      }
+
+      /* Maximized power display when sections are hidden */
+      .dashboard.maximized .power-card .metric-value {
+        font-size: clamp(8rem, 20vw, 16rem);
+      }
+
+      .dashboard.maximized .power-card {
+        padding: 3rem;
+      }
+
+      .dashboard.maximized .metrics-grid {
+        gap: 30px;
+      }
+
+      .metric-box {
+        text-align: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .metric-box .value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+      }
+
+      .metric-box .label {
+        font-size: 0.8rem;
+        color: #aaaaaa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 1024px) {
         .metrics-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            grid-template-rows: auto auto;
-            gap: 20px;
-        }
-
-        .metric-card {
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, transparent 100%);
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto auto;
         }
 
         .power-card {
-            grid-column: 1;
-            grid-row: 1 / 3;
-            --accent-color: #f39c12;
+          grid-column: 1 / 3;
+          grid-row: 1;
         }
 
         .hr-card {
-            grid-column: 2;
-            grid-row: 1;
-            --accent-color: #e74c3c;
+          grid-column: 1;
+          grid-row: 2;
         }
 
         .cadence-card {
-            grid-column: 3;
-            grid-row: 1;
-            --accent-color: #3498db;
+          grid-column: 2;
+          grid-row: 2;
         }
 
+        .speed-card {
+          grid-column: 1;
+          grid-row: 3;
+        }
+
+        .distance-card {
+          grid-column: 2;
+          grid-row: 3;
+        }
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 12px;
+        }
+
+        .dashboard {
+          gap: 16px;
+        }
+
+        .metrics-grid {
+          grid-template-columns: 1fr;
+          grid-template-rows: repeat(3, auto);
+        }
+
+        .power-card,
+        .hr-card,
+        .cadence-card {
+          grid-column: 1;
+        }
+
+        .power-card {
+          grid-row: 1;
+        }
+
+        .hr-card {
+          grid-row: 2;
+        }
+
+        .cadence-card {
+          grid-row: 3;
+        }
+
+        .header,
+        .metric-card,
         .controls-container {
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
+          padding: 1.5rem;
         }
 
         h1 {
-            color: #f39c12;
-            margin: 0 0 1rem 0;
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(45deg, #f39c12, #e67e22);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+          font-size: 2rem;
         }
 
-        .metric-value {
-            font-size: clamp(4rem, 8vw, 6rem);
-            font-weight: 1000;
-            color: var(--accent-color, #ffffff);
-            line-height: 1;
-            margin-bottom: 0.1rem;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            text-align: center;
+        .advanced-metrics {
+          grid-template-columns: 1fr;
+          gap: 12px;
+          margin: 1rem 0;
+        }
+      }
+
+      /* Compact layout for very small screens */
+      @media (max-width: 400px) {
+        .metrics-grid {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+          gap: 12px;
         }
 
-        .power-card .metric-value {
-            font-size: clamp(6rem, 16vw, 12rem);
+        .power-card {
+          grid-column: 1 / 3;
+          grid-row: 1;
+        }
+
+        .hr-card {
+          grid-column: 1;
+          grid-row: 2;
+        }
+
+        .cadence-card {
+          grid-column: 2;
+          grid-row: 2;
+        }
+
+        .metric-card {
+          padding: 0.8rem;
+        }
+
+        .power-card {
+          padding: 1.2rem;
+        }
+      }
+
+      /* Tablet styles */
+      @media (max-width: 768px) and (min-width: 481px) {
+        .averages-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+        }
+
+        .average-card {
+          padding: 1rem;
+        }
+
+        .average-label {
+          font-size: 0.85rem;
+          margin-bottom: 0.6rem;
+        }
+
+        .average-value {
+          font-size: 1.2rem;
+        }
+
+        .average-title {
+          font-size: 0.75rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 8px;
+        }
+
+        .header,
+        .metric-card,
+        .controls-container {
+          padding: 1rem;
+        }
+
+        h1 {
+          font-size: 1.6rem;
+          margin: 0 0 0.5rem 0;
+        }
+
+        .metric-card {
+          padding: 1.2rem;
+          border-radius: 16px;
         }
 
         .metric-label {
-            font-size: 0.5rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-            line-height: 1.2;
-        }
-
-        .metric-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.8rem;
-        }
-
-        .metric-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.1rem;
+          font-size: 0.6rem;
         }
 
         .metric-unit {
-            font-size: 0.4rem;
-            color: #aaaaaa;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 500;
+          font-size: 0.5rem;
         }
 
-        .status-text {
-            margin-top: 1rem;
-            color: #bbbbbb;
-            font-style: italic;
-            font-size: 0.9rem;
+        .metric-row {
+          gap: 1rem;
         }
 
-        .device-name {
-            margin-top: 0.5rem;
-            font-weight: 600;
-            color: var(--accent-color, #f39c12);
-            font-size: 0.9rem;
+        .metric-box .value {
+          font-size: 1.4rem;
+        }
+
+        .metric-box .label {
+          font-size: 0.7rem;
         }
 
         button {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            color: #121212;
-            font-weight: 600;
-            border: none;
-            padding: 16px 32px;
-            border-radius: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 8px;
-            box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        button:hover::before {
-            left: 100%;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(243, 156, 18, 0.4);
-        }
-
-        button:disabled {
-            background: #555;
-            color: #888;
-            cursor: not-allowed;
-            transform: translateY(0);
-            box-shadow: none;
-        }
-
-        button:disabled::before {
-            display: none;
+          padding: 12px 24px;
+          font-size: 14px;
+          margin: 6px;
+          border-radius: 10px;
         }
 
         .export-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 1.5rem;
-        }
-
-        .export-buttons button {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            box-shadow: 0 4px 16px rgba(52, 152, 219, 0.3);
-        }
-
-        .export-buttons button:hover {
-            box-shadow: 0 8px 24px rgba(52, 152, 219, 0.4);
-        }
-
-        /* Export Image Button Specific Styling */
-        #exportImageButton {
-            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%) !important;
-            box-shadow: 0 4px 16px rgba(230, 126, 34, 0.3) !important;
-            color: white !important;
-            font-weight: 600;
-            position: relative;
-        }
-
-        #exportImageButton:hover {
-            box-shadow: 0 8px 24px rgba(230, 126, 34, 0.4) !important;
-            transform: translateY(-2px);
-        }
-
-        #exportImageButton:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Toggle Button Styles */
-        .toggle-controls {
-            text-align: center;
-            margin: 1rem 0;
+          flex-direction: column;
+          align-items: center;
         }
 
         .toggle-button {
-            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-            box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            padding: 12px 20px;
-            min-width: 200px;
-            justify-content: center;
-        }
-
-        .toggle-button:hover {
-            box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
-            background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
-        }
-
-        .toggle-icon {
-            font-size: 12px;
-            transition: transform 0.3s ease;
-        }
-
-        .toggle-button.collapsed .toggle-icon {
-            transform: rotate(180deg);
-        }
-
-        /* Section Header Styles for integrated toggle buttons */
-        .section-header {
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 1rem;
+          font-size: 12px;
+          padding: 10px 16px;
+          min-width: 160px;
         }
 
         .section-toggle-button {
-            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-            box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            padding: 12px 20px;
-            min-width: 200px;
-            justify-content: center;
-            width: 100%;
-            border-radius: 12px;
+          font-size: 12px;
+          padding: 10px 16px;
+          min-width: 160px;
         }
 
-        .section-toggle-button:hover {
-            box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
-            background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
+        .section-header {
+          margin-bottom: 1rem;
+          padding-bottom: 0.75rem;
         }
 
-        .section-toggle-button .toggle-icon {
-            font-size: 12px;
-            transition: transform 0.3s ease;
-        }
-
-        .section-toggle-button.collapsed .toggle-icon {
-            transform: rotate(180deg);
-        }
-
-        /* Bottom Controls Section */
-        .bottom-controls {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        /* Hamburger Menu Styles */
-        .hamburger-menu {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-
-        .hamburger-button {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .hamburger-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(243, 156, 18, 0.4);
-        }
-
-        .hamburger-icon {
-            display: flex;
-            flex-direction: column;
-            width: 20px;
-            height: 14px;
-            justify-content: space-between;
-        }
-
-        .hamburger-line {
-            width: 100%;
-            height: 2px;
-            background: #121212;
-            border-radius: 1px;
-            transition: all 0.3s ease;
-        }
-
-        .hamburger-button.active .hamburger-line:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-
-        .hamburger-button.active .hamburger-line:nth-child(2) {
-            opacity: 0;
-        }
-
-        .hamburger-button.active .hamburger-line:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -6px);
-        }
-
-        .menu-dropdown {
-            position: absolute;
-            top: 60px;
-            right: 0;
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            min-width: 220px;
-            overflow: hidden;
-            transform: translateY(-10px);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .menu-dropdown.active {
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .menu-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            transition: background 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .menu-item:last-child {
-            border-bottom: none;
-        }
-
-        .menu-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .menu-item-text {
-            font-size: 14px;
-            color: #ffffff;
-            font-weight: 500;
-        }
-
-        /* Debug data menu item specific styling */
-        #loadDebugDataMenuItem {
-            background: rgba(231, 76, 60, 0.1);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-        }
-
-        #loadDebugDataMenuItem:hover {
-            background: rgba(231, 76, 60, 0.2);
-        }
-
-        #loadDebugDataMenuItem .menu-item-text {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-
-        /* Info menu item specific styling */
-        #showInfoMenuItem {
-            background: rgba(52, 152, 219, 0.1);
-            border: 1px solid rgba(52, 152, 219, 0.3);
-        }
-
-        #showInfoMenuItem:hover {
-            background: rgba(52, 152, 219, 0.2);
-        }
-
-        #showInfoMenuItem .menu-item-text {
-            color: #3498db;
-            font-weight: 600;
-        }
-
-        /* QR Code menu item specific styling */
-        #showQrCodeMenuItem {
-            background: rgba(155, 89, 182, 0.1);
-            border: 1px solid rgba(155, 89, 182, 0.3);
-        }
-
-        #showQrCodeMenuItem:hover {
-            background: rgba(155, 89, 182, 0.2);
-        }
-
-        #showQrCodeMenuItem .menu-item-text {
-            color: #9b59b6;
-            font-weight: 600;
-        }
-
-        .menu-toggle {
-            width: 40px;
-            height: 20px;
-            background: #555;
-            border-radius: 10px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .menu-toggle.active {
-            background: #f39c12;
-        }
-
-        .menu-toggle-slider {
-            width: 16px;
-            height: 16px;
-            background: #fff;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s ease;
-        }
-
-        .menu-toggle.active .menu-toggle-slider {
-            transform: translateX(20px);
-        }
-
-        /* Collapsed section styles - reduce vertical space */
+        /* Mobile collapsed section styles */
         .controls-container.collapsed {
-            padding: 1rem 2rem;
+          padding: 0.75rem 1rem;
         }
 
         .export-section.collapsed {
-            padding: 1rem 2rem;
+          padding: 0.75rem 1rem;
         }
 
         .power-averages-section.collapsed {
-            padding: 1rem 2rem;
+          padding: 0.75rem 1rem;
         }
 
         .section-header.collapsed {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
+          margin-bottom: 0;
+          padding-bottom: 0;
         }
 
-        /* Horizontal layout for collapsed sections */
-        .dashboard.has-collapsed-sections {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-
+        /* Mobile horizontal collapsed sections */
         .collapsed-sections-row {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
+          flex-direction: column;
+          gap: 0.5rem;
         }
 
         .collapsed-sections-row .controls-container.collapsed,
         .collapsed-sections-row .export-section.collapsed,
         .collapsed-sections-row .power-averages-section.collapsed {
-            flex: 1;
-            min-width: 200px;
-            max-width: 300px;
-            margin-top: 0;
-            padding: 1rem;
+          flex: none;
+          min-width: auto;
+          max-width: none;
+          padding: 0.5rem;
         }
 
         .collapsed-sections-row .section-toggle-button {
-            min-width: auto;
-            width: 100%;
-            font-size: 12px;
-            padding: 10px 16px;
+          font-size: 11px;
+          padding: 8px 12px;
         }
 
-        /* Collapsible Sections */
-        .controls-container,
-        .export-section {
-            transition: all 0.4s ease-in-out;
-            overflow: hidden;
+        .dashboard.maximized .power-card .metric-value {
+          font-size: clamp(6rem, 18vw, 12rem);
         }
 
-        .dashboard {
-            transition: all 0.4s ease-in-out;
+        .status-text {
+          font-size: 0.8rem;
+          margin-top: 0.5rem;
         }
 
-        .power-card .metric-value {
-            transition: font-size 0.4s ease-in-out;
-        }
-
-        .power-card {
-            transition: padding 0.4s ease-in-out;
-        }
-
-        .export-section {
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 1rem;
-        }
-
-        .export-section .export-buttons {
-            margin-top: 0;
-        }
-
-        /* Power Averages Section */
-        .power-averages-section {
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 1rem;
+        .device-name {
+          font-size: 0.8rem;
+          margin-top: 0.3rem;
         }
 
         .averages-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.2rem;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.75rem;
+          margin: 0 -0.5rem;
         }
 
         .average-card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 1.5rem;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
+          padding: 0.75rem;
+          border-radius: 12px;
         }
 
         .average-label {
-            font-size: 1rem;
-            color: #f39c12;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+          font-size: 0.8rem;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
         }
 
         .average-values {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
         }
 
         .current-average,
         .best-average {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.5rem;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .current-average {
-            border-left: 3px solid #3498db;
-        }
-
-        .best-average {
-            border-left: 3px solid #e74c3c;
-        }
-
-        .average-title {
-            font-size: 0.9rem;
-            color: #aaaaaa;
-            font-weight: 500;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
 
         .average-value {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0 0.5rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+
+        .average-title {
+          font-size: 0.7rem;
+          flex: 1;
         }
 
         .average-unit {
-            font-size: 0.9rem;
-            color: #888888;
-            font-weight: 500;
+          font-size: 0.7rem;
+          margin-left: 0.25rem;
+        }
+      }
+
+      /* Loading and Animation States */
+      .metric-value.loading {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
 
-        /* Maximized power display when sections are hidden */
-        .dashboard.maximized .power-card .metric-value {
-            font-size: clamp(8rem, 20vw, 16rem);
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      .metric-card.connected::before {
+        background: linear-gradient(
+          90deg,
+          var(--accent-color, #f39c12) 0%,
+          rgba(255, 255, 255, 0.3) 100%
+        );
+        animation: glow 3s ease-in-out infinite;
+      }
+
+      @keyframes glow {
+        0%,
+        100% {
+          opacity: 1;
         }
 
-        .dashboard.maximized .power-card {
-            padding: 3rem;
+        50% {
+          opacity: 0.7;
         }
+      }
 
-        .dashboard.maximized .metrics-grid {
-            gap: 30px;
+      .status-indicator {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #666;
+        transition: all 0.3s ease;
+      }
+
+      .status-indicator.connected {
+        background: #27ae60;
+        box-shadow: 0 0 12px rgba(39, 174, 96, 0.5);
+      }
+
+      .status-indicator.connecting {
+        background: #f39c12;
+        animation: pulse 1s ease-in-out infinite;
+      }
+
+      /* Improved scrollbar for webkit browsers */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      /* Focus states for accessibility */
+      button:focus {
+        outline: 2px solid var(--accent-color, #f39c12);
+        outline-offset: 2px;
+      }
+
+      /* Status text inside button styling */
+      button .status-text {
+        margin-top: 0.5rem;
+        color: rgba(18, 18, 18, 0.7);
+        font-style: italic;
+        font-size: 0.8rem;
+        font-weight: 400;
+      }
+
+      button:disabled .status-text {
+        color: rgba(136, 136, 136, 0.8);
+      }
+
+      /* Device name inside button styling */
+      button .device-name {
+        margin-top: 0.3rem;
+        color: rgba(18, 18, 18, 0.8);
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      button:disabled .device-name {
+        color: rgba(136, 136, 136, 0.9);
+      }
+
+      /* Dark mode enhancements */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
         }
-
-        .metric-box {
-            text-align: center;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .metric-box .value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.5rem;
-        }
-
-        .metric-box .label {
-            font-size: 0.8rem;
-            color: #aaaaaa;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .metrics-grid {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto;
-            }
-
-            .power-card {
-                grid-column: 1 / 3;
-                grid-row: 1;
-            }
-
-            .hr-card {
-                grid-column: 1;
-                grid-row: 2;
-            }
-
-            .cadence-card {
-                grid-column: 2;
-                grid-row: 2;
-            }
-
-            .speed-card {
-                grid-column: 1;
-                grid-row: 3;
-            }
-
-            .distance-card {
-                grid-column: 2;
-                grid-row: 3;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 12px;
-            }
-
-            .dashboard {
-                gap: 16px;
-            }
-
-            .metrics-grid {
-                grid-template-columns: 1fr;
-                grid-template-rows: repeat(3, auto);
-            }
-
-            .power-card,
-            .hr-card,
-            .cadence-card {
-                grid-column: 1;
-            }
-
-            .power-card {
-                grid-row: 1;
-            }
-
-            .hr-card {
-                grid-row: 2;
-            }
-
-            .cadence-card {
-                grid-row: 3;
-            }
-
-            .header,
-            .metric-card,
-            .controls-container {
-                padding: 1.5rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .advanced-metrics {
-                grid-template-columns: 1fr;
-                gap: 12px;
-                margin: 1rem 0;
-            }
-        }
-
-        /* Compact layout for very small screens */
-        @media (max-width: 400px) {
-            .metrics-grid {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto;
-                gap: 12px;
-            }
-
-            .power-card {
-                grid-column: 1 / 3;
-                grid-row: 1;
-            }
-
-            .hr-card {
-                grid-column: 1;
-                grid-row: 2;
-            }
-
-            .cadence-card {
-                grid-column: 2;
-                grid-row: 2;
-            }
-
-            .metric-card {
-                padding: 0.8rem;
-            }
-
-            .power-card {
-                padding: 1.2rem;
-            }
-        }
-
-        /* Tablet styles */
-        @media (max-width: 768px) and (min-width: 481px) {
-            .averages-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
-            }
-
-            .average-card {
-                padding: 1rem;
-            }
-
-            .average-label {
-                font-size: 0.85rem;
-                margin-bottom: 0.6rem;
-            }
-
-            .average-value {
-                font-size: 1.2rem;
-            }
-
-            .average-title {
-                font-size: 0.75rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 8px;
-            }
-
-            .header,
-            .metric-card,
-            .controls-container {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 1.6rem;
-                margin: 0 0 0.5rem 0;
-            }
-
-            .metric-card {
-                padding: 1.2rem;
-                border-radius: 16px;
-            }
-
-            .metric-label {
-                font-size: 0.6rem;
-            }
-
-            .metric-unit {
-                font-size: 0.5rem;
-            }
-
-            .metric-row {
-                gap: 1rem;
-            }
-
-            .metric-box .value {
-                font-size: 1.4rem;
-            }
-
-            .metric-box .label {
-                font-size: 0.7rem;
-            }
-
-            button {
-                padding: 12px 24px;
-                font-size: 14px;
-                margin: 6px;
-                border-radius: 10px;
-            }
-
-            .export-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .toggle-button {
-                font-size: 12px;
-                padding: 10px 16px;
-                min-width: 160px;
-            }
-
-            .section-toggle-button {
-                font-size: 12px;
-                padding: 10px 16px;
-                min-width: 160px;
-            }
-
-            .section-header {
-                margin-bottom: 1rem;
-                padding-bottom: 0.75rem;
-            }
-
-            /* Mobile collapsed section styles */
-            .controls-container.collapsed {
-                padding: 0.75rem 1rem;
-            }
-
-            .export-section.collapsed {
-                padding: 0.75rem 1rem;
-            }
-
-            .power-averages-section.collapsed {
-                padding: 0.75rem 1rem;
-            }
-
-            .section-header.collapsed {
-                margin-bottom: 0;
-                padding-bottom: 0;
-            }
-
-            /* Mobile horizontal collapsed sections */
-            .collapsed-sections-row {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .collapsed-sections-row .controls-container.collapsed,
-            .collapsed-sections-row .export-section.collapsed,
-            .collapsed-sections-row .power-averages-section.collapsed {
-                flex: none;
-                min-width: auto;
-                max-width: none;
-                padding: 0.5rem;
-            }
-
-            .collapsed-sections-row .section-toggle-button {
-                font-size: 11px;
-                padding: 8px 12px;
-            }
-
-            .dashboard.maximized .power-card .metric-value {
-                font-size: clamp(6rem, 18vw, 12rem);
-            }
-
-            .status-text {
-                font-size: 0.8rem;
-                margin-top: 0.5rem;
-            }
-
-            .device-name {
-                font-size: 0.8rem;
-                margin-top: 0.3rem;
-            }
-
-            .averages-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.75rem;
-                margin: 0 -0.5rem;
-            }
-
-            .average-card {
-                padding: 0.75rem;
-                border-radius: 12px;
-            }
-
-            .average-label {
-                font-size: 0.8rem;
-                margin-bottom: 0.5rem;
-                font-weight: 500;
-            }
-
-            .average-values {
-                display: flex;
-                flex-direction: column;
-                gap: 0.25rem;
-            }
-
-            .current-average,
-            .best-average {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .average-value {
-                font-size: 1.1rem;
-                font-weight: 600;
-            }
-
-            .average-title {
-                font-size: 0.7rem;
-                flex: 1;
-            }
-
-            .average-unit {
-                font-size: 0.7rem;
-                margin-left: 0.25rem;
-            }
-        }
-
-        /* Loading and Animation States */
-        .metric-value.loading {
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-        }
-
-        .metric-card.connected::before {
-            background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, rgba(255, 255, 255, 0.3) 100%);
-            animation: glow 3s ease-in-out infinite;
-        }
-
-        @keyframes glow {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
-        }
-
-        .status-indicator {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #666;
-            transition: all 0.3s ease;
-        }
-
-        .status-indicator.connected {
-            background: #27ae60;
-            box-shadow: 0 0 12px rgba(39, 174, 96, 0.5);
-        }
-
-        .status-indicator.connecting {
-            background: #f39c12;
-            animation: pulse 1s ease-in-out infinite;
-        }
-
-        /* Improved scrollbar for webkit browsers */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        /* Focus states for accessibility */
-        button:focus {
-            outline: 2px solid var(--accent-color, #f39c12);
-            outline-offset: 2px;
-        }
-
-        /* Status text inside button styling */
-        button .status-text {
-            margin-top: 0.5rem;
-            color: rgba(18, 18, 18, 0.7);
-            font-style: italic;
-            font-size: 0.8rem;
-            font-weight: 400;
-        }
-
-        button:disabled .status-text {
-            color: rgba(136, 136, 136, 0.8);
-        }
-
-        /* Device name inside button styling */
-        button .device-name {
-            margin-top: 0.3rem;
-            color: rgba(18, 18, 18, 0.8);
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        button:disabled .device-name {
-            color: rgba(136, 136, 136, 0.9);
-        }
-
-        /* Dark mode enhancements */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
-            }
-        }
-
-        /* Modal Styles */
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal {
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            border-radius: 16px;
-            padding: 32px;
-            max-width: 500px;
-            margin: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        .modal h3 {
-            margin: 0 0 16px 0;
-            color: #ffffff;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .modal p {
-            margin: 0 0 16px 0;
-            color: #cccccc;
-            line-height: 1.5;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 24px;
-        }
-
-        .modal-button {
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            border: none;
-            font-size: 14px;
-        }
-
-        .modal-button.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-button.secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .modal-button.primary {
-            background: linear-gradient(135deg, #007acc 0%, #005a99 100%);
-            color: white;
-        }
-
-        .modal-button.primary:hover {
-            background: linear-gradient(135deg, #0088dd 0%, #0066aa 100%);
-            transform: translateY(-1px);
-        }
+      }
+
+      /* Modal Styles */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+      }
+
+      .modal {
+        background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 500px;
+        margin: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+
+      .modal h3 {
+        margin: 0 0 16px 0;
+        color: #ffffff;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .modal p {
+        margin: 0 0 16px 0;
+        color: #cccccc;
+        line-height: 1.5;
+      }
+
+      .modal-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+      }
+
+      .modal-button {
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        font-size: 14px;
+      }
+
+      .modal-button.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .modal-button.secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .modal-button.primary {
+        background: linear-gradient(135deg, #007acc 0%, #005a99 100%);
+        color: white;
+      }
+
+      .modal-button.primary:hover {
+        background: linear-gradient(135deg, #0088dd 0%, #0066aa 100%);
+        transform: translateY(-1px);
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <!-- Hamburger Menu -->
     <div class="hamburger-menu">
-        <button class="hamburger-button" id="hamburgerButton">
-            <div class="hamburger-icon">
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-            </div>
-        </button>
-        <div class="menu-dropdown" id="menuDropdown">
-            <div class="menu-item" id="togglePowerAveragesMenuItem">
-                <span class="menu-item-text">Power Averages</span>
-                <div class="menu-toggle" id="powerAveragesToggle">
-                    <div class="menu-toggle-slider"></div>
-                </div>
-            </div>
-            <div class="menu-item" id="togglePowerMetricMenuItem">
-                <span class="menu-item-text">Power Metric</span>
-                <div class="menu-toggle" id="powerMetricToggle">
-                    <div class="menu-toggle-slider"></div>
-                </div>
-            </div>
-            <div class="menu-item" id="toggleHeartRateMetricMenuItem">
-                <span class="menu-item-text">Heart Rate Metric</span>
-                <div class="menu-toggle" id="heartRateMetricToggle">
-                    <div class="menu-toggle-slider"></div>
-                </div>
-            </div>
-            <div class="menu-item" id="toggleCadenceMetricMenuItem">
-                <span class="menu-item-text">Cadence Metric</span>
-                <div class="menu-toggle" id="cadenceMetricToggle">
-                    <div class="menu-toggle-slider"></div>
-                </div>
-            </div>
-            <div class="menu-item" id="toggleConnectSectionMenuItem">
-                <span class="menu-item-text">Connect Devices</span>
-                <div class="menu-toggle" id="connectSectionToggle">
-                    <div class="menu-toggle-slider"></div>
-                </div>
-            </div>
-            <div class="menu-item" id="toggleExportSectionMenuItem">
-                <span class="menu-item-text">Export Data</span>
-                <div class="menu-toggle" id="exportSectionToggle">
-                    <div class="menu-toggle-slider"></div>
-                </div>
-            </div>
-            <div class="menu-item" id="loadDebugDataMenuItem">
-                <span class="menu-item-text">🔧 Load Debug Data</span>
-            </div>
-            <div class="menu-item" id="showInfoMenuItem">
-                <span class="menu-item-text">ℹ️ App Info</span>
-            </div>
-            <div class="menu-item" id="showQrCodeMenuItem">
-                <span class="menu-item-text">📱 Share QR Code</span>
-            </div>
+      <button class="hamburger-button" id="hamburgerButton">
+        <div class="hamburger-icon">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
         </div>
+      </button>
+      <div class="menu-dropdown" id="menuDropdown">
+        <div class="menu-item" id="togglePowerAveragesMenuItem">
+          <span class="menu-item-text">Power Averages</span>
+          <div class="menu-toggle" id="powerAveragesToggle">
+            <div class="menu-toggle-slider"></div>
+          </div>
+        </div>
+        <div class="menu-item" id="togglePowerMetricMenuItem">
+          <span class="menu-item-text">Power Metric</span>
+          <div class="menu-toggle" id="powerMetricToggle">
+            <div class="menu-toggle-slider"></div>
+          </div>
+        </div>
+        <div class="menu-item" id="toggleHeartRateMetricMenuItem">
+          <span class="menu-item-text">Heart Rate Metric</span>
+          <div class="menu-toggle" id="heartRateMetricToggle">
+            <div class="menu-toggle-slider"></div>
+          </div>
+        </div>
+        <div class="menu-item" id="toggleCadenceMetricMenuItem">
+          <span class="menu-item-text">Cadence Metric</span>
+          <div class="menu-toggle" id="cadenceMetricToggle">
+            <div class="menu-toggle-slider"></div>
+          </div>
+        </div>
+        <div class="menu-item" id="toggleConnectSectionMenuItem">
+          <span class="menu-item-text">Connect Devices</span>
+          <div class="menu-toggle" id="connectSectionToggle">
+            <div class="menu-toggle-slider"></div>
+          </div>
+        </div>
+        <div class="menu-item" id="toggleExportSectionMenuItem">
+          <span class="menu-item-text">Export Data</span>
+          <div class="menu-toggle" id="exportSectionToggle">
+            <div class="menu-toggle-slider"></div>
+          </div>
+        </div>
+        <div class="menu-item" id="loadDebugDataMenuItem">
+          <span class="menu-item-text">🔧 Load Debug Data</span>
+        </div>
+        <div class="menu-item" id="showInfoMenuItem">
+          <span class="menu-item-text">ℹ️ App Info</span>
+        </div>
+        <div class="menu-item" id="showQrCodeMenuItem">
+          <span class="menu-item-text">📱 Share QR Code</span>
+        </div>
+      </div>
     </div>
 
     <div class="dashboard">
-        <div class="metrics-grid">
-            <div class="metric-card power-card">
-                <div class="status-indicator" id="power-status-indicator"></div>
-                <div class="metric-row">
-                    <div class="metric-value" id="power-value">--</div>
-                    <div class="metric-info">
-                        <div class="metric-label">Power Output</div>
-                        <div class="metric-unit">Watts</div>
-                    </div>
-                </div>
+      <div class="metrics-grid">
+        <div class="metric-card power-card">
+          <div class="status-indicator" id="power-status-indicator"></div>
+          <div class="metric-row">
+            <div class="metric-value" id="power-value">--</div>
+            <div class="metric-info">
+              <div class="metric-label">Power Output</div>
+              <div class="metric-unit">Watts</div>
             </div>
-
-            <div class="metric-card hr-card">
-                <div class="status-indicator" id="hr-status-indicator"></div>
-                <div class="metric-row">
-                    <div class="metric-value" id="hr-value">--</div>
-                    <div class="metric-info">
-                        <div class="metric-label">Heart Rate</div>
-                        <div class="metric-unit">BPM</div>
-                    </div>
-                </div>
-                <div class="status-text" id="hrStatus" style="display: none;"></div>
-            </div>
-
-            <div class="metric-card cadence-card">
-                <div class="status-indicator" id="cadence-status-indicator"></div>
-                <div class="metric-row">
-                    <div class="metric-value" id="cadence-value">--</div>
-                    <div class="metric-info">
-                        <div class="metric-label">Cadence</div>
-                        <div class="metric-unit">RPM</div>
-                    </div>
-                </div>
-                <div class="status-text" id="cadenceStatus" style="display: none;"></div>
-            </div>
+          </div>
         </div>
+
+        <div class="metric-card hr-card">
+          <div class="status-indicator" id="hr-status-indicator"></div>
+          <div class="metric-row">
+            <div class="metric-value" id="hr-value">--</div>
+            <div class="metric-info">
+              <div class="metric-label">Heart Rate</div>
+              <div class="metric-unit">BPM</div>
+            </div>
+          </div>
+          <div class="status-text" id="hrStatus" style="display: none"></div>
+        </div>
+
+        <div class="metric-card cadence-card">
+          <div class="status-indicator" id="cadence-status-indicator"></div>
+          <div class="metric-row">
+            <div class="metric-value" id="cadence-value">--</div>
+            <div class="metric-info">
+              <div class="metric-label">Cadence</div>
+              <div class="metric-unit">RPM</div>
+            </div>
+          </div>
+          <div class="status-text" id="cadenceStatus" style="display: none"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Power Averages Section -->
-    <div class="power-averages-section" id="powerAveragesSection" style="display: none;">
-        <div class="averages-grid">
-            <div class="average-card">
-                <div class="average-label">10 Second Average</div>
-                <div class="average-values">
-                    <div class="current-average">
-                        <span class="average-title">Current:</span>
-                        <span class="average-value" id="avg10s-current">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                    <div class="best-average">
-                        <span class="average-title">Best:</span>
-                        <span class="average-value" id="avg10s-best">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                </div>
+    <div class="power-averages-section" id="powerAveragesSection" style="display: none">
+      <div class="averages-grid">
+        <div class="average-card">
+          <div class="average-label">10 Second Average</div>
+          <div class="average-values">
+            <div class="current-average">
+              <span class="average-title">Current:</span>
+              <span class="average-value" id="avg10s-current">--</span>
+              <span class="average-unit">W</span>
             </div>
-            <div class="average-card">
-                <div class="average-label">30 Second Average</div>
-                <div class="average-values">
-                    <div class="current-average">
-                        <span class="average-title">Current:</span>
-                        <span class="average-value" id="avg30s-current">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                    <div class="best-average">
-                        <span class="average-title">Best:</span>
-                        <span class="average-value" id="avg30s-best">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                </div>
+            <div class="best-average">
+              <span class="average-title">Best:</span>
+              <span class="average-value" id="avg10s-best">--</span>
+              <span class="average-unit">W</span>
             </div>
-            <div class="average-card">
-                <div class="average-label">1 Minute Average</div>
-                <div class="average-values">
-                    <div class="current-average">
-                        <span class="average-title">Current:</span>
-                        <span class="average-value" id="avg1m-current">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                    <div class="best-average">
-                        <span class="average-title">Best:</span>
-                        <span class="average-value" id="avg1m-best">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                </div>
-            </div>
-            <div class="average-card">
-                <div class="average-label">2 Minute Average</div>
-                <div class="average-values">
-                    <div class="current-average">
-                        <span class="average-title">Current:</span>
-                        <span class="average-value" id="avg2m-current">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                    <div class="best-average">
-                        <span class="average-title">Best:</span>
-                        <span class="average-value" id="avg2m-best">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                </div>
-            </div>
-            <div class="average-card">
-                <div class="average-label">4 Minute Average</div>
-                <div class="average-values">
-                    <div class="current-average">
-                        <span class="average-title">Current:</span>
-                        <span class="average-value" id="avg4m-current">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                    <div class="best-average">
-                        <span class="average-title">Best:</span>
-                        <span class="average-value" id="avg4m-best">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                </div>
-            </div>
-            <div class="average-card">
-                <div class="average-label">8 Minute Average</div>
-                <div class="average-values">
-                    <div class="current-average">
-                        <span class="average-title">Current:</span>
-                        <span class="average-value" id="avg8m-current">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                    <div class="best-average">
-                        <span class="average-title">Best:</span>
-                        <span class="average-value" id="avg8m-best">--</span>
-                        <span class="average-unit">W</span>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
+        <div class="average-card">
+          <div class="average-label">30 Second Average</div>
+          <div class="average-values">
+            <div class="current-average">
+              <span class="average-title">Current:</span>
+              <span class="average-value" id="avg30s-current">--</span>
+              <span class="average-unit">W</span>
+            </div>
+            <div class="best-average">
+              <span class="average-title">Best:</span>
+              <span class="average-value" id="avg30s-best">--</span>
+              <span class="average-unit">W</span>
+            </div>
+          </div>
+        </div>
+        <div class="average-card">
+          <div class="average-label">1 Minute Average</div>
+          <div class="average-values">
+            <div class="current-average">
+              <span class="average-title">Current:</span>
+              <span class="average-value" id="avg1m-current">--</span>
+              <span class="average-unit">W</span>
+            </div>
+            <div class="best-average">
+              <span class="average-title">Best:</span>
+              <span class="average-value" id="avg1m-best">--</span>
+              <span class="average-unit">W</span>
+            </div>
+          </div>
+        </div>
+        <div class="average-card">
+          <div class="average-label">2 Minute Average</div>
+          <div class="average-values">
+            <div class="current-average">
+              <span class="average-title">Current:</span>
+              <span class="average-value" id="avg2m-current">--</span>
+              <span class="average-unit">W</span>
+            </div>
+            <div class="best-average">
+              <span class="average-title">Best:</span>
+              <span class="average-value" id="avg2m-best">--</span>
+              <span class="average-unit">W</span>
+            </div>
+          </div>
+        </div>
+        <div class="average-card">
+          <div class="average-label">4 Minute Average</div>
+          <div class="average-values">
+            <div class="current-average">
+              <span class="average-title">Current:</span>
+              <span class="average-value" id="avg4m-current">--</span>
+              <span class="average-unit">W</span>
+            </div>
+            <div class="best-average">
+              <span class="average-title">Best:</span>
+              <span class="average-value" id="avg4m-best">--</span>
+              <span class="average-unit">W</span>
+            </div>
+          </div>
+        </div>
+        <div class="average-card">
+          <div class="average-label">8 Minute Average</div>
+          <div class="average-values">
+            <div class="current-average">
+              <span class="average-title">Current:</span>
+              <span class="average-value" id="avg8m-current">--</span>
+              <span class="average-unit">W</span>
+            </div>
+            <div class="best-average">
+              <span class="average-title">Best:</span>
+              <span class="average-value" id="avg8m-best">--</span>
+              <span class="average-unit">W</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
-
 
     <!-- Bottom Controls - Always Visible -->
     <div class="bottom-controls">
-        <!-- Connect Controls Section -->
-        <div class="controls-container" id="connectSection">
-            <div class="section-header">
-                <button id="toggleConnectSection" class="section-toggle-button">
-                    <span id="connectToggleText">Hide Connect Devices</span>
-                    <span class="toggle-icon">▲</span>
-                </button>
-            </div>
-            <button id="connectButton">
-                Connect Power Meter
-                <div class="status-text" id="status">Disconnected</div>
-                <div class="device-name" id="device-name" style="display: none;"></div>
-            </button>
-            <button id="hrConnectButton">
-                Connect Heart Rate Monitor
-                <div class="device-name" id="hrDeviceName" style="display: none;"></div>
-            </button>
-            <button id="speedCadenceConnectButton">
-                Connect Speed & Cadence
-                <div class="device-name" id="cadenceDeviceName" style="display: none;"></div>
-            </button>
+      <!-- Connect Controls Section -->
+      <div class="controls-container" id="connectSection">
+        <div class="section-header">
+          <button id="toggleConnectSection" class="section-toggle-button">
+            <span id="connectToggleText">Hide Connect Devices</span>
+            <span class="toggle-icon">▲</span>
+          </button>
         </div>
+        <button id="connectButton">
+          Connect Power Meter
+          <div class="status-text" id="status">Disconnected</div>
+          <div class="device-name" id="device-name" style="display: none"></div>
+        </button>
+        <button id="hrConnectButton">
+          Connect Heart Rate Monitor
+          <div class="device-name" id="hrDeviceName" style="display: none"></div>
+        </button>
+        <button id="speedCadenceConnectButton">
+          Connect Speed & Cadence
+          <div class="device-name" id="cadenceDeviceName" style="display: none"></div>
+        </button>
+      </div>
 
-        <!-- Export Controls Section -->
-        <div class="export-section" id="exportSection" style="display: none;">
-            <div class="section-header">
-                <button id="toggleExportSection" class="section-toggle-button">
-                    <span id="exportToggleText">Hide Export Data</span>
-                    <span class="toggle-icon">▲</span>
-                </button>
-            </div>
-            <div class="export-buttons" id="export-buttons">
-                <button id="exportJsonButton">Export Summary JSON</button>
-                <button id="exportCsvButton">Export Summary CSV</button>
-                <button id="exportTcxButton">Export TCX</button>
-                <button id="exportRawJsonButton">Export Raw Measurements JSON</button>
-                <button id="exportRawCsvButton">Export Raw Measurements CSV</button>
-                <button id="exportImageButton"
-                    style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); color: white;">📊 Export
-                    Summary Image</button>
-                <button id="clearSessionButton" style="background: #f44336; margin-top: 1rem;">Clear Session
-                    Data</button>
-            </div>
+      <!-- Export Controls Section -->
+      <div class="export-section" id="exportSection" style="display: none">
+        <div class="section-header">
+          <button id="toggleExportSection" class="section-toggle-button">
+            <span id="exportToggleText">Hide Export Data</span>
+            <span class="toggle-icon">▲</span>
+          </button>
         </div>
+        <div class="export-buttons" id="export-buttons">
+          <button id="exportJsonButton">Export Summary JSON</button>
+          <button id="exportCsvButton">Export Summary CSV</button>
+          <button id="exportTcxButton">Export TCX</button>
+          <button id="exportRawJsonButton">Export Raw Measurements JSON</button>
+          <button id="exportRawCsvButton">Export Raw Measurements CSV</button>
+          <button
+            id="exportImageButton"
+            style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); color: white"
+          >
+            📊 Export Summary Image
+          </button>
+          <button id="clearSessionButton" style="background: #f44336; margin-top: 1rem">
+            Clear Session Data
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
-</body>
-
+  </body>
 </html>
