@@ -1088,25 +1088,18 @@
       }
     }
 
-    .status-indicator {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #666;
-      transition: all 0.3s ease;
+    /* Connection status styling in buttons */
+    #hrConnectionStatus,
+    #cadenceConnectionStatus {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: rgba(18, 18, 18, 0.7);
     }
 
-    .status-indicator.connected {
-      background: #27ae60;
-      box-shadow: 0 0 12px rgba(39, 174, 96, 0.5);
-    }
-
-    .status-indicator.connecting {
-      background: #f39c12;
-      animation: pulse 1s ease-in-out infinite;
+    button:disabled #hrConnectionStatus,
+    button:disabled #cadenceConnectionStatus {
+      color: rgba(136, 136, 136, 0.8);
     }
 
     /* Improved scrollbar for webkit browsers */
@@ -1313,7 +1306,6 @@
   <div class="dashboard">
     <div class="metrics-grid">
       <div class="metric-card power-card">
-        <div class="status-indicator" id="power-status-indicator"></div>
         <div class="metric-row">
           <div class="metric-value" id="power-value">--</div>
           <div class="metric-info">
@@ -1324,7 +1316,6 @@
       </div>
 
       <div class="metric-card hr-card">
-        <div class="status-indicator" id="hr-status-indicator"></div>
         <div class="metric-row">
           <div class="metric-value" id="hr-value">--</div>
           <div class="metric-info">
@@ -1336,7 +1327,6 @@
       </div>
 
       <div class="metric-card cadence-card">
-        <div class="status-indicator" id="cadence-status-indicator"></div>
         <div class="metric-row">
           <div class="metric-value" id="cadence-value">--</div>
           <div class="metric-info">
@@ -1354,7 +1344,6 @@
   <div class="spy-mode-section" id="spyModeSection" style="display: none">
     <div class="spy-content">
       <div class="metric-card spy-card" title="Click to connect to spy power meter">
-        <div class="status-indicator" id="spy-status-indicator"></div>
         <div class="metric-row">
           <div class="metric-value" id="spy-value">--</div>
           <div class="metric-info">
@@ -1447,10 +1436,12 @@
       </button>
       <button id="hrConnectButton">
         Connect Heart Rate Monitor
+        <div class="status-text" id="hrConnectionStatus">Disconnected</div>
         <div class="device-name" id="hrDeviceName" style="display: none"></div>
       </button>
       <button id="speedCadenceConnectButton">
         Connect Speed & Cadence
+        <div class="status-text" id="cadenceConnectionStatus">Disconnected</div>
         <div class="device-name" id="cadenceDeviceName" style="display: none"></div>
       </button>
     </div>

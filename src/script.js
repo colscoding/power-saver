@@ -732,17 +732,13 @@ const cadenceCard = document.querySelector('.cadence-card');
 const spyCard = document.querySelector('.spy-card');
 const spyModeSection = document.getElementById('spyModeSection');
 
-// Status indicator elements
-const powerStatusIndicator = document.getElementById('power-status-indicator');
-const hrStatusIndicator = document.getElementById('hr-status-indicator');
-const cadenceStatusIndicator = document.getElementById('cadence-status-indicator');
-const spyStatusIndicator = document.getElementById('spy-status-indicator');
+// Connection status elements on buttons
+const hrConnectionStatus = document.getElementById('hrConnectionStatus');
+const cadenceConnectionStatus = document.getElementById('cadenceConnectionStatus');
 
-// Initialize all status indicators to disconnected state
-powerStatusIndicator.className = 'status-indicator';
-hrStatusIndicator.className = 'status-indicator';
-cadenceStatusIndicator.className = 'status-indicator';
-spyStatusIndicator.className = 'status-indicator';
+// Initialize all connection status to disconnected state
+if (hrConnectionStatus) hrConnectionStatus.textContent = 'Disconnected';
+if (cadenceConnectionStatus) cadenceConnectionStatus.textContent = 'Disconnected';
 
 // Only add event listeners if elements exist
 if (hamburgerBtn && menuDropdown) {
@@ -1664,7 +1660,6 @@ connectButton.addEventListener('click', async () => {
 
   try {
     statusText.textContent = 'Scanning for power meters...';
-    powerStatusIndicator.className = 'status-indicator connecting';
 
     // Scan specifically for devices advertising the Cycling Power service
     powerMeterDevice = await navigator.bluetooth.requestDevice({
@@ -1705,7 +1700,6 @@ connectButton.addEventListener('click', async () => {
     characteristic.addEventListener('characteristicvaluechanged', handlePowerMeasurement);
 
     statusText.textContent = 'Connected and receiving data!';
-    powerStatusIndicator.className = 'status-indicator connected';
     connectButton.disabled = true;
 
     // Start session if this is the first connection
@@ -1731,7 +1725,6 @@ connectButton.addEventListener('click', async () => {
     }, 100);
   } catch (error) {
     statusText.textContent = `Error: ${error.message}`;
-    powerStatusIndicator.className = 'status-indicator';
     console.error('Connection failed:', error);
     if (powerMeterDevice) {
       powerMeterDevice.removeEventListener('gattserverdisconnected', onDisconnected);
@@ -1758,7 +1751,7 @@ async function connectToSpyMeter() {
     spyInstructionsElement.style.display = 'none';
     spyStatusElement.textContent = 'Scanning for spy power meter...';
     spyStatusElement.style.display = 'block';
-    spyStatusIndicator.className = 'status-indicator connecting';
+    // Connecting status handled by spyStatusElement
 
     // Scan for devices advertising the Cycling Power service
     spyMeterDevice = await navigator.bluetooth.requestDevice({
@@ -1786,10 +1779,10 @@ async function connectToSpyMeter() {
 
     spyStatusElement.textContent = 'Spy connected!';
     spyStatusElement.style.display = 'none';
-    spyStatusIndicator.className = 'status-indicator connected';
+    // Connected status handled by spyStatusElement
   } catch (error) {
     spyStatusElement.textContent = `Spy Error: ${error.message}`;
-    spyStatusIndicator.className = 'status-indicator';
+    // Error status handled by spyStatusElement
     console.error('Spy connection failed:', error);
     if (spyMeterDevice) {
       spyMeterDevice.removeEventListener('gattserverdisconnected', onSpyDisconnected);
@@ -1809,7 +1802,6 @@ function disconnectSpyMeter() {
   }
   spyMeterDevice = null;
   spyValueElement.textContent = '--';
-  spyStatusIndicator.className = 'status-indicator';
   spyStatusElement.style.display = 'none';
   spyInstructionsElement.style.display = 'block';
 }
@@ -1818,7 +1810,6 @@ function onSpyDisconnected() {
   console.log('Spy device disconnected');
   spyMeterDevice = null;
   spyValueElement.textContent = '--';
-  spyStatusIndicator.className = 'status-indicator';
   spyStatusElement.textContent = 'Spy disconnected';
   spyStatusElement.style.display = 'block';
   setTimeout(() => {
@@ -2057,7 +2048,7 @@ function parsePowerMeasurement(value) {
 
 function onDisconnected() {
   statusText.textContent = 'Device disconnected.';
-  powerStatusIndicator.className = 'status-indicator';
+  // Status handled by statusText element
   deviceNameElement.textContent = '';
   updatePowerValue('--');
   resetPowerAverages();
@@ -2094,7 +2085,7 @@ hrConnectButton.addEventListener('click', async () => {
 
   try {
     hrStatusText.textContent = 'Scanning for devices...';
-    hrStatusIndicator.className = 'status-indicator connecting';
+    if (hrConnectionStatus) hrConnectionStatus.textContent = 'Connecting...';
 
     // Filter for devices that advertise the 'heart_rate' service
     hrBluetoothDevice = await navigator.bluetooth.requestDevice({
@@ -2121,11 +2112,11 @@ hrConnectButton.addEventListener('click', async () => {
     hrCharacteristic.addEventListener('characteristicvaluechanged', handleHeartRateChanged);
 
     hrStatusText.textContent = 'Connected!';
-    hrStatusIndicator.className = 'status-indicator connected';
+    if (hrConnectionStatus) hrConnectionStatus.textContent = 'Connected';
     hrConnectButton.disabled = true;
   } catch (error) {
     hrStatusText.textContent = `Error: ${error.message}`;
-    hrStatusIndicator.className = 'status-indicator';
+    if (hrConnectionStatus) hrConnectionStatus.textContent = 'Connection Failed';
     console.error('Connection failed:', error);
   }
 });
@@ -2157,7 +2148,7 @@ function parseHeartRate(value) {
 
 function onDisconnectedHr() {
   hrStatusText.textContent = 'Device disconnected.';
-  hrStatusIndicator.className = 'status-indicator';
+  if (hrConnectionStatus) hrConnectionStatus.textContent = 'Disconnected';
   hrDeviceName.textContent = '';
   hrValue.textContent = '--';
   hrConnectButton.disabled = false;
@@ -2179,7 +2170,7 @@ speedCadenceConnectButton.addEventListener('click', async () => {
 
   try {
     cadenceStatusText.textContent = 'Scanning for sensors...';
-    cadenceStatusIndicator.className = 'status-indicator connecting';
+    if (cadenceConnectionStatus) cadenceConnectionStatus.textContent = 'Connecting...';
 
     // Reset cadence variables for clean start
     if (cadenceResetTimer) {
@@ -2214,11 +2205,11 @@ speedCadenceConnectButton.addEventListener('click', async () => {
     characteristic.addEventListener('characteristicvaluechanged', handleSpeedCadenceMeasurement);
 
     cadenceStatusText.textContent = 'Connected!';
-    cadenceStatusIndicator.className = 'status-indicator connected';
+    if (cadenceConnectionStatus) cadenceConnectionStatus.textContent = 'Connected';
     speedCadenceConnectButton.disabled = true;
   } catch (error) {
     cadenceStatusText.textContent = `Error: ${error.message}`;
-    cadenceStatusIndicator.className = 'status-indicator';
+    if (cadenceConnectionStatus) cadenceConnectionStatus.textContent = 'Connection Failed';
     console.error('Speed/Cadence connection failed:', error);
   }
 });
@@ -2272,7 +2263,7 @@ function handleSpeedCadenceMeasurement(event) {
 
 function onDisconnectedSpeedCadence() {
   cadenceStatusText.textContent = 'Device disconnected.';
-  cadenceStatusIndicator.className = 'status-indicator';
+  if (cadenceConnectionStatus) cadenceConnectionStatus.textContent = 'Disconnected';
   cadenceDeviceName.textContent = '';
   cadenceValueElement.textContent = '--';
   speedCadenceConnectButton.disabled = false;
