@@ -595,11 +595,20 @@ function restoreSessionData(sessionData) {
 }
 
 /**
+ * Helper function to update power value with enhanced styling
+ */
+function updatePowerValue(value) {
+  const displayValue = value || '--';
+  powerValueElement.textContent = displayValue;
+  powerValueElement.setAttribute('data-value', displayValue);
+}
+
+/**
  * Update displays after restoring session data
  */
 function updateDisplaysFromRestoredData() {
   // Update current metric values
-  powerValueElement.textContent = lastPowerValue || '--';
+  updatePowerValue(lastPowerValue);
   hrValueElement.textContent = lastHeartRateValue || '--';
   cadenceValueElement.textContent = lastCadenceValue || '--';
 
@@ -1135,7 +1144,7 @@ function resetAllSessionData() {
 
   // Update displays
   updatePowerAveragesDisplay();
-  powerValueElement.textContent = '--';
+  updatePowerValue('--');
   hrValueElement.textContent = '--';
   cadenceValueElement.textContent = '--';
 
@@ -1211,7 +1220,7 @@ function loadDebugData() {
   calculateAllPowerAverages();
 
   // Update displays
-  powerValueElement.textContent = lastPowerValue;
+  updatePowerValue(lastPowerValue);
   hrValueElement.textContent = lastHeartRateValue;
   cadenceValueElement.textContent = lastCadenceValue;
   updatePowerAveragesDisplay();
@@ -1874,7 +1883,7 @@ function handlePowerMeasurement(event) {
   // Power is always present
   const power = value.getInt16(offset, true);
   rawMeasurement.instantaneousPower = power;
-  powerValueElement.textContent = power;
+  updatePowerValue(power);
   lastPowerValue = power;
 
   // Add power reading to averaging calculations
@@ -1902,7 +1911,7 @@ function onDisconnected() {
   statusText.textContent = 'Device disconnected.';
   powerStatusIndicator.className = 'status-indicator';
   deviceNameElement.textContent = '';
-  powerValueElement.textContent = '--';
+  updatePowerValue('--');
   resetPowerAverages();
   connectButton.disabled = false;
   if (dataLoggerInterval) {
