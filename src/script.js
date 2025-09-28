@@ -723,21 +723,26 @@ const exportSectionToggle = document.getElementById('exportSectionToggle');
 const loadDebugDataMenuItem = document.getElementById('loadDebugDataMenuItem');
 const showInfoMenuItem = document.getElementById('showInfoMenuItem');
 const showQrCodeMenuItem = document.getElementById('showQrCodeMenuItem');
+const spyModeToggle = document.getElementById('spyModeToggle');
 
 // Metric card elements
 const powerCard = document.querySelector('.power-card');
 const heartRateCard = document.querySelector('.hr-card');
 const cadenceCard = document.querySelector('.cadence-card');
+const spyCard = document.querySelector('.spy-card');
+const spyModeSection = document.getElementById('spyModeSection');
 
 // Status indicator elements
 const powerStatusIndicator = document.getElementById('power-status-indicator');
 const hrStatusIndicator = document.getElementById('hr-status-indicator');
 const cadenceStatusIndicator = document.getElementById('cadence-status-indicator');
+const spyStatusIndicator = document.getElementById('spy-status-indicator');
 
 // Initialize all status indicators to disconnected state
 powerStatusIndicator.className = 'status-indicator';
 hrStatusIndicator.className = 'status-indicator';
 cadenceStatusIndicator.className = 'status-indicator';
+spyStatusIndicator.className = 'status-indicator';
 
 // Only add event listeners if elements exist
 if (hamburgerBtn && menuDropdown) {
@@ -898,6 +903,40 @@ if (exportSectionToggle && exportSection) {
   console.error('Export section toggle elements not found:', {
     exportSectionToggle: !!exportSectionToggle,
     exportSection: !!exportSection,
+  });
+}
+
+// Spy mode toggle via hamburger menu
+if (spyModeToggle && spyModeSection) {
+  let spyModeVisible = false; // Start hidden by default
+
+  spyModeToggle.addEventListener('click', function () {
+    spyModeVisible = !spyModeVisible;
+
+    if (spyModeVisible) {
+      spyModeSection.style.display = 'block';
+      spyModeToggle.classList.add('active');
+      // Make sure instructions are visible when first enabling spy mode
+      if (spyInstructionsElement) {
+        spyInstructionsElement.style.display = 'block';
+      }
+    } else {
+      spyModeSection.style.display = 'none';
+      spyModeToggle.classList.remove('active');
+      // Disconnect spy device if connected
+      if (spyMeterDevice) {
+        disconnectSpyMeter();
+      }
+      // Reset spy display elements
+      if (spyValueElement) spyValueElement.textContent = '--';
+      if (spyStatusElement) spyStatusElement.style.display = 'none';
+      if (spyInstructionsElement) spyInstructionsElement.style.display = 'block';
+    }
+  });
+} else {
+  console.error('Spy mode toggle elements not found:', {
+    spyModeToggle: !!spyModeToggle,
+    spyModeSection: !!spyModeSection,
   });
 }
 
@@ -1601,6 +1640,12 @@ const CYCLING_POWER_FEATURE_CHARACTERISTIC_UUID = 'cycling_power_feature';
 const CYCLING_CADENCE_SERVICE_UUID = 'cycling_speed_and_cadence';
 const CSC_MEASUREMENT_CHARACTERISTIC_UUID = 'csc_measurement';
 
+// Spy mode variables
+let spyMeterDevice = null;
+const spyValueElement = document.getElementById('spy-value');
+const spyStatusElement = document.getElementById('spyStatus');
+const spyInstructionsElement = document.getElementById('spyInstructions');
+
 connectButton.addEventListener('click', async () => {
   await requestWakeLock();
   if (!navigator.bluetooth) {
@@ -1693,6 +1738,109 @@ connectButton.addEventListener('click', async () => {
     }
   }
 });
+
+// Spy mode connection functionality
+spyCard.addEventListener('click', async () => {
+  if (!spyMeterDevice) {
+    await connectToSpyMeter();
+  } else {
+    disconnectSpyMeter();
+  }
+});
+
+async function connectToSpyMeter() {
+  if (!navigator.bluetooth) {
+    console.error('Web Bluetooth API is not available.');
+    return;
+  }
+
+  try {
+    spyInstructionsElement.style.display = 'none';
+    spyStatusElement.textContent = 'Scanning for spy power meter...';
+    spyStatusElement.style.display = 'block';
+    spyStatusIndicator.className = 'status-indicator connecting';
+
+    // Scan for devices advertising the Cycling Power service
+    spyMeterDevice = await navigator.bluetooth.requestDevice({
+      filters: [
+        {
+          services: [CYCLING_POWER_SERVICE_UUID],
+        },
+      ],
+    });
+
+    spyStatusElement.textContent = 'Connecting to spy device...';
+
+    spyMeterDevice.addEventListener('gattserverdisconnected', onSpyDisconnected);
+
+    const server = await spyMeterDevice.gatt.connect();
+    const service = await server.getPrimaryService(CYCLING_POWER_SERVICE_UUID);
+    const characteristic = await service.getCharacteristic(
+      CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID
+    );
+
+    // Subscribe to power measurement notifications
+    await characteristic.startNotifications();
+
+    characteristic.addEventListener('characteristicvaluechanged', handleSpyPowerMeasurement);
+
+    spyStatusElement.textContent = 'Spy connected!';
+    spyStatusElement.style.display = 'none';
+    spyStatusIndicator.className = 'status-indicator connected';
+  } catch (error) {
+    spyStatusElement.textContent = `Spy Error: ${error.message}`;
+    spyStatusIndicator.className = 'status-indicator';
+    console.error('Spy connection failed:', error);
+    if (spyMeterDevice) {
+      spyMeterDevice.removeEventListener('gattserverdisconnected', onSpyDisconnected);
+      spyMeterDevice = null;
+    }
+    // Show instructions again if connection failed
+    setTimeout(() => {
+      spyStatusElement.style.display = 'none';
+      spyInstructionsElement.style.display = 'block';
+    }, 3000);
+  }
+}
+
+function disconnectSpyMeter() {
+  if (spyMeterDevice && spyMeterDevice.gatt.connected) {
+    spyMeterDevice.gatt.disconnect();
+  }
+  spyMeterDevice = null;
+  spyValueElement.textContent = '--';
+  spyStatusIndicator.className = 'status-indicator';
+  spyStatusElement.style.display = 'none';
+  spyInstructionsElement.style.display = 'block';
+}
+
+function onSpyDisconnected() {
+  console.log('Spy device disconnected');
+  spyMeterDevice = null;
+  spyValueElement.textContent = '--';
+  spyStatusIndicator.className = 'status-indicator';
+  spyStatusElement.textContent = 'Spy disconnected';
+  spyStatusElement.style.display = 'block';
+  setTimeout(() => {
+    spyStatusElement.style.display = 'none';
+    spyInstructionsElement.style.display = 'block';
+  }, 3000);
+}
+
+function handleSpyPowerMeasurement(event) {
+  const value = event.target.value;
+  const data = new Uint8Array(value.buffer);
+
+  // Parse cycling power measurement data (same format as main power meter)
+  let instantaneousPower = 0;
+
+  if (data.length >= 4) {
+    // Read instantaneous power (16-bit unsigned integer, little endian)
+    instantaneousPower = data[2] + (data[3] << 8);
+  }
+
+  spyValueElement.textContent = instantaneousPower;
+}
 
 exportJsonButton.addEventListener('click', () => {
   const jsonString = JSON.stringify(powerData, null, 2);
