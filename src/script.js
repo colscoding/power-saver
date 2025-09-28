@@ -242,10 +242,12 @@ async function generateSummaryImage() {
   ctx.fillText(now.toLocaleDateString() + ' ' + now.toLocaleTimeString(), width / 2, 80);
 
   // Session duration
-  if (sessionStartTime && powerData.length > 0) {
+  if (powerData.length > 0) {
     const sessionEnd = powerData[powerData.length - 1].timestamp;
-    const duration = Math.round((sessionEnd - sessionStartTime) / 1000 / 60); // minutes
-    ctx.fillText(`Session Duration: ${duration} minutes`, width / 2, 105);
+    const sessionStart = powerData[0].timestamp;
+    const sessionSeconds = Math.round((sessionEnd - sessionStart) / 1000);
+    const durationMinutes = Math.round(sessionSeconds / 60); // minutes
+    ctx.fillText(`Session Duration: ${durationMinutes} minutes`, width / 2, 105);
   }
 
   let yOffset = 130;
@@ -271,11 +273,9 @@ async function generateSummaryImage() {
     ctx.font = '16px Arial, sans-serif';
     ctx.fillStyle = '#cccccc';
     ctx.fillText('Duration', 70, yOffset);
-    ctx.fillText('Current', 200, yOffset);
-    ctx.fillText('Best', 320, yOffset);
+    ctx.fillText('Best', 220, yOffset);
     ctx.fillText('Duration', 470, yOffset);
-    ctx.fillText('Current', 600, yOffset);
-    ctx.fillText('Best', 720, yOffset);
+    ctx.fillText('Best', 620, yOffset);
     yOffset += 30;
 
     // Draw averages in two columns
@@ -287,10 +287,8 @@ async function generateSummaryImage() {
 
       ctx.fillStyle = '#ffffff';
       ctx.fillText(avg.label, xBase, y);
-      ctx.fillStyle = avg.data.current > 0 ? '#3498db' : '#666666';
-      ctx.fillText(avg.data.current + 'W', xBase + 130, y);
       ctx.fillStyle = avg.data.best > 0 ? '#e74c3c' : '#666666';
-      ctx.fillText(avg.data.best + 'W', xBase + 250, y);
+      ctx.fillText(avg.data.best + 'W', xBase + 150, y);
     }
 
     yOffset += 100;
