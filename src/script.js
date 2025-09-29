@@ -201,7 +201,11 @@ function generateTcxString(powerData) {
  * Generates a comprehensive summary image with power averages and timeline charts
  * @returns {Promise<HTMLCanvasElement>} Canvas containing the summary image
  */
-async function generateSummaryImage() {
+async function generateSummaryImage(dataPoints) {
+  const hrDataPoints = dataPoints.filter((d) => d.heartRate !== undefined);
+  const cadenceDataPoints = dataPoints.filter((d) => d.cadence !== undefined);
+  const powerDataPoints = dataPoints.filter((d) => d.power !== undefined);
+
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
@@ -213,11 +217,21 @@ async function generateSummaryImage() {
     requiredHeight += 200;
   }
 
+  // Add height for heart rate statistics if available
+  if (hrDataPoints.length > 0 && hrDataPoints.some(d => d.heartRate > 0)) {
+    requiredHeight += 140;
+  }
+
+  // Add height for cadence statistics if available
+  if (cadenceDataPoints.length > 0 && cadenceDataPoints.some(d => d.cadence > 0)) {
+    requiredHeight += 140;
+  }
+
   // Add height for each chart
   const singleChartHeight = 350;
-  if (powerData.length > 0) requiredHeight += singleChartHeight;
-  if (heartData.length > 0) requiredHeight += singleChartHeight;
-  if (cadenceData.length > 0) requiredHeight += singleChartHeight;
+  if (powerDataPoints.length > 0) requiredHeight += singleChartHeight;
+  if (hrDataPoints.length > 0) requiredHeight += singleChartHeight;
+  if (cadenceDataPoints.length > 0) requiredHeight += singleChartHeight;
 
   // Set canvas size for high resolution export
   const width = 1200;
@@ -242,9 +256,9 @@ async function generateSummaryImage() {
   ctx.fillText(now.toLocaleDateString() + ' ' + now.toLocaleTimeString(), width / 2, 80);
 
   // Session duration
-  if (powerData.length > 0) {
-    const sessionEnd = powerData[powerData.length - 1].timestamp;
-    const sessionStart = powerData[0].timestamp;
+  if (powerDataPoints.length > 0) {
+    const sessionEnd = powerDataPoints[powerDataPoints.length - 1].timestamp;
+    const sessionStart = powerDataPoints[0].timestamp;
     const sessionSeconds = Math.round((sessionEnd - sessionStart) / 1000);
     const durationMinutes = Math.round(sessionSeconds / 60); // minutes
     ctx.fillText(`Session Duration: ${durationMinutes} minutes`, width / 2, 105);
@@ -294,8 +308,78 @@ async function generateSummaryImage() {
     yOffset += 100;
   }
 
+  // Heart Rate Statistics Section
+  if (hrDataPoints.length > 0) {
+    const heartRates = hrDataPoints.map(d => d.heartRate).filter(hr => hr > 0);
+    if (heartRates.length > 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Heart Rate Statistics', 50, yOffset);
+      yOffset += 40;
+
+      const maxHR = Math.max(...heartRates);
+      const minHR = Math.min(...heartRates);
+      const avgHR = Math.round(heartRates.reduce((a, b) => a + b, 0) / heartRates.length);
+
+      ctx.font = '16px Arial, sans-serif';
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText('Average:', 70, yOffset);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillText(`${avgHR} BPM`, 200, yOffset);
+      yOffset += 25;
+
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText('Maximum:', 70, yOffset);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillText(`${maxHR} BPM`, 200, yOffset);
+      yOffset += 25;
+
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText('Minimum:', 70, yOffset);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillText(`${minHR} BPM`, 200, yOffset);
+      yOffset += 40;
+    }
+  }
+
+  // Cadence Statistics Section
+  if (cadenceDataPoints.length > 0) {
+    const cadences = cadenceDataPoints.map(d => d.cadence).filter(cad => cad > 0);
+    if (cadences.length > 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Cadence Statistics', 50, yOffset);
+      yOffset += 40;
+
+      const maxCadence = Math.max(...cadences);
+      const minCadence = Math.min(...cadences);
+      const avgCadence = Math.round(cadences.reduce((a, b) => a + b, 0) / cadences.length);
+
+      ctx.font = '16px Arial, sans-serif';
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText('Average:', 70, yOffset);
+      ctx.fillStyle = '#f39c12';
+      ctx.fillText(`${avgCadence} RPM`, 200, yOffset);
+      yOffset += 25;
+
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText('Maximum:', 70, yOffset);
+      ctx.fillStyle = '#f39c12';
+      ctx.fillText(`${maxCadence} RPM`, 200, yOffset);
+      yOffset += 25;
+
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText('Minimum:', 70, yOffset);
+      ctx.fillStyle = '#f39c12';
+      ctx.fillText(`${minCadence} RPM`, 200, yOffset);
+      yOffset += 40;
+    }
+  }
+
   // If no data is available, show a message
-  const hasData = powerData.length > 0 || heartData.length > 0 || cadenceData.length > 0;
+  const hasData = powerDataPoints.length > 0 || hrDataPoints.length > 0 || cadenceDataPoints.length > 0;
   if (!hasData) {
     ctx.fillStyle = '#cccccc';
     ctx.font = '24px Arial, sans-serif';
@@ -312,7 +396,7 @@ async function generateSummaryImage() {
   const chartStartX = 50;
 
   // Power Chart
-  if (powerData.length > 0) {
+  if (powerDataPoints.length > 0) {
     yOffset += 20;
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px Arial, sans-serif';
@@ -321,7 +405,7 @@ async function generateSummaryImage() {
 
     drawTimelineChart(
       ctx,
-      powerData,
+      powerDataPoints,
       'power',
       chartStartX,
       yOffset,
@@ -334,7 +418,7 @@ async function generateSummaryImage() {
   }
 
   // Heart Rate Chart
-  if (heartData.length > 0) {
+  if (hrDataPoints.length > 0) {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px Arial, sans-serif';
     ctx.fillText('Heart Rate Timeline', chartStartX, yOffset);
@@ -342,7 +426,7 @@ async function generateSummaryImage() {
 
     drawTimelineChart(
       ctx,
-      heartData,
+      hrDataPoints,
       'heartRate',
       chartStartX,
       yOffset,
@@ -355,7 +439,7 @@ async function generateSummaryImage() {
   }
 
   // Cadence Chart
-  if (cadenceData.length > 0) {
+  if (cadenceDataPoints.length > 0) {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px Arial, sans-serif';
     ctx.fillText('Cadence Timeline', chartStartX, yOffset);
@@ -363,7 +447,7 @@ async function generateSummaryImage() {
 
     drawTimelineChart(
       ctx,
-      cadenceData,
+      cadenceDataPoints,
       'cadence',
       chartStartX,
       yOffset,
@@ -1959,12 +2043,12 @@ exportTcxButton.addEventListener('click', () => {
 // Export Summary Image
 exportImageButton.addEventListener('click', async () => {
   try {
-    if (powerData.length === 0 && heartData.length === 0 && cadenceData.length === 0) {
+    if (powerData.length === 0) {
       alert('No data available to export. Please record some activity first.');
       return;
     }
 
-    const canvas = await generateSummaryImage();
+    const canvas = await generateSummaryImage(powerData);
 
     // Create download link
     canvas.toBlob((blob) => {
