@@ -1,14 +1,32 @@
 /**
- * Tests for Bluetooth data parsing functions
+ * Bluetooth Data Parsing Tests
+ * 
+ * Tests for parsing binary data from Bluetooth characteristics.
+ * Covers power measurement and heart rate data parsing functionality.
+ * 
+ * @requires jest
+ * @requires DataView mock (from setup.js)
  */
 
-// Import the functions we want to test
-// Since the original script.js doesn't export functions, we'll copy them here for testing
+/* ==========================================================================
+   Data Parsing Functions Under Test
+   ========================================================================== */
+
+/**
+ * Parse power measurement data from Bluetooth characteristic
+ * @param {DataView} value - DataView containing power measurement data
+ * @returns {number} Instantaneous power in watts
+ */
 function parsePowerMeasurement(value) {
   const instantaneousPower = value.getInt16(2, true);
   return instantaneousPower;
 }
 
+/**
+ * Parse heart rate data from Bluetooth characteristic
+ * @param {DataView} value - DataView containing heart rate data
+ * @returns {number} Heart rate in beats per minute
+ */
 function parseHeartRate(value) {
   const flags = value.getUint8(0);
   const is16bit = flags & 0x1;
@@ -19,32 +37,70 @@ function parseHeartRate(value) {
   }
 }
 
+/* ==========================================================================
+   Test Data Constants
+   ========================================================================== */
+
+/** Test data for power measurement parsing */
+const POWER_TEST_DATA = {
+  NORMAL_POWER: {
+    value: 250,
+    buffer: new Uint8Array([0x00, 0x00, 0xfa, 0x00]), // 250W in little-endian
+  },
+  NEGATIVE_POWER: {
+    value: -100,
+    buffer: new Uint8Array([0x00, 0x00, 0x9c, 0xff]), // -100W in two's complement
+  },
+  ZERO_POWER: {
+    value: 0,
+    buffer: new Uint8Array([0x00, 0x00, 0x00, 0x00]),
+  },
+  MAX_POWER: {
+    value: 32767,
+    buffer: new Uint8Array([0x00, 0x00, 0xff, 0x7f]), // Max positive 16-bit signed
+  },
+};
+
+/* ==========================================================================
+   Test Suites
+   ========================================================================== */
+
 describe('Bluetooth Data Parsing', () => {
   describe('parsePowerMeasurement', () => {
-    test('should parse power measurement correctly', () => {
-      // Create a mock DataView with power value of 250W
-      const buffer = new Uint8Array([0x00, 0x00, 0xfa, 0x00]); // 250 in little-endian
+    test('should parse normal power measurement correctly', () => {
+      // Arrange
+      const { buffer, value: expectedPower } = POWER_TEST_DATA.NORMAL_POWER;
       const mockDataView = new DataView(buffer.buffer);
 
+      // Act
       const result = parsePowerMeasurement(mockDataView);
-      expect(result).toBe(250);
+
+      // Assert
+      expect(result).toBe(expectedPower);
     });
 
     test('should handle negative power values', () => {
-      // Create a mock DataView with negative power value
-      const buffer = new Uint8Array([0x00, 0x00, 0x9c, 0xff]); // -100 in little-endian two's complement
+      // Arrange
+      const { buffer, value: expectedPower } = POWER_TEST_DATA.NEGATIVE_POWER;
       const mockDataView = new DataView(buffer.buffer);
 
+      // Act
       const result = parsePowerMeasurement(mockDataView);
-      expect(result).toBe(-100);
+
+      // Assert
+      expect(result).toBe(expectedPower);
     });
 
     test('should handle zero power', () => {
-      const buffer = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
+      // Arrange
+      const { buffer, value: expectedPower } = POWER_TEST_DATA.ZERO_POWER;
       const mockDataView = new DataView(buffer.buffer);
 
+      // Act
       const result = parsePowerMeasurement(mockDataView);
-      expect(result).toBe(0);
+
+      // Assert
+      expect(result).toBe(expectedPower);
     });
 
     test('should handle maximum power value', () => {

@@ -11,7 +11,12 @@ export default defineConfig([
     ignores: ["build/**", "dist/**", "coverage/**"]
   },
   {
+    files: ["src/**/*.js"],
+    languageOptions: { sourceType: "module" }
+  },
+  {
     files: ["**/*.js"],
+    ignores: ["src/**/*.js"],
     languageOptions: { sourceType: "script" }
   },
   {

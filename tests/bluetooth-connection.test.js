@@ -1,8 +1,24 @@
 /**
- * Tests for Bluetooth connection management and error handling
+ * Bluetooth Connection Management Tests
+ * 
+ * Tests for Bluetooth device connection, disconnection, and error handling.
+ * Covers Web Bluetooth API interactions and device state management.
+ * 
+ * @requires jest
+ * @requires Web Bluetooth API mocks (from setup.js)
  */
 
-// Mock Bluetooth connection functions
+/* ==========================================================================
+   Test Utilities and Mock Functions
+   ========================================================================== */
+
+/**
+ * Connect to a Bluetooth device with specified service and characteristic
+ * @param {string} serviceUuid - The Bluetooth service UUID
+ * @param {string} characteristicUuid - The characteristic UUID
+ * @returns {Promise<Object>} Connection object with device, server, service, and characteristic
+ * @throws {Error} When Web Bluetooth API is not available or connection fails
+ */
 async function connectToDevice(serviceUuid, characteristicUuid) {
   if (!navigator.bluetooth) {
     throw new Error('Web Bluetooth API is not available.');
@@ -25,6 +41,11 @@ async function connectToDevice(serviceUuid, characteristicUuid) {
   return { device, server, service, characteristic };
 }
 
+/**
+ * Handle device disconnection and cleanup
+ * @param {BluetoothDevice} device - The Bluetooth device to disconnect
+ * @param {Function} resetCallback - Callback to reset application state
+ */
 function handleDisconnection(device, resetCallback) {
   if (device) {
     device.removeEventListener('gattserverdisconnected', handleDisconnection);
@@ -34,10 +55,18 @@ function handleDisconnection(device, resetCallback) {
   }
 }
 
+/**
+ * Validate if Web Bluetooth API is supported
+ * @returns {boolean} True if Bluetooth is supported
+ */
 function validateBluetoothSupport() {
   return navigator.bluetooth != null;
 }
 
+/**
+ * Get Bluetooth availability status
+ * @returns {Promise<boolean>} True if Bluetooth is available
+ */
 async function getBluetoothAvailability() {
   if (!navigator.bluetooth) {
     return false;
@@ -49,9 +78,87 @@ async function getBluetoothAvailability() {
   }
 }
 
+/* ==========================================================================
+   Test Constants
+   ========================================================================== */
+
+/** Bluetooth service and characteristic UUIDs for testing */
+const TEST_CONSTANTS = {
+  CYCLING_POWER_SERVICE_UUID: 'cycling_power',
+  CYCLING_POWER_MEASUREMENT_UUID: 'cycling_power_measurement',
+  HEART_RATE_SERVICE_UUID: 'heart_rate',
+  HEART_RATE_MEASUREMENT_UUID: 'heart_rate_measurement',
+};
+
+/* ==========================================================================
+   Test Suites
+   ========================================================================== */
+
+/* ==========================================================================
+   Mock Factory Functions
+   ========================================================================== */
+
+/**
+ * Create a mock Bluetooth characteristic
+ * @param {Object} overrides - Properties to override in the mock
+ * @returns {Object} Mock characteristic object
+ */
+function createMockCharacteristic(overrides = {}) {
+  return {
+    startNotifications: jest.fn().mockResolvedValue(undefined),
+    stopNotifications: jest.fn().mockResolvedValue(undefined),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create a mock Bluetooth service
+ * @param {Object} characteristic - Mock characteristic to return
+ * @param {Object} overrides - Properties to override in the mock
+ * @returns {Object} Mock service object
+ */
+function createMockService(characteristic, overrides = {}) {
+  return {
+    getCharacteristic: jest.fn().mockResolvedValue(characteristic),
+    ...overrides,
+  };
+}
+
+/**
+ * Create a mock GATT server
+ * @param {Object} service - Mock service to return
+ * @param {Object} overrides - Properties to override in the mock
+ * @returns {Object} Mock server object
+ */
+function createMockServer(service, overrides = {}) {
+  return {
+    getPrimaryService: jest.fn().mockResolvedValue(service),
+    connected: true,
+    ...overrides,
+  };
+}
+
+/**
+ * Create a mock Bluetooth device
+ * @param {Object} server - Mock GATT server
+ * @param {Object} overrides - Properties to override in the mock
+ * @returns {Object} Mock device object
+ */
+function createMockDevice(server, overrides = {}) {
+  return {
+    gatt: { connect: jest.fn().mockResolvedValue(server) },
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    name: 'Test Device',
+    id: 'test-device-id',
+    ...overrides,
+  };
+}
+
 describe('Bluetooth Connection Management', () => {
-  const CYCLING_POWER_SERVICE_UUID = 'cycling_power';
-  const CYCLING_POWER_MEASUREMENT_UUID = 'cycling_power_measurement';
+  const { CYCLING_POWER_SERVICE_UUID, CYCLING_POWER_MEASUREMENT_UUID } = TEST_CONSTANTS;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -59,30 +166,21 @@ describe('Bluetooth Connection Management', () => {
 
   describe('connectToDevice', () => {
     test('should connect to device successfully', async () => {
-      const mockCharacteristic = {
-        startNotifications: jest.fn().mockResolvedValue(undefined),
-      };
-
-      const mockService = {
-        getCharacteristic: jest.fn().mockResolvedValue(mockCharacteristic),
-      };
-
-      const mockServer = {
-        getPrimaryService: jest.fn().mockResolvedValue(mockService),
-      };
-
-      const mockDevice = {
-        gatt: { connect: jest.fn().mockResolvedValue(mockServer) },
-        addEventListener: jest.fn(),
-      };
+      // Arrange
+      const mockCharacteristic = createMockCharacteristic();
+      const mockService = createMockService(mockCharacteristic);
+      const mockServer = createMockServer(mockService);
+      const mockDevice = createMockDevice(mockServer);
 
       navigator.bluetooth.requestDevice.mockResolvedValue(mockDevice);
 
+      // Act
       const result = await connectToDevice(
         CYCLING_POWER_SERVICE_UUID,
         CYCLING_POWER_MEASUREMENT_UUID
       );
 
+      // Assert
       expect(navigator.bluetooth.requestDevice).toHaveBeenCalledWith({
         filters: [{ services: [CYCLING_POWER_SERVICE_UUID] }],
       });

@@ -1,8 +1,21 @@
 /**
- * Tests for DOM interactions and UI state management
+ * DOM Interactions and UI State Management Tests
+ * 
+ * Tests for DOM manipulation functions and UI state updates.
+ * Covers display updates, connection status management, and element interactions.
+ * 
+ * @requires jest
+ * @requires DOM mocks (from setup.js)
  */
 
-// Mock DOM manipulation functions
+/* ==========================================================================
+   DOM Manipulation Functions Under Test
+   ========================================================================== */
+
+/**
+ * Update power display element
+ * @param {number|string} power - Power value to display
+ */
 function updatePowerDisplay(power) {
   const element = document.getElementById('power-value');
   if (element) {
@@ -10,6 +23,11 @@ function updatePowerDisplay(power) {
   }
 }
 
+/**
+ * Update connection status and device information
+ * @param {string} status - Connection status message
+ * @param {string} deviceName - Optional device name
+ */
 function updateConnectionStatus(status, deviceName = '') {
   const statusElement = document.getElementById('status');
   const deviceElement = document.getElementById('device-name');
@@ -20,6 +38,10 @@ function updateConnectionStatus(status, deviceName = '') {
   if (connectButton) connectButton.disabled = status === 'Connected and receiving data!';
 }
 
+/**
+ * Update heart rate display element
+ * @param {number|string} heartRate - Heart rate value to display
+ */
 function updateHeartRateDisplay(heartRate) {
   const element = document.getElementById('hr-value');
   if (element) {
@@ -27,6 +49,10 @@ function updateHeartRateDisplay(heartRate) {
   }
 }
 
+/**
+ * Update balance display with left/right split
+ * @param {number|null} balance - Balance value (0-100) or null
+ */
 function updateBalanceDisplay(balance) {
   const element = document.getElementById('balance-value');
   if (element) {
@@ -38,6 +64,9 @@ function updateBalanceDisplay(balance) {
   }
 }
 
+/**
+ * Reset all display values to default state
+ */
 function resetDisplayValues() {
   const displays = [
     'power-value',
@@ -56,6 +85,22 @@ function resetDisplayValues() {
     }
   });
 }
+
+/* ==========================================================================
+   Test Helper Functions
+   ========================================================================== */
+
+/* ==========================================================================
+   Test Suites
+   ========================================================================== */
+
+/* ==========================================================================
+   Test Constants
+   ========================================================================== */
+
+/* ==========================================================================
+   Test Suites
+   ========================================================================== */
 
 describe('DOM Interactions', () => {
   let mockElements;

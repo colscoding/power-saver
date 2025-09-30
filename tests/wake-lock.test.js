@@ -1,10 +1,25 @@
 /**
- * Tests for Wake Lock API functionality
+ * Wake Lock API Functionality Tests
+ * 
+ * Tests for screen wake lock management to prevent device sleep during sessions.
+ * Covers wake lock request, release, and error handling scenarios.
+ * 
+ * @requires jest
+ * @requires Wake Lock API mocks (from setup.js)
  */
 
-// Mock wake lock functions
+/* ==========================================================================
+   Wake Lock Functions Under Test
+   ========================================================================== */
+
+/** Global wake lock reference */
 let mockWakeLock = null;
 
+/**
+ * Request a screen wake lock to prevent device sleep
+ * @returns {Promise<WakeLockSentinel>} Wake lock sentinel object
+ * @throws {Error} When Wake Lock API is not available or request fails
+ */
 async function requestWakeLock() {
   if (navigator.wakeLock) {
     try {
@@ -23,6 +38,10 @@ async function requestWakeLock() {
   }
 }
 
+/**
+ * Release the current wake lock if active
+ * @returns {Promise<void>}
+ */
 async function releaseWakeLock() {
   if (mockWakeLock !== null) {
     await mockWakeLock.release();
@@ -30,20 +49,43 @@ async function releaseWakeLock() {
   }
 }
 
+/* ==========================================================================
+   Test Constants and Helpers
+   ========================================================================== */
+
+/** Expected wake lock type */
+const WAKE_LOCK_TYPE = 'screen';
+
+/**
+ * Create a mock wake lock sentinel
+ * @param {Object} overrides - Properties to override
+ * @returns {Object} Mock wake lock sentinel
+ */
+function createMockWakeLockSentinel(overrides = {}) {
+  return {
+    release: jest.fn().mockResolvedValue(undefined),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    type: WAKE_LOCK_TYPE,
+    released: false,
+    ...overrides,
+  };
+}
+
+/* ==========================================================================
+   Test Suites
+   ========================================================================== */
+
 describe('Wake Lock Functionality', () => {
   beforeEach(() => {
+    // Reset wake lock state
     mockWakeLock = null;
     jest.clearAllMocks();
 
     // Ensure wakeLock mock is properly set up
     Object.defineProperty(navigator, 'wakeLock', {
       value: {
-        request: jest.fn(() =>
-          Promise.resolve({
-            release: jest.fn(),
-            addEventListener: jest.fn(),
-          })
-        ),
+        request: jest.fn(() => Promise.resolve(createMockWakeLockSentinel())),
       },
       writable: true,
       configurable: true,

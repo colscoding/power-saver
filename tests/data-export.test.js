@@ -1,12 +1,30 @@
 /**
- * Tests for data export functionality (JSON and CSV)
+ * Data Export Functionality Tests
+ * 
+ * Tests for data export functions including JSON, CSV, and filename generation.
+ * Covers various data formats and edge cases for export functionality.
+ * 
+ * @requires jest
  */
 
-// Mock export functions
+/* ==========================================================================
+   Export Functions Under Test
+   ========================================================================== */
+
+/**
+ * Generate JSON export from power data
+ * @param {Array<Object>} powerData - Array of power measurement objects
+ * @returns {string} JSON string representation of the data
+ */
 function generateJsonExport(powerData) {
   return JSON.stringify(powerData, null, 2);
 }
 
+/**
+ * Generate CSV export from power data
+ * @param {Array<Object>} powerData - Array of power measurement objects
+ * @returns {string} CSV string representation of the data
+ */
 function generateCsvExport(powerData) {
   let csvContent = 'timestamp,power,heartRate,cadence,speed,distance,balance,smoothness,torque\n';
   powerData.forEach((row) => {
@@ -15,6 +33,11 @@ function generateCsvExport(powerData) {
   return csvContent;
 }
 
+/**
+ * Generate filename with date stamp
+ * @param {string} extension - File extension (without dot)
+ * @returns {string} Generated filename with current date
+ */
 function generateFileName(extension) {
   const now = new Date();
   const year = now.getFullYear();
@@ -24,77 +47,114 @@ function generateFileName(extension) {
   return `power_data_${dateString}.${extension}`;
 }
 
+/* ==========================================================================
+   Test Data Constants
+   ========================================================================== */
+
+/** Mock power data for testing export functions */
+const MOCK_POWER_DATA = {
+  COMPLETE_RECORD: {
+    timestamp: 1631875200000,
+    power: 250,
+    heartRate: 145,
+    cadence: 90,
+    speed: 35,
+    distance: 10.5,
+    balance: 52,
+    smoothness: 85,
+    torque: 88,
+  },
+  PARTIAL_RECORD: {
+    timestamp: 1631875200100,
+    power: 260,
+    heartRate: 148,
+    cadence: 92,
+    speed: 36,
+    distance: 10.6,
+    balance: 53,
+    smoothness: 86,
+    torque: 89,
+  },
+  MINIMAL_RECORD: {
+    timestamp: 1631875200200,
+    power: 245,
+    heartRate: 142,
+    cadence: 88,
+    speed: 34,
+    distance: 10.7,
+    balance: null,
+    smoothness: null,
+    torque: null,
+  },
+};
+
+/** Expected CSV header */
+
+
+/* ==========================================================================
+   Test Suites
+   ========================================================================== */
+
 describe('Data Export Functions', () => {
   const mockPowerData = [
-    {
-      timestamp: 1631875200000,
-      power: 250,
-      heartRate: 145,
-      cadence: 90,
-      speed: 35,
-      distance: 10.5,
-      balance: 52,
-      smoothness: 85,
-      torque: 88,
-    },
-    {
-      timestamp: 1631875200100,
-      power: 260,
-      heartRate: 148,
-      cadence: 92,
-      speed: 36,
-      distance: 10.6,
-      balance: 53,
-      smoothness: 86,
-      torque: 89,
-    },
-    {
-      timestamp: 1631875200200,
-      power: 245,
-      heartRate: 142,
-      cadence: 88,
-      speed: 34,
-      distance: 10.7,
-      balance: null,
-      smoothness: null,
-      torque: null,
-    },
+    MOCK_POWER_DATA.COMPLETE_RECORD,
+    MOCK_POWER_DATA.PARTIAL_RECORD,
+    MOCK_POWER_DATA.MINIMAL_RECORD,
   ];
 
   describe('generateJsonExport', () => {
     test('should generate valid JSON from power data', () => {
-      const result = generateJsonExport(mockPowerData);
+      // Arrange
+      const testData = mockPowerData;
 
+      // Act
+      const result = generateJsonExport(testData);
+
+      // Assert
       expect(result).toBeDefined();
       expect(() => JSON.parse(result)).not.toThrow();
 
       const parsed = JSON.parse(result);
       expect(parsed).toHaveLength(3);
-      expect(parsed[0].power).toBe(250);
-      expect(parsed[1].heartRate).toBe(148);
+      expect(parsed[0].power).toBe(MOCK_POWER_DATA.COMPLETE_RECORD.power);
+      expect(parsed[1].heartRate).toBe(MOCK_POWER_DATA.PARTIAL_RECORD.heartRate);
     });
 
     test('should handle empty data array', () => {
-      const result = generateJsonExport([]);
+      // Arrange
+      const emptyData = [];
 
+      // Act
+      const result = generateJsonExport(emptyData);
+
+      // Assert
       expect(result).toBe('[]');
     });
 
     test('should preserve all data fields', () => {
-      const result = generateJsonExport([mockPowerData[0]]);
-      const parsed = JSON.parse(result);
+      // Arrange
+      const singleRecord = [MOCK_POWER_DATA.COMPLETE_RECORD];
 
-      expect(parsed[0]).toMatchObject({
-        timestamp: 1631875200000,
-        power: 250,
-        heartRate: 145,
-        cadence: 90,
-        speed: 35,
-        distance: 10.5,
-        balance: 52,
-        smoothness: 85,
-        torque: 88,
-      });
+      // Act
+      const result = generateJsonExport(singleRecord);
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed[0]).toMatchObject(MOCK_POWER_DATA.COMPLETE_RECORD);
+    });
+
+    test('should handle null values correctly', () => {
+      // Arrange
+      const recordWithNulls = [MOCK_POWER_DATA.MINIMAL_RECORD];
+
+      // Act
+      const result = generateJsonExport(recordWithNulls);
+
+      // Assert
+      const parsed = JSON.parse(result);
+      expect(parsed[0].balance).toBeNull();
+      expect(parsed[0].smoothness).toBeNull();
+      expect(parsed[0].torque).toBeNull();
     });
   });
 

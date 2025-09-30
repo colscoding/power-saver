@@ -1,8 +1,24 @@
 /**
- * Tests for power measurement processing and extended power features
+ * Power Measurement Processing Tests
+ * 
+ * Tests for power measurement data processing including extended power features
+ * such as pedal balance, torque effectiveness, and pedal smoothness.
+ * 
+ * @requires jest
+ * @requires DataView mock (from setup.js)
  */
 
-// Mock the power meter functionality for testing
+/* ==========================================================================
+   Power Processing Functions Under Test
+   ========================================================================== */
+
+/**
+ * Process power measurement flags and extract extended data
+ * @param {number} flags - Flags indicating available data fields
+ * @param {DataView} value - DataView containing measurement data
+ * @param {number} offset - Starting offset for power data (default: 2)
+ * @returns {Object} Processed power data with available extended metrics
+ */
 function processPowerMeasurementFlags(flags, value, offset = 2) {
   const result = {
     power: value.getInt16(offset, true),
