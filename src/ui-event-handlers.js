@@ -140,10 +140,11 @@ export function setupSectionToggles(elements) {
     if (elements.connectSectionToggle && elements.connectSection) {
         let connectSectionVisible = true; // Start visible by default
         elements.connectSectionToggle.classList.add('active'); // Set initial active state
+        elements.connectSection.style.display = 'block'; // Ensure it's visible initially
 
         elements.connectSectionToggle.addEventListener('click', function () {
             connectSectionVisible = !connectSectionVisible;
-
+            console.log('Toggling connect section, now visible:', connectSectionVisible);
             if (connectSectionVisible) {
                 elements.connectSection.style.display = 'block';
                 elements.connectSectionToggle.classList.add('active');
@@ -246,59 +247,6 @@ export function setupMenuItems(elements) {
 }
 
 /**
- * Setup section collapse toggles
- * @param {Object} elements - UI elements object
- */
-export function setupSectionCollapseToggles(elements) {
-    // Toggle functionality for connect section
-    if (elements.toggleConnectSection && elements.connectSection && elements.connectToggleText) {
-        elements.toggleConnectSection.addEventListener('click', () => {
-            const connectButtons = elements.connectSection.querySelectorAll('button:not(.section-toggle-button)');
-            const sectionHeader = elements.connectSection.querySelector('.section-header');
-            const isHidden = connectButtons[0] && connectButtons[0].style.display === 'none';
-
-            if (isHidden) {
-                connectButtons.forEach((btn) => (btn.style.display = 'block'));
-                elements.connectToggleText.textContent = 'Hide Connect Devices';
-                elements.toggleConnectSection.classList.remove('collapsed');
-                elements.connectSection.classList.remove('collapsed');
-                if (sectionHeader) sectionHeader.classList.remove('collapsed');
-            } else {
-                connectButtons.forEach((btn) => (btn.style.display = 'none'));
-                elements.connectToggleText.textContent = 'Show Connect Devices';
-                elements.toggleConnectSection.classList.add('collapsed');
-                elements.connectSection.classList.add('collapsed');
-                if (sectionHeader) sectionHeader.classList.add('collapsed');
-            }
-        });
-    }
-
-    // Toggle functionality for export section
-    if (elements.toggleExportSection && elements.exportSection && elements.exportToggleText) {
-        elements.toggleExportSection.addEventListener('click', () => {
-            const exportButtons = document.getElementById('export-buttons');
-            const sectionHeader = elements.exportSection.querySelector('.section-header');
-            const isHidden = exportButtons && exportButtons.style.display === 'none';
-
-            if (isHidden) {
-                elements.exportSection.style.display = 'block';
-                if (exportButtons) exportButtons.style.display = 'flex';
-                elements.exportToggleText.textContent = 'Hide Export Data';
-                elements.toggleExportSection.classList.remove('collapsed');
-                elements.exportSection.classList.remove('collapsed');
-                if (sectionHeader) sectionHeader.classList.remove('collapsed');
-            } else {
-                if (exportButtons) exportButtons.style.display = 'none';
-                elements.exportToggleText.textContent = 'Show Export Data';
-                elements.toggleExportSection.classList.add('collapsed');
-                elements.exportSection.classList.add('collapsed');
-                if (sectionHeader) sectionHeader.classList.add('collapsed');
-            }
-        });
-    }
-}
-
-/**
  * Function to update dashboard layout based on visible sections
  */
 export function updateDashboardLayout() {
@@ -352,15 +300,16 @@ function manageCollapsedSectionsLayout() {
  * @param {Object} elements - UI elements object
  */
 export function initializeSections(elements) {
-    // Initialize sections - connect section visible, export section hidden (controlled by hamburger menu)
+    // Initialize sections - both connect and export sections visible by default
     if (elements.connectSection) {
+        elements.connectSection.style.display = 'block'; // Ensure connect section is visible
         const connectButtons = elements.connectSection.querySelectorAll('button:not(.section-toggle-button)');
         connectButtons.forEach((btn) => (btn.style.display = 'block'));
     }
 
-    // Initialize export section as hidden (controlled by hamburger menu)
+    // Initialize export section as visible (always available)
     if (elements.exportSection) {
-        elements.exportSection.style.display = 'none';
+        elements.exportSection.style.display = 'block';
     }
 
     // Initialize power averages section as hidden (controlled by hamburger menu)

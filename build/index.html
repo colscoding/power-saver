@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><title>Web Bluetooth Power Meter</title><link rel=stylesheet href=power-saver.45adf146.css><body>
+<!DOCTYPE html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><title>Web Bluetooth Power Meter</title><link rel=stylesheet href=power-saver.2a850d27.css><body>
   
   <div class=hamburger-menu>
     <button class=hamburger-button id=hamburgerButton>
@@ -113,7 +113,7 @@
           Click to connect</div>
       </div>
     </div>
-  
+  </section>
 
   
   <section class=power-averages-section id=powerAveragesSection>
@@ -123,24 +123,30 @@
         <table class=power-averages-table>
           <thead>
             <tr>
-              <th>Power averages</th>
+              <th></th>
               <th>10s</th>
+              <th>20s</th>
               <th>30s</th>
-              <th>1m</th>
+              <th>40s</th>
+              <th>50s</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td class=row-label>Current</td>
               <td><span id=avg10s-current>--</span> W</td>
+              <td><span id=avg20s-current>--</span> W</td>
               <td><span id=avg30s-current>--</span> W</td>
-              <td><span id=avg1m-current>--</span> W</td>
+              <td><span id=avg40s-current>--</span> W</td>
+              <td><span id=avg50s-current>--</span> W</td>
             </tr>
             <tr>
               <td class=row-label>Best</td>
               <td><span id=avg10s-best>--</span> W</td>
+              <td><span id=avg20s-best>--</span> W</td>
               <td><span id=avg30s-best>--</span> W</td>
-              <td><span id=avg1m-best>--</span> W</td>
+              <td><span id=avg40s-best>--</span> W</td>
+              <td><span id=avg50s-best>--</span> W</td>
             </tr>
           </tbody>
         </table>
@@ -151,83 +157,102 @@
         <table class=power-averages-table>
           <thead>
             <tr>
-              <th>Power averages</th>
+              <th></th>
+              <th>1m</th>
               <th>2m</th>
+              <th>3m</th>
               <th>4m</th>
-              <th>8m</th>
+              <th>5m</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td class=row-label>Current</td>
+              <td><span id=avg1m-current>--</span> W</td>
               <td><span id=avg2m-current>--</span> W</td>
+              <td><span id=avg3m-current>--</span> W</td>
               <td><span id=avg4m-current>--</span> W</td>
-              <td><span id=avg8m-current>--</span> W</td>
+              <td><span id=avg5m-current>--</span> W</td>
             </tr>
             <tr>
               <td class=row-label>Best</td>
+              <td><span id=avg1m-best>--</span> W</td>
               <td><span id=avg2m-best>--</span> W</td>
+              <td><span id=avg3m-best>--</span> W</td>
               <td><span id=avg4m-best>--</span> W</td>
-              <td><span id=avg8m-best>--</span> W</td>
+              <td><span id=avg5m-best>--</span> W</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-  
+  </section>
 
   
-  <div class=bottom-controls>
-    
-    <section class=controls-container id=connectSection>
-      <header class=section-header>
-        <button id=toggleConnectSection class=section-toggle-button aria-expanded=true aria-controls=connectSection>
-          <span id=connectToggleText>Hide Connect Devices</span>
-          <span class=toggle-icon aria-hidden=true>▲</span>
-        </button>
-      </header>
-      <button id=connectButton>
-        Connect Power Meter
-        <div class=status-text id=status>Disconnected</div>
-        <div class=device-name id=device-name></div>
-      </button>
-      <button id=hrConnectButton>
-        Connect Heart Rate Monitor
-        <div class=status-text id=hrConnectionStatus>Disconnected</div>
-        <div class=device-name id=hrDeviceName></div>
-      </button>
-      <button id=speedCadenceConnectButton>
-        Connect Speed &amp; Cadence
-        <div class=status-text id=cadenceConnectionStatus>Disconnected</div>
-        <div class=device-name id=cadenceDeviceName></div>
-      </button>
-    </section></div>
+  <section class=controls-container id=connectSection>
+    <button id=connectButton>
+      Connect Power Meter
+      <div class=status-text id=status>Disconnected</div>
+      <div class=device-name id=device-name></div>
+    </button>
+    <button id=hrConnectButton>
+      Connect Heart Rate Monitor
+      <div class=status-text id=hrConnectionStatus>Disconnected</div>
+      <div class=device-name id=hrDeviceName></div>
+    </button>
+    <button id=speedCadenceConnectButton>
+      Connect Speed &amp; Cadence
+      <div class=status-text id=cadenceConnectionStatus>Disconnected</div>
+      <div class=device-name id=cadenceDeviceName></div>
+    </button>
+  </section>
 
-    
-    <section class=export-section id=exportSection>
-      <header class=section-header>
-        <button id=toggleExportSection class=section-toggle-button aria-expanded=false aria-controls=export-buttons>
-          <span id=exportToggleText>Hide Export Data</span>
-          <span class=toggle-icon aria-hidden=true>▲</span>
+  
+  <section class=export-section id=exportSection>
+    <div class=export-buttons id=export-buttons>
+      <button id=exportJsonButton>Export Summary JSON</button>
+      <button id=exportCsvButton>Export Summary CSV</button>
+      <button id=exportTcxButton>Export TCX</button>
+      <button id=exportRawJsonButton>Export Raw Measurements JSON</button>
+      <button id=exportRawCsvButton>Export Raw Measurements CSV</button>
+      <button id=exportImageButton aria-label="Export summary as image">
+        📊 Export Summary Image
+      </button>
+
+      
+      <div class=cloud-export-section>
+        <h4 class=cloud-export-title>☁️ Cloud Exports</h4>
+        <button id=googleAuthButton class=auth-button aria-label="Sign in to Google account for cloud exports">
+          🔗 Sign In to Google
         </button>
-      </header>
-      <div class=export-buttons id=export-buttons>
-        <button id=exportJsonButton>Export Summary JSON</button>
-        <button id=exportCsvButton>Export Summary CSV</button>
-        <button id=exportTcxButton>Export TCX</button>
-        <button id=exportRawJsonButton>Export Raw Measurements JSON</button>
-        <button id=exportRawCsvButton>Export Raw Measurements CSV</button>
-        <button id=exportImageButton aria-label="Export summary as image">
-          📊 Export Summary Image
+        <button id=exportGoogleDocsButton class=cloud-export-button aria-label="Export session report to Google Docs">
+          📄 Export to Google Docs
         </button>
-        <button id=clearSessionButton aria-label="Clear all session data">
-          Clear Session Data
+        <button id=exportGoogleSheetsButton class=cloud-export-button aria-label="Export detailed data to Google Sheets">
+          📊 Export to Google Sheets
+        </button>
+        <button id=configureGoogleApiButton class=config-button aria-label="Configure Google API credentials">
+          ⚙️ Configure API
         </button>
       </div>
-    
-  
 
-  <script type=module src=power-saver.41ed3745.js></script>
+      
+      <div class=intervals-export-section>
+        <h4 class=intervals-export-title>🏃 intervals.icu</h4>
+        <button id=exportIntervalsButton class=intervals-export-button aria-label="Export activity to intervals.icu">
+          🚴 Export to intervals.icu
+        </button>
+        <button id=configureIntervalsButton class="config-button intervals-config" aria-label="Configure intervals.icu API credentials">
+          ⚙️ Configure intervals.icu
+        </button>
+      </div>
+
+      <button id=clearSessionButton aria-label="Clear all session data">
+        Clear Session Data
+      </button>
+    </div>
+  </section>
+
+  <script type=module src=power-saver.f0b88fe2.js></script>
 
 
-</section></section></section>

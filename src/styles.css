@@ -319,6 +319,214 @@ button:disabled::before {
     transform: none;
 }
 
+/* ==========================================================================
+   Cloud Export Section Styles
+   ========================================================================== */
+
+.cloud-export-section {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(76, 175, 80, 0.1) 100%);
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    border-radius: 12px;
+    position: relative;
+}
+
+.cloud-export-section::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, #4CAF50, #66BB6A, #81C784);
+    border-radius: 12px;
+    z-index: -1;
+    opacity: 0.2;
+}
+
+.cloud-export-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #81C784;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.auth-button {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3) !important;
+    margin-bottom: 0.75rem !important;
+    width: 100% !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.auth-button:hover {
+    box-shadow: 0 8px 24px rgba(76, 175, 80, 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+.auth-button.signed-in {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    box-shadow: 0 4px 16px rgba(255, 152, 0, 0.3) !important;
+}
+
+.auth-button.signed-in:hover {
+    box-shadow: 0 8px 24px rgba(255, 152, 0, 0.4) !important;
+}
+
+.cloud-export-button {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+    box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3) !important;
+    margin: 0.25rem !important;
+    flex: 1 !important;
+    min-width: 200px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.cloud-export-button:hover {
+    box-shadow: 0 8px 24px rgba(33, 150, 243, 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+.cloud-export-button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    background: linear-gradient(135deg, #666 0%, #555 100%) !important;
+    box-shadow: none !important;
+}
+
+.cloud-export-button:disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.config-button {
+    background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%) !important;
+    box-shadow: 0 4px 16px rgba(156, 39, 176, 0.3) !important;
+    margin-top: 0.75rem !important;
+    width: 100% !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.config-button:hover {
+    box-shadow: 0 8px 24px rgba(156, 39, 176, 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* ==========================================================================
+   intervals.icu Export Section Styles
+   ========================================================================== */
+
+.intervals-export-section {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(229, 90, 43, 0.1) 100%);
+    border: 2px solid rgba(255, 107, 53, 0.3);
+    border-radius: 12px;
+    position: relative;
+}
+
+.intervals-export-section::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, #FF6B35, #E55A2B, #FF8A60);
+    border-radius: 12px;
+    z-index: -1;
+    opacity: 0.2;
+}
+
+.intervals-export-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #FF8A60;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.intervals-export-button {
+    background: linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%) !important;
+    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3) !important;
+    margin: 0.25rem !important;
+    width: 100% !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.intervals-export-button:hover {
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+.intervals-export-button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    background: linear-gradient(135deg, #666 0%, #555 100%) !important;
+    box-shadow: none !important;
+}
+
+.intervals-export-button:disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.config-button.intervals-config {
+    background: linear-gradient(135deg, #FF8A60 0%, #FF6B35 100%) !important;
+    box-shadow: 0 4px 16px rgba(255, 138, 96, 0.3) !important;
+    font-size: 0.85rem !important;
+}
+
+.config-button.intervals-config:hover {
+    box-shadow: 0 8px 24px rgba(255, 138, 96, 0.4) !important;
+}
+
+/* Cloud export buttons layout */
+.cloud-export-section .export-buttons {
+    margin-top: 0;
+}
+
+.cloud-export-section .cloud-export-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Configuration notice styling */
+.config-notice {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 183, 77, 0.1);
+    border: 1px solid rgba(255, 183, 77, 0.3);
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.config-notice code {
+    display: block;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
 #clearSessionButton {
     background: #f44336;
     margin-top: 1rem;

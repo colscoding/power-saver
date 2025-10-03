@@ -54,7 +54,7 @@ function showAppInfo() {
             <h3 style="color: #f39c12; margin: 1.5rem 0 1rem 0;">📊 Features:</h3>
             <ul style="margin-bottom: 1rem; padding-left: 1.5rem;">
                 <li><strong>Real-time Metrics:</strong> Live power, heart rate, and cadence display</li>
-                <li><strong>Power Averages:</strong> 10s, 30s, 1m, 2m, 4m, and 8m rolling averages</li>
+                <li><strong>Power Averages:</strong> 10s, 20s, 30s, 40s, 50s, 1m, 2m, 3m, 4m, and 5m rolling averages</li>
                 <li><strong>Data Export:</strong> JSON, CSV, TCX, and visual summary image formats</li>
                 <li><strong>Session Persistence:</strong> Data automatically saved and restored</li>
                 <li><strong>Custom Dashboard:</strong> Toggle metrics and sections via hamburger menu</li>

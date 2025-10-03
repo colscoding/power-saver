@@ -1,6 +1,17 @@
 // Summary Image Generation Functions
 /**
- * Generates a comprehensive summary image with power averages and timeline charts
+ * Generates a comprehensive summary        const averagesData = [
+            { label: '10s', data: powerAverages['10s'] },
+            { label: '20s', data: powerAverages['20s'] },
+            { label: '30s', data: powerAverages['30s'] },
+            { label: '40s', data: powerAverages['40s'] },
+            { label: '50s', data: powerAverages['50s'] },
+            { label: '1m', data: powerAverages['1m'] },
+            { label: '2m', data: powerAverages['2m'] },
+            { label: '3m', data: powerAverages['3m'] },
+            { label: '4m', data: powerAverages['4m'] },
+            { label: '5m', data: powerAverages['5m'] },
+        ];ith power averages and timeline charts
  * @returns {Promise<HTMLCanvasElement>} Canvas containing the summary image
  */
 async function generateSummaryImage({ dataPoints, powerAverages }) {

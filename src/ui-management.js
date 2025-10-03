@@ -33,17 +33,19 @@ export const elements = {
         rawJson: null,
         rawCsv: null,
         image: null,
-        clearSession: null
+        clearSession: null,
+        googleDocs: null,
+        googleSheets: null,
+        googleAuth: null,
+        configureGoogleApi: null,
+        intervals: null,
+        configureIntervals: null
     },
 
     // Toggle elements
-    toggleConnectSection: null,
-    toggleExportSection: null,
     connectSection: null,
     exportSection: null,
     powerAveragesSection: null,
-    connectToggleText: null,
-    exportToggleText: null,
 
     // Hamburger menu elements
     hamburgerBtn: null,
@@ -105,15 +107,17 @@ export function initializeElements() {
     elements.exportButtons.rawCsv = document.getElementById('exportRawCsvButton');
     elements.exportButtons.image = document.getElementById('exportImageButton');
     elements.exportButtons.clearSession = document.getElementById('clearSessionButton');
+    elements.exportButtons.googleDocs = document.getElementById('exportGoogleDocsButton');
+    elements.exportButtons.googleSheets = document.getElementById('exportGoogleSheetsButton');
+    elements.exportButtons.googleAuth = document.getElementById('googleAuthButton');
+    elements.exportButtons.configureGoogleApi = document.getElementById('configureGoogleApiButton');
+    elements.exportButtons.intervals = document.getElementById('exportIntervalsButton');
+    elements.exportButtons.configureIntervals = document.getElementById('configureIntervalsButton');
 
     // Toggle elements
-    elements.toggleConnectSection = document.getElementById('toggleConnectSection');
-    elements.toggleExportSection = document.getElementById('toggleExportSection');
     elements.connectSection = document.getElementById('connectSection');
     elements.exportSection = document.getElementById('exportSection');
     elements.powerAveragesSection = document.getElementById('powerAveragesSection');
-    elements.connectToggleText = document.getElementById('connectToggleText');
-    elements.exportToggleText = document.getElementById('exportToggleText');
 
     // Hamburger menu elements
     elements.hamburgerBtn = document.getElementById('hamburgerButton');

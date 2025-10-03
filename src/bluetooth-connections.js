@@ -19,6 +19,12 @@ let hrBluetoothDevice = null;
 let speedCadenceBluetoothDevice = null;
 let spyMeterDevice = null;
 
+// Store event listener references for proper cleanup
+let powerMeterDisconnectHandler = null;
+let hrDisconnectHandler = null;
+let speedCadenceDisconnectHandler = null;
+let spyMeterDisconnectHandler = null;
+
 // Cadence calculation variables
 let lastCrankRevs = 0;
 let lastCrankTime = 0;
@@ -525,4 +531,30 @@ function onSpyDisconnected(elements) {
             elements.spyInstructionsElement.style.display = 'block';
         }
     }, 3000);
+}
+
+/**
+ * Clean up all Bluetooth event listeners
+ * Call this function when the app is closing or resetting connections
+ */
+export function cleanupBluetoothEventListeners() {
+    if (powerMeterDevice && powerMeterDisconnectHandler) {
+        powerMeterDevice.removeEventListener('gattserverdisconnected', powerMeterDisconnectHandler);
+        powerMeterDisconnectHandler = null;
+    }
+
+    if (hrBluetoothDevice && hrDisconnectHandler) {
+        hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+        hrDisconnectHandler = null;
+    }
+
+    if (speedCadenceBluetoothDevice && speedCadenceDisconnectHandler) {
+        speedCadenceBluetoothDevice.removeEventListener('gattserverdisconnected', speedCadenceDisconnectHandler);
+        speedCadenceDisconnectHandler = null;
+    }
+
+    if (spyMeterDevice && spyMeterDisconnectHandler) {
+        spyMeterDevice.removeEventListener('gattserverdisconnected', spyMeterDisconnectHandler);
+        spyMeterDisconnectHandler = null;
+    }
 }
