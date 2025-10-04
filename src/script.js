@@ -30,13 +30,12 @@ import {
   disconnectSpyMeter,
   isSpyMeterConnected
 } from "./bluetooth-connections.js";
-import { setupExportEventListeners, initializeGoogleAPI, initializeIntervalsConfig, isIntervalsConfigured } from "./data-export.js";
+import { setupExportMenuListeners } from "./export-modals.js";
 import { showSessionRestoredNotification } from "./notifications.js";
 import {
   setupHamburgerMenu,
   setupPowerAveragesToggle,
   setupMetricToggles,
-  setupSectionToggles,
   setupSpyModeToggle,
   setupMenuItems,
   initializeSections
@@ -244,212 +243,6 @@ function setupConnectionEventListeners() {
 }
 
 /**
- * Initialize cloud export functionality
- * @async
- * @returns {Promise<void>}
- */
-async function initializeCloudExports() {
-  try {
-    // Initialize Google API
-    const googleClientId = getGoogleClientId();
-    const googleApiKey = getGoogleApiKey();
-
-    if (googleClientId && googleApiKey) {
-      console.log('Initializing Google API for cloud exports...');
-      const success = await initializeGoogleAPI(googleClientId, googleApiKey);
-
-      if (success) {
-        console.log('Google API initialized successfully');
-        enableCloudExportButtons();
-      } else {
-        console.warn('Failed to initialize Google API');
-        disableCloudExportButtons('Failed to initialize Google API');
-      }
-    } else {
-      console.info('Google API credentials not configured. Cloud exports disabled.');
-      disableCloudExportButtons('Google API credentials not configured');
-      showConfigurationHelp();
-    }
-
-    // Initialize intervals.icu
-    const intervalsApiKey = getIntervalsApiKey();
-    const intervalsAthleteId = getIntervalsAthleteId();
-
-    if (intervalsApiKey && intervalsAthleteId) {
-      console.log('Initializing intervals.icu configuration...');
-      const success = initializeIntervalsConfig(intervalsApiKey, intervalsAthleteId);
-
-      if (success) {
-        console.log('intervals.icu configured successfully');
-        enableIntervalsExportButtons();
-      } else {
-        console.warn('Failed to initialize intervals.icu configuration');
-        disableIntervalsExportButtons('Failed to initialize intervals.icu');
-      }
-    } else {
-      console.info('intervals.icu credentials not configured.');
-      disableIntervalsExportButtons('intervals.icu credentials not configured');
-    }
-  } catch (error) {
-    console.error('Error initializing cloud exports:', error);
-    disableCloudExportButtons(`Error: ${error.message}`);
-  }
-}/**
- * Get Google Client ID from environment or configuration
- * @returns {string|null} Google Client ID
- */
-function getGoogleClientId() {
-  // Check localStorage and window configuration
-  const clientId = localStorage.getItem('google_client_id') ||
-    (typeof window !== 'undefined' && window.GOOGLE_CONFIG && window.GOOGLE_CONFIG.CLIENT_ID) ||
-    null;
-
-  // Clear sensitive data from global scope for security
-  if (typeof window !== 'undefined' && window.GOOGLE_CONFIG) {
-    delete window.GOOGLE_CONFIG.CLIENT_ID;
-  }
-
-  return clientId;
-}
-
-/**
- * Get Google API Key from environment or configuration
- * @returns {string|null} Google API Key
- */
-function getGoogleApiKey() {
-  // Check localStorage and window configuration
-  const apiKey = localStorage.getItem('google_api_key') ||
-    (typeof window !== 'undefined' && window.GOOGLE_CONFIG && window.GOOGLE_CONFIG.API_KEY) ||
-    null;
-
-  // Clear sensitive data from global scope for security
-  if (typeof window !== 'undefined' && window.GOOGLE_CONFIG) {
-    delete window.GOOGLE_CONFIG.API_KEY;
-  }
-
-  return apiKey;
-}
-
-/**
- * Get intervals.icu API Key from configuration
- * @returns {string|null} intervals.icu API Key
- */
-function getIntervalsApiKey() {
-  return localStorage.getItem('intervals_api_key') ||
-    (typeof window !== 'undefined' && window.INTERVALS_CONFIG && window.INTERVALS_CONFIG.API_KEY) ||
-    null;
-}
-
-/**
- * Get intervals.icu Athlete ID from configuration
- * @returns {string|null} intervals.icu Athlete ID
- */
-function getIntervalsAthleteId() {
-  return localStorage.getItem('intervals_athlete_id') ||
-    (typeof window !== 'undefined' && window.INTERVALS_CONFIG && window.INTERVALS_CONFIG.ATHLETE_ID) ||
-    null;
-}
-
-/**
- * Enable cloud export buttons
- */
-function enableCloudExportButtons() {
-  if (elements.exportButtons.googleDocs) {
-    elements.exportButtons.googleDocs.disabled = false;
-    elements.exportButtons.googleDocs.title = 'Export session report to Google Docs';
-  }
-  if (elements.exportButtons.googleSheets) {
-    elements.exportButtons.googleSheets.disabled = false;
-    elements.exportButtons.googleSheets.title = 'Export detailed data to Google Sheets';
-  }
-  if (elements.exportButtons.googleAuth) {
-    elements.exportButtons.googleAuth.disabled = false;
-  }
-  if (elements.exportButtons.configureGoogleApi) {
-    elements.exportButtons.configureGoogleApi.disabled = false;
-  }
-  // Enable intervals.icu buttons if configured
-  if (isIntervalsConfigured()) {
-    enableIntervalsExportButtons();
-  }
-}
-
-/**
- * Disable cloud export buttons with reason
- * @param {string} reason - Reason for disabling
- */
-function disableCloudExportButtons(reason) {
-  if (elements.exportButtons.googleDocs) {
-    elements.exportButtons.googleDocs.disabled = true;
-    elements.exportButtons.googleDocs.title = `Disabled: ${reason}`;
-  }
-  if (elements.exportButtons.googleSheets) {
-    elements.exportButtons.googleSheets.disabled = true;
-    elements.exportButtons.googleSheets.title = `Disabled: ${reason}`;
-  }
-  if (elements.exportButtons.googleAuth) {
-    elements.exportButtons.googleAuth.disabled = true;
-    elements.exportButtons.googleAuth.title = `Disabled: ${reason}`;
-  }
-  // Keep config button enabled so users can configure
-  if (elements.exportButtons.configureGoogleApi) {
-    elements.exportButtons.configureGoogleApi.disabled = false;
-    elements.exportButtons.configureGoogleApi.title = 'Configure Google API credentials';
-  }
-}
-
-/**
- * Enable intervals.icu export buttons
- */
-function enableIntervalsExportButtons() {
-  if (elements.exportButtons.intervals) {
-    elements.exportButtons.intervals.disabled = false;
-    elements.exportButtons.intervals.title = 'Export activity to intervals.icu';
-  }
-  if (elements.exportButtons.configureIntervals) {
-    elements.exportButtons.configureIntervals.disabled = false;
-    elements.exportButtons.configureIntervals.title = 'Configure intervals.icu credentials';
-  }
-}
-
-/**
- * Disable intervals.icu export buttons with reason
- * @param {string} reason - Reason for disabling
- */
-function disableIntervalsExportButtons(reason) {
-  if (elements.exportButtons.intervals) {
-    elements.exportButtons.intervals.disabled = true;
-    elements.exportButtons.intervals.title = `Disabled: ${reason}`;
-  }
-  // Keep config button enabled so users can configure
-  if (elements.exportButtons.configureIntervals) {
-    elements.exportButtons.configureIntervals.disabled = false;
-    elements.exportButtons.configureIntervals.title = 'Configure intervals.icu credentials';
-  }
-}
-
-/**
- * Show configuration help for Google API setup
- */
-function showConfigurationHelp() {
-  // Add a subtle notice about configuration
-  const cloudSection = document.querySelector('.cloud-export-section');
-  if (cloudSection && !cloudSection.querySelector('.config-notice')) {
-    const notice = document.createElement('div');
-    notice.className = 'config-notice';
-    notice.innerHTML = `
-      <p style="font-size: 0.9rem; color: #FFB74D; margin: 0.5rem 0; text-align: center;">
-        💡 To enable cloud exports, configure Google API credentials in the browser console:<br>
-        <code style="background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 3px;">
-          localStorage.setItem('google_client_id', 'your-client-id');<br>
-          localStorage.setItem('google_api_key', 'your-api-key');
-        </code>
-      </p>
-    `;
-    cloudSection.appendChild(notice);
-  }
-}
-/**
  * Session restoration functionality
  */
 
@@ -572,14 +365,10 @@ async function initializeApp() {
   setupHamburgerMenu(elements);
   setupPowerAveragesToggle(elements);
   setupMetricToggles(elements);
-  setupSectionToggles(elements);
   setupSpyModeToggle(elements, () => disconnectSpyMeter(elements));
   setupMenuItems(elements);
   setupConnectionEventListeners();
-  setupExportEventListeners(dataStore);
-
-  // Initialize Google API for cloud exports (optional)
-  await initializeCloudExports();
+  setupExportMenuListeners(dataStore);
 
   // Try to load previous session data
   const sessionData = loadSessionData();

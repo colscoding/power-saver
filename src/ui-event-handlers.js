@@ -50,7 +50,8 @@ export function setupPowerAveragesToggle(elements) {
         return;
     }
 
-    let powerAveragesVisible = false;
+    let powerAveragesVisible = true; // Start visible by default
+    elements.powerAveragesToggle.classList.add('active'); // Set initial active state
     elements.powerAveragesToggle.addEventListener('click', function () {
         powerAveragesVisible = !powerAveragesVisible;
 
@@ -131,52 +132,7 @@ export function setupMetricToggles(elements) {
     }
 }
 
-/**
- * Setup section toggle functionality
- * @param {Object} elements - UI elements object
- */
-export function setupSectionToggles(elements) {
-    // Connect section toggle
-    if (elements.connectSectionToggle && elements.connectSection) {
-        let connectSectionVisible = true; // Start visible by default
-        elements.connectSectionToggle.classList.add('active'); // Set initial active state
-        elements.connectSection.style.display = 'block'; // Ensure it's visible initially
 
-        elements.connectSectionToggle.addEventListener('click', function () {
-            connectSectionVisible = !connectSectionVisible;
-            console.log('Toggling connect section, now visible:', connectSectionVisible);
-            if (connectSectionVisible) {
-                elements.connectSection.style.display = 'block';
-                elements.connectSectionToggle.classList.add('active');
-            } else {
-                elements.connectSection.style.display = 'none';
-                elements.connectSectionToggle.classList.remove('active');
-            }
-        });
-    } else {
-        console.error('Connect section toggle elements not found');
-    }
-
-    // Export section toggle
-    if (elements.exportSectionToggle && elements.exportSection) {
-        let exportSectionVisible = false; // Start hidden by default
-        // exportSectionToggle starts inactive since export section is initially hidden
-
-        elements.exportSectionToggle.addEventListener('click', function () {
-            exportSectionVisible = !exportSectionVisible;
-
-            if (exportSectionVisible) {
-                elements.exportSection.style.display = 'block';
-                elements.exportSectionToggle.classList.add('active');
-            } else {
-                elements.exportSection.style.display = 'none';
-                elements.exportSectionToggle.classList.remove('active');
-            }
-        });
-    } else {
-        console.error('Export section toggle elements not found');
-    }
-}
 
 /**
  * Setup spy mode toggle functionality
@@ -300,21 +256,9 @@ function manageCollapsedSectionsLayout() {
  * @param {Object} elements - UI elements object
  */
 export function initializeSections(elements) {
-    // Initialize sections - both connect and export sections visible by default
-    if (elements.connectSection) {
-        elements.connectSection.style.display = 'block'; // Ensure connect section is visible
-        const connectButtons = elements.connectSection.querySelectorAll('button:not(.section-toggle-button)');
-        connectButtons.forEach((btn) => (btn.style.display = 'block'));
-    }
-
-    // Initialize export section as visible (always available)
-    if (elements.exportSection) {
-        elements.exportSection.style.display = 'block';
-    }
-
-    // Initialize power averages section as hidden (controlled by hamburger menu)
+    // Initialize power averages section as visible by default
     if (elements.powerAveragesSection) {
-        elements.powerAveragesSection.style.display = 'none';
+        elements.powerAveragesSection.style.display = 'block';
     }
 
     updateDashboardLayout();

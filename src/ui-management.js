@@ -43,8 +43,6 @@ export const elements = {
     },
 
     // Toggle elements
-    connectSection: null,
-    exportSection: null,
     powerAveragesSection: null,
 
     // Hamburger menu elements
@@ -54,8 +52,6 @@ export const elements = {
     powerMetricToggle: null,
     heartRateMetricToggle: null,
     cadenceMetricToggle: null,
-    connectSectionToggle: null,
-    exportSectionToggle: null,
     showInfoMenuItem: null,
     showQrCodeMenuItem: null,
     spyModeToggle: null,
@@ -99,24 +95,7 @@ export function initializeElements() {
     elements.hrConnectButton = document.getElementById('hrConnectButton');
     elements.speedCadenceConnectButton = document.getElementById('speedCadenceConnectButton');
 
-    // Export buttons
-    elements.exportButtons.json = document.getElementById('exportJsonButton');
-    elements.exportButtons.csv = document.getElementById('exportCsvButton');
-    elements.exportButtons.tcx = document.getElementById('exportTcxButton');
-    elements.exportButtons.rawJson = document.getElementById('exportRawJsonButton');
-    elements.exportButtons.rawCsv = document.getElementById('exportRawCsvButton');
-    elements.exportButtons.image = document.getElementById('exportImageButton');
-    elements.exportButtons.clearSession = document.getElementById('clearSessionButton');
-    elements.exportButtons.googleDocs = document.getElementById('exportGoogleDocsButton');
-    elements.exportButtons.googleSheets = document.getElementById('exportGoogleSheetsButton');
-    elements.exportButtons.googleAuth = document.getElementById('googleAuthButton');
-    elements.exportButtons.configureGoogleApi = document.getElementById('configureGoogleApiButton');
-    elements.exportButtons.intervals = document.getElementById('exportIntervalsButton');
-    elements.exportButtons.configureIntervals = document.getElementById('configureIntervalsButton');
-
     // Toggle elements
-    elements.connectSection = document.getElementById('connectSection');
-    elements.exportSection = document.getElementById('exportSection');
     elements.powerAveragesSection = document.getElementById('powerAveragesSection');
 
     // Hamburger menu elements
@@ -126,8 +105,6 @@ export function initializeElements() {
     elements.powerMetricToggle = document.getElementById('powerMetricToggle');
     elements.heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
     elements.cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
-    elements.connectSectionToggle = document.getElementById('connectSectionToggle');
-    elements.exportSectionToggle = document.getElementById('exportSectionToggle');
     elements.showInfoMenuItem = document.getElementById('showInfoMenuItem');
     elements.showQrCodeMenuItem = document.getElementById('showQrCodeMenuItem');
     elements.spyModeToggle = document.getElementById('spyModeToggle');

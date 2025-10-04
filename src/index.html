@@ -19,39 +19,27 @@
       </div>
     </button>
     <div class="menu-dropdown" id="menuDropdown">
-      <div class="menu-item" id="togglePowerAveragesMenuItem">
-        <span class="menu-item-text">Power Averages</span>
-        <div class="menu-toggle" id="powerAveragesToggle">
-          <div class="menu-toggle-slider"></div>
-        </div>
-      </div>
       <div class="menu-item" id="togglePowerMetricMenuItem">
-        <span class="menu-item-text">Power Metric</span>
+        <span class="menu-item-text">⚡ Power Metric</span>
         <div class="menu-toggle" id="powerMetricToggle">
           <div class="menu-toggle-slider"></div>
         </div>
       </div>
       <div class="menu-item" id="toggleHeartRateMetricMenuItem">
-        <span class="menu-item-text">Heart Rate Metric</span>
+        <span class="menu-item-text">❤️ Heart Rate Metric</span>
         <div class="menu-toggle" id="heartRateMetricToggle">
           <div class="menu-toggle-slider"></div>
         </div>
       </div>
       <div class="menu-item" id="toggleCadenceMetricMenuItem">
-        <span class="menu-item-text">Cadence Metric</span>
+        <span class="menu-item-text">🚴 Cadence Metric</span>
         <div class="menu-toggle" id="cadenceMetricToggle">
           <div class="menu-toggle-slider"></div>
         </div>
       </div>
-      <div class="menu-item" id="toggleConnectSectionMenuItem">
-        <span class="menu-item-text">Connect Devices</span>
-        <div class="menu-toggle" id="connectSectionToggle">
-          <div class="menu-toggle-slider"></div>
-        </div>
-      </div>
-      <div class="menu-item" id="toggleExportSectionMenuItem">
-        <span class="menu-item-text">Export Data</span>
-        <div class="menu-toggle" id="exportSectionToggle">
+      <div class="menu-item" id="togglePowerAveragesMenuItem">
+        <span class="menu-item-text">📊 Power Averages</span>
+        <div class="menu-toggle" id="powerAveragesToggle">
           <div class="menu-toggle-slider"></div>
         </div>
       </div>
@@ -59,6 +47,26 @@
         <span class="menu-item-text">🕵️ Spy Mode</span>
         <div class="menu-toggle" id="spyModeToggle">
           <div class="menu-toggle-slider"></div>
+        </div>
+      </div>
+      <div class="menu-section" id="exportMenuSection">
+        <div class="menu-section-header" id="exportSectionToggleHeader">
+          <span class="menu-section-title">📤 Export Data</span>
+          <span class="menu-section-arrow">▼</span>
+        </div>
+        <div class="menu-section-items" id="exportSectionItems">
+          <div class="menu-item" id="exportBasicMenuItem">
+            <span class="menu-item-text">📄 Basic Exports</span>
+          </div>
+          <div class="menu-item" id="exportCloudMenuItem">
+            <span class="menu-item-text">☁️ Cloud Exports</span>
+          </div>
+          <div class="menu-item" id="exportServicesMenuItem">
+            <span class="menu-item-text">🏃 Training Platforms</span>
+          </div>
+          <div class="menu-item" id="exportUtilsMenuItem">
+            <span class="menu-item-text">🛠️ Utilities</span>
+          </div>
         </div>
       </div>
       <div class="menu-item" id="showInfoMenuItem">
@@ -80,6 +88,11 @@
             <div class="metric-unit">Watts</div>
           </div>
         </div>
+        <button class="metric-connect-button" id="connectButton">
+          Connect Power Meter
+          <div class="status-text" id="status">Disconnected</div>
+          <div class="device-name" id="device-name"></div>
+        </button>
       </div>
 
       <div class="metric-card hr-card">
@@ -91,6 +104,11 @@
           </div>
         </div>
         <div class="status-text" id="hrStatus"></div>
+        <button class="metric-connect-button" id="hrConnectButton">
+          Connect Heart Rate Monitor
+          <div class="status-text" id="hrConnectionStatus">Disconnected</div>
+          <div class="device-name" id="hrDeviceName"></div>
+        </button>
       </div>
 
       <div class="metric-card cadence-card">
@@ -102,6 +120,11 @@
           </div>
         </div>
         <div class="status-text" id="cadenceStatus"></div>
+        <button class="metric-connect-button" id="speedCadenceConnectButton">
+          Connect Speed & Cadence
+          <div class="status-text" id="cadenceConnectionStatus">Disconnected</div>
+          <div class="device-name" id="cadenceDeviceName"></div>
+        </button>
       </div>
 
     </div>
@@ -196,75 +219,6 @@
           </tbody>
         </table>
       </div>
-    </div>
-  </section>
-
-  <!-- Connect Controls Section -->
-  <section class="controls-container" id="connectSection">
-    <button id="connectButton">
-      Connect Power Meter
-      <div class="status-text" id="status">Disconnected</div>
-      <div class="device-name" id="device-name"></div>
-    </button>
-    <button id="hrConnectButton">
-      Connect Heart Rate Monitor
-      <div class="status-text" id="hrConnectionStatus">Disconnected</div>
-      <div class="device-name" id="hrDeviceName"></div>
-    </button>
-    <button id="speedCadenceConnectButton">
-      Connect Speed & Cadence
-      <div class="status-text" id="cadenceConnectionStatus">Disconnected</div>
-      <div class="device-name" id="cadenceDeviceName"></div>
-    </button>
-  </section>
-
-  <!-- Export Controls Section -->
-  <section class="export-section" id="exportSection">
-    <div class="export-buttons" id="export-buttons">
-      <button id="exportJsonButton">Export Summary JSON</button>
-      <button id="exportCsvButton">Export Summary CSV</button>
-      <button id="exportTcxButton">Export TCX</button>
-      <button id="exportRawJsonButton">Export Raw Measurements JSON</button>
-      <button id="exportRawCsvButton">Export Raw Measurements CSV</button>
-      <button id="exportImageButton" aria-label="Export summary as image">
-        📊 Export Summary Image
-      </button>
-
-      <!-- Cloud Export Section -->
-      <div class="cloud-export-section">
-        <h4 class="cloud-export-title">☁️ Cloud Exports</h4>
-        <button id="googleAuthButton" class="auth-button" aria-label="Sign in to Google account for cloud exports">
-          🔗 Sign In to Google
-        </button>
-        <button id="exportGoogleDocsButton" class="cloud-export-button"
-          aria-label="Export session report to Google Docs">
-          📄 Export to Google Docs
-        </button>
-        <button id="exportGoogleSheetsButton" class="cloud-export-button"
-          aria-label="Export detailed data to Google Sheets">
-          📊 Export to Google Sheets
-        </button>
-        <button id="configureGoogleApiButton" class="config-button" aria-label="Configure Google API credentials">
-          ⚙️ Configure API
-        </button>
-      </div>
-
-      <!-- intervals.icu Export Section -->
-      <div class="intervals-export-section">
-        <h4 class="intervals-export-title">🏃 intervals.icu</h4>
-        <button id="exportIntervalsButton" class="intervals-export-button"
-          aria-label="Export activity to intervals.icu">
-          🚴 Export to intervals.icu
-        </button>
-        <button id="configureIntervalsButton" class="config-button intervals-config"
-          aria-label="Configure intervals.icu API credentials">
-          ⚙️ Configure intervals.icu
-        </button>
-      </div>
-
-      <button id="clearSessionButton" aria-label="Clear all session data">
-        Clear Session Data
-      </button>
     </div>
   </section>
 

@@ -624,156 +624,6 @@ function calculateLapStatistics(powerData) {
     };
 }
 
-/**
- * Setup all export button event listeners
- * @param {Object} dataStore - Object containing all data arrays and functions
- */
-export function setupExportEventListeners(dataStore) {
-    const { elements } = dataStore;
-
-    // JSON export
-    if (elements.exportButtons.json) {
-        elements.exportButtons.json.addEventListener('click', () => {
-            exportAsJson(dataStore.powerData);
-        });
-    }
-
-    // CSV export
-    if (elements.exportButtons.csv) {
-        elements.exportButtons.csv.addEventListener('click', () => {
-            exportAsCsv(dataStore.powerData);
-        });
-    }
-
-    // Raw JSON export
-    if (elements.exportButtons.rawJson) {
-        elements.exportButtons.rawJson.addEventListener('click', () => {
-            exportRawAsJson(dataStore.rawPowerMeasurements);
-        });
-    }
-
-    // Raw CSV export
-    if (elements.exportButtons.rawCsv) {
-        elements.exportButtons.rawCsv.addEventListener('click', () => {
-            exportRawAsCsv(dataStore.rawPowerMeasurements);
-        });
-    }
-
-    // TCX export
-    if (elements.exportButtons.tcx) {
-        elements.exportButtons.tcx.addEventListener('click', () => {
-            try {
-                exportAsTcx(dataStore.powerData);
-            } catch (error) {
-                alert(`Error generating TCX file: ${error.message}`);
-            }
-        });
-    }
-
-    // Image export
-    if (elements.exportButtons.image) {
-        elements.exportButtons.image.addEventListener('click', async () => {
-            try {
-                await exportSummaryImage({
-                    dataPoints: dataStore.powerData,
-                    powerAverages: dataStore.getPowerAverages()
-                });
-            } catch (error) {
-                alert(`Error generating summary image: ${error.message}`);
-            }
-        });
-    }
-
-    // Clear session
-    if (elements.exportButtons.clearSession) {
-        elements.exportButtons.clearSession.addEventListener('click', () => {
-            const confirmed = confirm(
-                'Are you sure you want to clear all session data? This action cannot be undone.'
-            );
-            if (confirmed) {
-                dataStore.resetAllSessionData();
-                alert('Session data cleared successfully!');
-            }
-        });
-    }
-
-    // Google Docs export
-    if (elements.exportButtons.googleDocs) {
-        elements.exportButtons.googleDocs.addEventListener('click', async () => {
-            try {
-                await exportToGoogleDocs({
-                    powerData: dataStore.powerData,
-                    powerAverages: dataStore.getPowerAverages(),
-                    sessionStartTime: dataStore.sessionStartTime
-                });
-            } catch (error) {
-                alert(`Error exporting to Google Docs: ${error.message}`);
-            }
-        });
-    }
-
-    // Google Sheets export
-    if (elements.exportButtons.googleSheets) {
-        elements.exportButtons.googleSheets.addEventListener('click', async () => {
-            try {
-                await exportToGoogleSheets({
-                    powerData: dataStore.powerData,
-                    rawMeasurements: dataStore.rawPowerMeasurements,
-                    sessionStartTime: dataStore.sessionStartTime
-                });
-            } catch (error) {
-                alert(`Error exporting to Google Sheets: ${error.message}`);
-            }
-        });
-    }
-
-    // Cloud authentication
-    if (elements.exportButtons.googleAuth) {
-        elements.exportButtons.googleAuth.addEventListener('click', async () => {
-            try {
-                if (isSignedInToGoogle()) {
-                    await signOutFromGoogle();
-                    updateCloudAuthButton(elements.exportButtons.googleAuth, false);
-                } else {
-                    const success = await authenticateWithGoogle();
-                    updateCloudAuthButton(elements.exportButtons.googleAuth, success);
-                }
-            } catch (error) {
-                alert(`Google authentication error: ${error.message}`);
-            }
-        });
-    }
-
-    // Google API configuration
-    if (elements.exportButtons.configureGoogleApi) {
-        elements.exportButtons.configureGoogleApi.addEventListener('click', () => {
-            showGoogleApiConfigModal();
-        });
-    }
-
-    // intervals.icu export
-    if (elements.exportButtons.intervals) {
-        elements.exportButtons.intervals.addEventListener('click', async () => {
-            try {
-                await exportToIntervals({
-                    powerData: dataStore.powerData,
-                    powerAverages: dataStore.getPowerAverages(),
-                    sessionStartTime: dataStore.sessionStartTime
-                });
-                alert('Successfully exported to intervals.icu!');
-            } catch (error) {
-                alert(`Error exporting to intervals.icu: ${error.message}`);
-            }
-        });
-    }
-
-    // intervals.icu configuration
-    if (elements.exportButtons.configureIntervals) {
-        elements.exportButtons.configureIntervals.addEventListener('click', () => {
-            showIntervalsConfigModal();
-        });
-    }
-}
 
 /**
  * Export power data to Google Docs as a formatted document
@@ -1264,28 +1114,9 @@ function formatDuration(duration) {
 }
 
 /**
- * Update cloud authentication button state
- * @param {HTMLElement} button - The authentication button element
- * @param {boolean} isSignedIn - Whether user is signed in
- */
-function updateCloudAuthButton(button, isSignedIn) {
-    if (!button) return;
-
-    if (isSignedIn) {
-        button.textContent = '🔗 Sign Out from Google';
-        button.classList.add('signed-in');
-        button.setAttribute('aria-label', 'Sign out from Google account');
-    } else {
-        button.textContent = '🔗 Sign In to Google';
-        button.classList.remove('signed-in');
-        button.setAttribute('aria-label', 'Sign in to Google account for cloud exports');
-    }
-}
-
-/**
  * Show Google API configuration modal
  */
-function showGoogleApiConfigModal() {
+export function showGoogleApiConfigModal() {
     // Create modal backdrop
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';
@@ -1405,7 +1236,7 @@ function showGoogleApiConfigModal() {
 /**
  * Show intervals.icu configuration modal
  */
-function showIntervalsConfigModal() {
+export function showIntervalsConfigModal() {
     // Create modal backdrop
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';
