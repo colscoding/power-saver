@@ -93,9 +93,6 @@ export async function connectPowerMeter(callbacks, elements) {
         });
 
         callbacks.onStatusUpdate('Connected and receiving data!');
-        if (elements.powerMeterConnectButton) {
-            elements.powerMeterConnectButton.disabled = true;
-        }
 
         return true;
     } catch (error) {
@@ -161,9 +158,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         callbacks.onStatusUpdate('Connected!');
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Connected';
-        }
-        if (elements.hrConnectButton) {
-            elements.hrConnectButton.disabled = true;
         }
 
         return true;
@@ -233,9 +227,6 @@ export async function connectSpeedCadenceSensor(callbacks, elements) {
         callbacks.onStatusUpdate('Connected!');
         if (elements.cadenceConnectionStatus) {
             elements.cadenceConnectionStatus.textContent = 'Connected';
-        }
-        if (elements.speedCadenceConnectButton) {
-            elements.speedCadenceConnectButton.disabled = true;
         }
 
         return true;
@@ -364,6 +355,22 @@ export function isSpyMeterConnected() {
     return spyMeterDevice && spyMeterDevice.gatt.connected;
 }
 
+/**
+ * Check if heart rate monitor is connected
+ * @returns {boolean}
+ */
+export function isHeartRateConnected() {
+    return hrBluetoothDevice && hrBluetoothDevice.gatt.connected;
+}
+
+/**
+ * Check if speed/cadence sensor is connected
+ * @returns {boolean}
+ */
+export function isSpeedCadenceConnected() {
+    return speedCadenceBluetoothDevice && speedCadenceBluetoothDevice.gatt.connected;
+}
+
 // Event handlers
 function handlePowerMeasurement(event, callbacks) {
     const value = event.target.value;
@@ -464,9 +471,6 @@ function onPowerMeterDisconnected(callbacks, elements) {
     if (elements.deviceNameElement) {
         elements.deviceNameElement.textContent = '';
     }
-    if (elements.powerMeterConnectButton) {
-        elements.powerMeterConnectButton.disabled = false;
-    }
     if (powerMeterDevice) {
         powerMeterDevice.removeEventListener('gattserverdisconnected', () => {
             onPowerMeterDisconnected(callbacks, elements);
@@ -484,11 +488,11 @@ function onHeartRateDisconnected(callbacks, elements) {
     if (elements.hrDeviceName) {
         elements.hrDeviceName.textContent = '';
     }
-    if (elements.hrConnectButton) {
-        elements.hrConnectButton.disabled = false;
-    }
     hrBluetoothDevice = null;
     callbacks.onHeartRateChange(0);
+    if (callbacks.onDisconnected) {
+        callbacks.onDisconnected();
+    }
 }
 
 function onCadenceDisconnected(callbacks, elements) {
@@ -499,11 +503,11 @@ function onCadenceDisconnected(callbacks, elements) {
     if (elements.cadenceDeviceName) {
         elements.cadenceDeviceName.textContent = '';
     }
-    if (elements.speedCadenceConnectButton) {
-        elements.speedCadenceConnectButton.disabled = false;
-    }
     speedCadenceBluetoothDevice = null;
     callbacks.onCadenceChange(0);
+    if (callbacks.onDisconnected) {
+        callbacks.onDisconnected();
+    }
 
     // Clear cadence reset timer and reset variables
     if (cadenceResetTimer) {

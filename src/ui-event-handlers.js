@@ -4,7 +4,6 @@
  */
 
 import { showAppInfo } from './app-info-modal.js';
-import { showQrCodeModal } from './qr-code-modal.js';
 
 /**
  * Setup hamburger menu functionality
@@ -186,19 +185,6 @@ export function setupMenuItems(elements) {
         });
     } else {
         console.error('Show info menu item not found');
-    }
-
-    // QR Code functionality
-    if (elements.showQrCodeMenuItem) {
-        elements.showQrCodeMenuItem.addEventListener('click', function () {
-            showQrCodeModal();
-            // Close the menu after showing QR code
-            if (elements.menuDropdown) {
-                elements.menuDropdown.classList.remove('active');
-            }
-        });
-    } else {
-        console.error('Show QR code menu item not found');
     }
 }
 

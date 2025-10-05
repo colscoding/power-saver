@@ -33,13 +33,7 @@ export const elements = {
         rawJson: null,
         rawCsv: null,
         image: null,
-        clearSession: null,
-        googleDocs: null,
-        googleSheets: null,
-        googleAuth: null,
-        configureGoogleApi: null,
-        intervals: null,
-        configureIntervals: null
+        clearSession: null
     },
 
     // Toggle elements
@@ -53,7 +47,6 @@ export const elements = {
     heartRateMetricToggle: null,
     cadenceMetricToggle: null,
     showInfoMenuItem: null,
-    showQrCodeMenuItem: null,
     spyModeToggle: null,
 
     // Metric card elements
@@ -106,7 +99,6 @@ export function initializeElements() {
     elements.heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
     elements.cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
     elements.showInfoMenuItem = document.getElementById('showInfoMenuItem');
-    elements.showQrCodeMenuItem = document.getElementById('showQrCodeMenuItem');
     elements.spyModeToggle = document.getElementById('spyModeToggle');
 
     // Metric card elements
@@ -163,6 +155,30 @@ export function resetMetricDisplays() {
     updatePowerValue('--');
     if (elements.hrValueElement) elements.hrValueElement.textContent = '--';
     if (elements.cadenceValueElement) elements.cadenceValueElement.textContent = '--';
+}
+
+/**
+ * Update connect button visibility based on device connection status
+ * @param {Object} connectionStates - Object containing connection states for each device type
+ * @param {boolean} connectionStates.powerMeter - Power meter connection state
+ * @param {boolean} connectionStates.heartRate - Heart rate monitor connection state
+ * @param {boolean} connectionStates.speedCadence - Speed/cadence sensor connection state
+ */
+export function updateConnectButtonVisibility(connectionStates) {
+    // Hide/show power meter connect button
+    if (elements.powerMeterConnectButton) {
+        elements.powerMeterConnectButton.style.display = connectionStates.powerMeter ? 'none' : 'block';
+    }
+
+    // Hide/show heart rate connect button
+    if (elements.hrConnectButton) {
+        elements.hrConnectButton.style.display = connectionStates.heartRate ? 'none' : 'block';
+    }
+
+    // Hide/show speed/cadence connect button
+    if (elements.speedCadenceConnectButton) {
+        elements.speedCadenceConnectButton.style.display = connectionStates.speedCadence ? 'none' : 'block';
+    }
 }
 
 /**

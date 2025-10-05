@@ -20,7 +20,8 @@ import {
   initializeElements,
   updatePowerValue,
   updateMetricDisplays,
-  resetMetricDisplays
+  resetMetricDisplays,
+  updateConnectButtonVisibility
 } from "./ui-management.js";
 import {
   connectPowerMeter,
@@ -28,7 +29,10 @@ import {
   connectSpeedCadenceSensor,
   connectSpyMeter,
   disconnectSpyMeter,
-  isSpyMeterConnected
+  isSpyMeterConnected,
+  isPowerMeterConnected,
+  isHeartRateConnected,
+  isSpeedCadenceConnected
 } from "./bluetooth-connections.js";
 import { setupExportMenuListeners } from "./export-modals.js";
 import { showSessionRestoredNotification } from "./notifications.js";
@@ -136,6 +140,7 @@ const powerMeterCallbacks = {
       dataLoggerInterval = null;
     }
     lastPowerValue = 0;
+    updateAllConnectButtonVisibility();
   },
   onStatusUpdate: (message) => {
     if (elements.statusText) {
@@ -155,6 +160,9 @@ const heartRateCallbacks = {
     if (elements.hrStatusText) {
       elements.hrStatusText.textContent = message;
     }
+  },
+  onDisconnected: () => {
+    updateAllConnectButtonVisibility();
   }
 };
 
@@ -169,8 +177,22 @@ const cadenceCallbacks = {
     if (elements.cadenceStatusText) {
       elements.cadenceStatusText.textContent = message;
     }
+  },
+  onDisconnected: () => {
+    updateAllConnectButtonVisibility();
   }
 };
+
+/**
+ * Update all connect button visibility based on current connection states
+ */
+function updateAllConnectButtonVisibility() {
+  updateConnectButtonVisibility({
+    powerMeter: isPowerMeterConnected(),
+    heartRate: isHeartRateConnected(),
+    speedCadence: isSpeedCadenceConnected()
+  });
+}
 
 /**
  * Setup connection button event listeners
@@ -212,6 +234,9 @@ function setupConnectionEventListeners() {
             saveSessionData(dataStore);
           }
         }, 100);
+
+        // Update button visibility
+        updateAllConnectButtonVisibility();
       }
     });
   }
@@ -219,14 +244,20 @@ function setupConnectionEventListeners() {
   // Heart rate monitor connection
   if (elements.hrConnectButton) {
     elements.hrConnectButton.addEventListener('click', async () => {
-      await connectHeartRateMonitor(heartRateCallbacks, elements);
+      const connected = await connectHeartRateMonitor(heartRateCallbacks, elements);
+      if (connected) {
+        updateAllConnectButtonVisibility();
+      }
     });
   }
 
   // Speed/cadence sensor connection
   if (elements.speedCadenceConnectButton) {
     elements.speedCadenceConnectButton.addEventListener('click', async () => {
-      await connectSpeedCadenceSensor(cadenceCallbacks, elements);
+      const connected = await connectSpeedCadenceSensor(cadenceCallbacks, elements);
+      if (connected) {
+        updateAllConnectButtonVisibility();
+      }
     });
   }
 
@@ -369,6 +400,9 @@ async function initializeApp() {
   setupMenuItems(elements);
   setupConnectionEventListeners();
   setupExportMenuListeners(dataStore);
+
+  // Initialize connect button visibility based on current connection states
+  updateAllConnectButtonVisibility();
 
   // Try to load previous session data
   const sessionData = loadSessionData();
