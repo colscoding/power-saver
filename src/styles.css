@@ -751,6 +751,60 @@ button:disabled::before {
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
+.export-modal-button.export-all {
+    background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    border: 2px solid rgba(155, 89, 182, 0.3);
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.export-modal-button.export-all::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.export-modal-button.export-all:hover::before {
+    left: 100%;
+}
+
+.export-modal-button.export-all:hover {
+    box-shadow: 0 6px 20px rgba(155, 89, 182, 0.4);
+    transform: translateY(-2px);
+}
+
+.export-modal-separator {
+    margin: 1.5rem 0 1rem 0;
+    text-align: center;
+    position: relative;
+}
+
+.export-modal-separator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.export-modal-separator span {
+    background: #2c3e50;
+    color: #7f8c8d;
+    padding: 0 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
 .export-modal-description {
     color: #ccc;
     font-size: 0.85rem;

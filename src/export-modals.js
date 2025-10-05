@@ -10,7 +10,8 @@ import {
     exportAsTcx,
     exportRawAsJson,
     exportRawAsCsv,
-    exportSummaryImage
+    exportSummaryImage,
+    exportAll
 } from './data-export.js';
 
 /**
@@ -18,20 +19,38 @@ import {
  * @param {Object} dataStore - Data store object containing export data
  */
 export function showBasicExportModal(dataStore) {
-    const modal = createExportModal('📄 Basic Exports', 'Export your session data in various formats');
+    const modal = createExportModal('📄 Exports', 'Export your session data in various formats');
 
     const buttons = [
         {
-            text: '📋 Export Summary JSON',
-            description: 'Session summary with averages',
+            text: '📥 Export All Files',
+            description: 'Download all export formats at once',
+            className: 'export-all primary',
+            onClick: async () => {
+                try {
+                    await exportAll({
+                        powerData: dataStore.powerData,
+                        rawPowerMeasurements: dataStore.rawPowerMeasurements,
+                        powerAverages: dataStore.getPowerAverages()
+                    });
+                    closeModal(modal);
+                    alert('All export files downloaded successfully!');
+                } catch (error) {
+                    alert(`Error during export all: ${error.message}`);
+                }
+            }
+        },
+        {
+            text: '📊 Export JSON',
+            description: 'JavaScript Object Notation format',
             onClick: () => {
                 exportAsJson(dataStore.powerData);
                 closeModal(modal);
             }
         },
         {
-            text: '📊 Export Summary CSV',
-            description: 'Session summary for spreadsheets',
+            text: '📊 Export CSV',
+            description: 'Comma-Separated Values format',
             onClick: () => {
                 exportAsCsv(dataStore.powerData);
                 closeModal(modal);
@@ -51,7 +70,7 @@ export function showBasicExportModal(dataStore) {
         },
         {
             text: '🔍 Export Raw JSON',
-            description: 'Complete measurement data',
+            description: 'Complete measurement data in JSON format',
             onClick: () => {
                 exportRawAsJson(dataStore.rawPowerMeasurements);
                 closeModal(modal);
@@ -59,7 +78,7 @@ export function showBasicExportModal(dataStore) {
         },
         {
             text: '📈 Export Raw CSV',
-            description: 'Raw measurements for analysis',
+            description: 'Complete measurement data in CSV format',
             onClick: () => {
                 exportRawAsCsv(dataStore.rawPowerMeasurements);
                 closeModal(modal);
@@ -162,7 +181,7 @@ function createExportModal(title, description) {
 function addButtonsToModal(modal, buttons) {
     const buttonsContainer = modal.querySelector('.export-modal-buttons');
 
-    buttons.forEach(buttonConfig => {
+    buttons.forEach((buttonConfig) => {
         const button = document.createElement('button');
         button.className = `export-modal-button ${buttonConfig.className || ''}`;
         button.disabled = buttonConfig.disabled || false;
@@ -174,6 +193,14 @@ function addButtonsToModal(modal, buttons) {
 
         button.addEventListener('click', buttonConfig.onClick);
         buttonsContainer.appendChild(button);
+
+        // Add separator after "Export All" button
+        if (buttonConfig.className && buttonConfig.className.includes('export-all')) {
+            const separator = document.createElement('div');
+            separator.className = 'export-modal-separator';
+            separator.innerHTML = '<span>Individual Exports</span>';
+            buttonsContainer.appendChild(separator);
+        }
     });
 }
 

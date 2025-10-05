@@ -158,3 +158,91 @@ function downloadFile(blob, filename) {
         throw error;
     }
 }
+
+/**
+ * Export all data formats at once
+ * @param {Object} data - Object containing powerData, rawPowerMeasurements, and powerAverages
+ */
+export async function exportAll(data) {
+    const { powerData, rawPowerMeasurements, powerAverages } = data;
+
+    if (!powerData || !Array.isArray(powerData) || powerData.length === 0) {
+        throw new Error('No valid power data available for export');
+    }
+
+    const errors = [];
+
+    try {
+        // Export Summary JSON
+        exportAsJson(powerData);
+        console.log('✓ Summary JSON exported');
+    } catch (error) {
+        errors.push(`Summary JSON: ${error.message}`);
+    }
+
+    // Small delay between downloads to prevent browser blocking
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+        // Export Summary CSV
+        exportAsCsv(powerData);
+        console.log('✓ Summary CSV exported');
+    } catch (error) {
+        errors.push(`Summary CSV: ${error.message}`);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+        // Export TCX
+        exportAsTcx(powerData);
+        console.log('✓ TCX exported');
+    } catch (error) {
+        errors.push(`TCX: ${error.message}`);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+        // Export Raw JSON (if available)
+        if (rawPowerMeasurements && rawPowerMeasurements.length > 0) {
+            exportRawAsJson(rawPowerMeasurements);
+            console.log('✓ Raw JSON exported');
+        }
+    } catch (error) {
+        errors.push(`Raw JSON: ${error.message}`);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+        // Export Raw CSV (if available)
+        if (rawPowerMeasurements && rawPowerMeasurements.length > 0) {
+            exportRawAsCsv(rawPowerMeasurements);
+            console.log('✓ Raw CSV exported');
+        }
+    } catch (error) {
+        errors.push(`Raw CSV: ${error.message}`);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    try {
+        // Export Summary Image
+        await exportSummaryImage({
+            dataPoints: powerData,
+            powerAverages: powerAverages || {}
+        });
+        console.log('✓ Summary Image exported');
+    } catch (error) {
+        errors.push(`Summary Image: ${error.message}`);
+    }
+
+    // Report any errors
+    if (errors.length > 0) {
+        console.warn('Some exports failed:', errors);
+        throw new Error(`Some exports failed:\n${errors.join('\n')}`);
+    }
+
+    console.log('✅ All exports completed successfully!');
+}
