@@ -10,7 +10,6 @@ import {
     exportAsTcx,
     exportRawAsJson,
     exportRawAsCsv,
-    exportSummaryImage,
     exportAll
 } from './data-export.js';
 
@@ -82,22 +81,6 @@ export function showBasicExportModal(dataStore) {
             onClick: () => {
                 exportRawAsCsv(dataStore.rawPowerMeasurements);
                 closeModal(modal);
-            }
-        },
-        {
-            text: '🖼️ Export Summary Image',
-            description: 'Visual summary of your session',
-            className: 'primary',
-            onClick: async () => {
-                try {
-                    await exportSummaryImage({
-                        dataPoints: dataStore.powerData,
-                        powerAverages: dataStore.getPowerAverages()
-                    });
-                    closeModal(modal);
-                } catch (error) {
-                    alert(`Error generating summary image: ${error.message}`);
-                }
             }
         }
     ];

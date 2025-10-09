@@ -126,41 +126,19 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             elements.hrConnectionStatus.textContent = 'Connecting...';
         }
 
-        // Filter for devices that advertise the 'heart_rate' service
+        // Show device selection
         hrBluetoothDevice = await navigator.bluetooth.requestDevice({
             filters: [
                 {
                     services: ['heart_rate'],
                 },
             ],
+            optionalServices: ['device_information', 'battery_service'] // Get additional info if available
         });
 
-        callbacks.onStatusUpdate('Connecting to device...');
-        if (elements.hrDeviceName) {
-            elements.hrDeviceName.textContent = `Device: ${hrBluetoothDevice.name}`;
-        }
-
-        // Add a listener for when the device gets disconnected
-        hrBluetoothDevice.addEventListener('gattserverdisconnected', () => {
-            onHeartRateDisconnected(callbacks, elements);
-        });
-
-        const hrServer = await hrBluetoothDevice.gatt.connect();
-        const hrService = await hrServer.getPrimaryService('heart_rate');
-        const hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
-
-        // Start notifications to receive heart rate data
-        await hrCharacteristic.startNotifications();
-        hrCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
-            handleHeartRateChanged(event, callbacks);
-        });
-
-        callbacks.onStatusUpdate('Connected!');
-        if (elements.hrConnectionStatus) {
-            elements.hrConnectionStatus.textContent = 'Connected';
-        }
-
+        await connectToHRDevice(hrBluetoothDevice, callbacks, elements);
         return true;
+
     } catch (error) {
         callbacks.onStatusUpdate(`Error: ${error.message}`);
         if (elements.hrConnectionStatus) {
@@ -169,6 +147,94 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         console.error('Connection failed:', error);
         return false;
     }
+}
+
+/**
+ * Connect to HR device with enhanced device information
+ * @param {BluetoothDevice} device - The Bluetooth device to connect to
+ * @param {Object} callbacks - Object containing callback functions
+ * @param {Object} elements - UI elements object
+ */
+async function connectToHRDevice(device, callbacks, elements) {
+    callbacks.onStatusUpdate('Connecting to device...');
+
+    // Get enhanced device information
+    const deviceInfo = await getEnhancedDeviceInfo(device);
+    if (elements.hrDeviceName) {
+        elements.hrDeviceName.textContent = `Device: ${deviceInfo}`;
+    }
+
+    // Add disconnect listener
+    hrDisconnectHandler = () => {
+        onHeartRateDisconnected(callbacks, elements);
+    };
+    device.addEventListener('gattserverdisconnected', hrDisconnectHandler);
+
+    const hrServer = await device.gatt.connect();
+    const hrService = await hrServer.getPrimaryService('heart_rate');
+    const hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
+
+    // Start notifications to receive heart rate data
+    await hrCharacteristic.startNotifications();
+    hrCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
+        handleHeartRateChanged(event, callbacks);
+    });
+
+    callbacks.onStatusUpdate('Connected!');
+    if (elements.hrConnectionStatus) {
+        elements.hrConnectionStatus.textContent = 'Connected';
+    }
+}
+
+/**
+ * Get enhanced device information for better identification
+ * @param {BluetoothDevice} device - The Bluetooth device
+ * @returns {string} Enhanced device information string
+ */
+async function getEnhancedDeviceInfo(device) {
+    let deviceInfo = device.name || 'Unknown Device';
+
+    try {
+        const server = await device.gatt.connect();
+
+        // Try to get device information service for more details
+        try {
+            const deviceInfoService = await server.getPrimaryService('device_information');
+
+            // Try to get manufacturer name
+            try {
+                const manufacturerChar = await deviceInfoService.getCharacteristic('manufacturer_name_string');
+                const manufacturerValue = await manufacturerChar.readValue();
+                const manufacturer = new TextDecoder().decode(manufacturerValue);
+                deviceInfo += ` (${manufacturer})`;
+            } catch (e) {
+                // Manufacturer info not available
+            }
+
+            // Try to get model number
+            try {
+                const modelChar = await deviceInfoService.getCharacteristic('model_number_string');
+                const modelValue = await modelChar.readValue();
+                const model = new TextDecoder().decode(modelValue);
+                deviceInfo += ` ${model}`;
+            } catch (e) {
+                // Model info not available
+            }
+
+        } catch (e) {
+            // Device information service not available
+        }
+
+    } catch (e) {
+        // Connection failed or server not available, use basic info
+    }
+
+    // Add device ID as fallback identifier to distinguish identical names
+    if (device.id) {
+        deviceInfo += ` [${device.id.slice(-6)}]`; // Last 6 chars of device ID
+    }
+
+    return deviceInfo;
 }
 
 /**

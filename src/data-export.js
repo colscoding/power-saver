@@ -1,10 +1,9 @@
 /**
  * Data Export Module
- * Handles all data export functionality including JSON, CSV, TCX, and image exports
+ * Handles all data export functionality including JSON, CSV, and TCX exports
  */
 
 import { generateTcxString } from './create-tcx.js';
-import { generateSummaryImage } from './create-image.js';
 import { getCurrentDateString } from './ui-management.js';
 
 /**
@@ -95,37 +94,6 @@ export function exportAsTcx(powerData) {
         downloadFile(blob, `power_data_${getCurrentDateString()}.tcx`);
     } catch (error) {
         console.error('Error generating TCX:', error);
-        throw error;
-    }
-}
-
-/**
- * Export summary image
- * @param {Object} data - Object containing dataPoints and powerAverages
- */
-export async function exportSummaryImage(data) {
-    try {
-        if (data.dataPoints.length === 0) {
-            throw new Error('No data available to export. Please record some activity first.');
-        }
-
-        const canvas = await generateSummaryImage({
-            dataPoints: data.dataPoints,
-            powerAverages: data.powerAverages
-        });
-
-        return new Promise((resolve, reject) => {
-            canvas.toBlob((blob) => {
-                if (blob) {
-                    downloadFile(blob, `power_meter_summary_${getCurrentDateString()}.png`);
-                    resolve();
-                } else {
-                    reject(new Error('Failed to generate image blob'));
-                }
-            }, 'image/png');
-        });
-    } catch (error) {
-        console.error('Error generating summary image:', error);
         throw error;
     }
 }
@@ -223,19 +191,6 @@ export async function exportAll(data) {
         }
     } catch (error) {
         errors.push(`Raw CSV: ${error.message}`);
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    try {
-        // Export Summary Image
-        await exportSummaryImage({
-            dataPoints: powerData,
-            powerAverages: powerAverages || {}
-        });
-        console.log('✓ Summary Image exported');
-    } catch (error) {
-        errors.push(`Summary Image: ${error.message}`);
     }
 
     // Report any errors

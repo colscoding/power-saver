@@ -360,26 +360,6 @@ button:disabled::before {
     box-shadow: 0 8px 24px rgba(52, 152, 219, 0.4);
 }
 
-/* Export Image Button Specific Styling */
-#exportImageButton {
-    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%) !important;
-    box-shadow: 0 4px 16px rgba(230, 126, 34, 0.3) !important;
-    color: white !important;
-    font-weight: 600;
-    position: relative;
-}
-
-#exportImageButton:hover {
-    box-shadow: 0 8px 24px rgba(230, 126, 34, 0.4) !important;
-    transform: translateY(-2px);
-}
-
-#exportImageButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
 
 
 
