@@ -56,6 +56,10 @@ let lastCadenceValue = 0;
 let sessionStartTime = null;
 let dataLoggerInterval = null;
 
+// Constants for data logging
+const DATA_LOGGER_INTERVAL_MS = 100; // Log data every 100ms
+const SESSION_SAVE_INTERVAL = 100; // Save session every 100 readings (10 seconds)
+
 /**
  * Update displays after restoring session data
  */
@@ -228,12 +232,11 @@ function setupConnectionEventListeners() {
             cadence: lastCadenceValue,
           });
 
-          // Save session data every 10 seconds
-          if (powerData.length % 100 === 0) {
-            // Every 100 readings = 10 seconds
+          // Save session data periodically (every 100 readings = 10 seconds)
+          if (powerData.length % SESSION_SAVE_INTERVAL === 0) {
             saveSessionData(dataStore);
           }
-        }, 100);
+        }, DATA_LOGGER_INTERVAL_MS);
 
         // Update button visibility
         updateAllConnectButtonVisibility();

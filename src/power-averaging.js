@@ -3,6 +3,22 @@
  * Handles power data collection, averaging calculations, and display updates
  */
 
+// Constants for time periods
+const TIME_PERIODS_MS = {
+    '10s': 10 * 1000,
+    '20s': 20 * 1000,
+    '30s': 30 * 1000,
+    '40s': 40 * 1000,
+    '50s': 50 * 1000,
+    '1m': 60 * 1000,
+    '2m': 120 * 1000,
+    '3m': 180 * 1000,
+    '4m': 240 * 1000,
+    '5m': 300 * 1000,
+};
+
+const RETENTION_BUFFER_MS = 6 * 60 * 1000; // Keep 6 minutes of data (5 min max period + buffer)
+
 // Power averaging data structures
 let powerReadings = []; // Array to store timestamped power readings
 let powerAverages = {
@@ -65,9 +81,9 @@ export function addPowerReading(power) {
     const now = Date.now();
     powerReadings.push({ timestamp: now, power: power });
 
-    // Keep only the last 5 minutes of readings (plus some buffer)
-    const fiveMinutesAgo = now - 6 * 60 * 1000; // 6 minutes to be safe
-    powerReadings = powerReadings.filter((reading) => reading.timestamp > fiveMinutesAgo);
+    // Keep only the last 5 minutes of readings (plus buffer to ensure we have enough data)
+    const retentionCutoff = now - RETENTION_BUFFER_MS;
+    powerReadings = powerReadings.filter((reading) => reading.timestamp > retentionCutoff);
 
     // Calculate current averages
     calculatePowerAverages();
@@ -79,20 +95,8 @@ export function addPowerReading(power) {
  */
 function calculatePowerAverages() {
     const now = Date.now();
-    const periods = {
-        '10s': 10 * 1000,
-        '20s': 20 * 1000,
-        '30s': 30 * 1000,
-        '40s': 40 * 1000,
-        '50s': 50 * 1000,
-        '1m': 60 * 1000,
-        '2m': 120 * 1000,
-        '3m': 180 * 1000,
-        '4m': 240 * 1000,
-        '5m': 300 * 1000,
-    };
 
-    for (const [periodKey, periodMs] of Object.entries(periods)) {
+    for (const [periodKey, periodMs] of Object.entries(TIME_PERIODS_MS)) {
         const cutoffTime = now - periodMs;
         const relevantReadings = powerReadings.filter((reading) => reading.timestamp >= cutoffTime);
 

@@ -6,12 +6,18 @@
 import { parseHeartRate } from './heart-rate.js';
 import { requestWakeLock } from './wake-lock.js';
 
-// Bluetooth service UUIDs
+// Bluetooth service UUIDs (using standard Bluetooth GATT service names)
 const CYCLING_POWER_SERVICE_UUID = 'cycling_power';
 const CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID = 'cycling_power_measurement';
 const CYCLING_POWER_FEATURE_CHARACTERISTIC_UUID = 'cycling_power_feature';
 const CYCLING_CADENCE_SERVICE_UUID = 'cycling_speed_and_cadence';
 const CSC_MEASUREMENT_CHARACTERISTIC_UUID = 'csc_measurement';
+
+// Constants for device identification
+const DEVICE_ID_SUFFIX_LENGTH = 6; // Characters to show from device ID
+
+// Constants for cadence calculation
+const CADENCE_RESET_TIMEOUT_MS = 3000; // Reset cadence after 3 seconds of no data
 
 // Device connection state
 let powerMeterDevice = null;
@@ -189,7 +195,7 @@ async function connectToHRDevice(device, callbacks, elements) {
 /**
  * Get enhanced device information for better identification
  * @param {BluetoothDevice} device - The Bluetooth device
- * @returns {string} Enhanced device information string
+ * @returns {Promise<string>} Enhanced device information string
  */
 async function getEnhancedDeviceInfo(device) {
     let deviceInfo = device.name || 'Unknown Device';
@@ -202,23 +208,15 @@ async function getEnhancedDeviceInfo(device) {
             const deviceInfoService = await server.getPrimaryService('device_information');
 
             // Try to get manufacturer name
-            try {
-                const manufacturerChar = await deviceInfoService.getCharacteristic('manufacturer_name_string');
-                const manufacturerValue = await manufacturerChar.readValue();
-                const manufacturer = new TextDecoder().decode(manufacturerValue);
+            const manufacturer = await readDeviceCharacteristic(deviceInfoService, 'manufacturer_name_string');
+            if (manufacturer) {
                 deviceInfo += ` (${manufacturer})`;
-            } catch (e) {
-                // Manufacturer info not available
             }
 
             // Try to get model number
-            try {
-                const modelChar = await deviceInfoService.getCharacteristic('model_number_string');
-                const modelValue = await modelChar.readValue();
-                const model = new TextDecoder().decode(modelValue);
+            const model = await readDeviceCharacteristic(deviceInfoService, 'model_number_string');
+            if (model) {
                 deviceInfo += ` ${model}`;
-            } catch (e) {
-                // Model info not available
             }
 
         } catch (e) {
@@ -231,10 +229,27 @@ async function getEnhancedDeviceInfo(device) {
 
     // Add device ID as fallback identifier to distinguish identical names
     if (device.id) {
-        deviceInfo += ` [${device.id.slice(-6)}]`; // Last 6 chars of device ID
+        deviceInfo += ` [${device.id.slice(-DEVICE_ID_SUFFIX_LENGTH)}]`;
     }
 
     return deviceInfo;
+}
+
+/**
+ * Read a string characteristic from a Bluetooth service
+ * @param {BluetoothRemoteGATTService} service - The Bluetooth GATT service
+ * @param {string} characteristicName - Name of the characteristic to read
+ * @returns {Promise<string|null>} Decoded string value or null if not available
+ */
+async function readDeviceCharacteristic(service, characteristicName) {
+    try {
+        const characteristic = await service.getCharacteristic(characteristicName);
+        const value = await characteristic.readValue();
+        return new TextDecoder().decode(value);
+    } catch (e) {
+        // Characteristic not available
+        return null;
+    }
 }
 
 /**
@@ -502,11 +517,11 @@ function handleSpeedCadenceMeasurement(event, callbacks) {
                     clearTimeout(cadenceResetTimer);
                 }
 
-                // Set timer to reset cadence to 0 if no new data comes in for 3 seconds
+                // Set timer to reset cadence to 0 if no new data comes in
                 cadenceResetTimer = setTimeout(() => {
                     callbacks.onCadenceChange(0);
                     cadenceResetTimer = null;
-                }, 3000);
+                }, CADENCE_RESET_TIMEOUT_MS);
             }
         }
         lastCrankRevs = cumulativeCrankRevolutions;

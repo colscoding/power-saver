@@ -1,6 +1,11 @@
-// Data Persistence Functions
+/**
+ * Session Data Persistence Module
+ * Manages localStorage operations for session data persistence
+ */
+
+// Constants for session management
 const SESSION_STORAGE_KEY = 'powerMeterSession';
-const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 /**
  * Save current session data to localStorage
@@ -30,18 +35,21 @@ function saveSessionData(dataStore) {
 
 /**
  * Load session data from localStorage if available and recent
- * Returns the session data object if available, null if not
+ * @returns {Object|null} Session data object if available and valid, null otherwise
  */
 function loadSessionData() {
     try {
         const savedData = localStorage.getItem(SESSION_STORAGE_KEY);
-        if (!savedData) return null;
+        if (!savedData) {
+            return null;
+        }
 
         const sessionData = JSON.parse(savedData);
         const now = Date.now();
+        const sessionAge = now - sessionData.timestamp;
 
-        // Check if session is too old (older than 24 hours)
-        if (now - sessionData.timestamp > SESSION_TIMEOUT) {
+        // Check if session has expired (older than 24 hours)
+        if (sessionAge > SESSION_TIMEOUT_MS) {
             localStorage.removeItem(SESSION_STORAGE_KEY);
             return null;
         }

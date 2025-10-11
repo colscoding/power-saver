@@ -1,6 +1,6 @@
 /**
  * Export Modals Module
- * Handles modal-based export functionality
+ * Handles modal-based export functionality with user-friendly dialogs
  */
 
 // Import required functions from data-export module
@@ -12,6 +12,20 @@ import {
     exportRawAsCsv,
     exportAll
 } from './data-export.js';
+
+// Constants for modal animations
+const MODAL_ANIMATION_DELAY_MS = 300;
+
+/**
+ * Handle export error with user-friendly message
+ * @param {Error} error - The error that occurred
+ * @param {string} exportType - Type of export that failed
+ */
+function handleExportError(error, exportType) {
+    const message = `Error during ${exportType} export: ${error.message}`;
+    console.error(message, error);
+    alert(message);
+}
 
 /**
  * Create and show basic export modal
@@ -35,7 +49,7 @@ export function showBasicExportModal(dataStore) {
                     closeModal(modal);
                     alert('All export files downloaded successfully!');
                 } catch (error) {
-                    alert(`Error during export all: ${error.message}`);
+                    handleExportError(error, 'all files');
                 }
             }
         },
@@ -43,16 +57,24 @@ export function showBasicExportModal(dataStore) {
             text: '📊 Export JSON',
             description: 'JavaScript Object Notation format',
             onClick: () => {
-                exportAsJson(dataStore.powerData);
-                closeModal(modal);
+                try {
+                    exportAsJson(dataStore.powerData);
+                    closeModal(modal);
+                } catch (error) {
+                    handleExportError(error, 'JSON');
+                }
             }
         },
         {
             text: '📊 Export CSV',
             description: 'Comma-Separated Values format',
             onClick: () => {
-                exportAsCsv(dataStore.powerData);
-                closeModal(modal);
+                try {
+                    exportAsCsv(dataStore.powerData);
+                    closeModal(modal);
+                } catch (error) {
+                    handleExportError(error, 'CSV');
+                }
             }
         },
         {
@@ -63,7 +85,7 @@ export function showBasicExportModal(dataStore) {
                     exportAsTcx(dataStore.powerData);
                     closeModal(modal);
                 } catch (error) {
-                    alert(`Error generating TCX file: ${error.message}`);
+                    handleExportError(error, 'TCX');
                 }
             }
         },
@@ -71,16 +93,24 @@ export function showBasicExportModal(dataStore) {
             text: '🔍 Export Raw JSON',
             description: 'Complete measurement data in JSON format',
             onClick: () => {
-                exportRawAsJson(dataStore.rawPowerMeasurements);
-                closeModal(modal);
+                try {
+                    exportRawAsJson(dataStore.rawPowerMeasurements);
+                    closeModal(modal);
+                } catch (error) {
+                    handleExportError(error, 'raw JSON');
+                }
             }
         },
         {
             text: '📈 Export Raw CSV',
             description: 'Complete measurement data in CSV format',
             onClick: () => {
-                exportRawAsCsv(dataStore.rawPowerMeasurements);
-                closeModal(modal);
+                try {
+                    exportRawAsCsv(dataStore.rawPowerMeasurements);
+                    closeModal(modal);
+                } catch (error) {
+                    handleExportError(error, 'raw CSV');
+                }
             }
         }
     ];
@@ -209,7 +239,7 @@ function closeModal(modal) {
         if (modal.parentNode) {
             document.body.removeChild(modal);
         }
-    }, 300);
+    }, MODAL_ANIMATION_DELAY_MS);
 }
 
 /**

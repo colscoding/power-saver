@@ -1,21 +1,32 @@
 
 
+// Bluetooth Heart Rate Format Constants
+const HR_VALUE_FORMAT_FLAG = 0x01; // Bit 0: Heart Rate Value Format (0 = UINT8, 1 = UINT16)
+const HR_FLAGS_OFFSET = 0;
+const HR_VALUE_OFFSET = 1;
+
 /**
- * The heart rate measurement is a DataView object.
- * The first byte is a flag, and the subsequent byte(s) are the heart rate value.
- * We need to check the first bit of the flag to see if the value is 8-bit or 16-bit.
+ * Parse heart rate measurement from Bluetooth characteristic value
+ * 
+ * The heart rate measurement is a DataView object following the Bluetooth
+ * Heart Rate Measurement characteristic format (org.bluetooth.characteristic.heart_rate_measurement).
+ * 
+ * Format:
+ * - Byte 0: Flags (bit 0 indicates value format)
+ * - Byte 1+: Heart rate value (UINT8 or UINT16 based on flags)
+ * 
+ * @param {DataView} value - The Bluetooth characteristic value
+ * @returns {number} Heart rate in beats per minute (BPM)
  */
 function parseHeartRate(value) {
-    const flags = value.getUint8(0);
-    // Check if the heart rate value format is UINT16 (bit 0 is 1) or UINT8 (bit 0 is 0)
-    const is16bit = flags & 0x1;
-    if (is16bit) {
-        // If 16-bit, read 2 bytes starting from the second byte
-        return value.getUint16(1, /*littleEndian=*/ true);
-    } else {
-        // If 8-bit, read 1 byte starting from the second byte
-        return value.getUint8(1);
+    const flags = value.getUint8(HR_FLAGS_OFFSET);
+    const isUint16Format = (flags & HR_VALUE_FORMAT_FLAG) !== 0;
+
+    if (isUint16Format) {
+        return value.getUint16(HR_VALUE_OFFSET, /* littleEndian= */ true);
     }
+
+    return value.getUint8(HR_VALUE_OFFSET);
 }
 
 export { parseHeartRate };
