@@ -43,8 +43,6 @@ import {
 
 // Application state variables
 let powerData = [];
-let heartData = [];
-let cadenceData = [];
 let lastPowerValue = 0;
 let lastHeartRateValue = 0;
 let lastCadenceValue = 0;
@@ -81,8 +79,6 @@ function updateDisplaysFromRestoredData() {
 function resetAllSessionData() {
   // Clear all data arrays
   powerData.length = 0;
-  heartData.length = 0;
-  cadenceData.length = 0;
 
   // Reset power averages
   resetPowerAverages();
@@ -105,8 +101,6 @@ function resetAllSessionData() {
  */
 const dataStore = {
   get powerData() { return powerData; },
-  get heartData() { return heartData; },
-  get cadenceData() { return cadenceData; },
   get lastPowerValue() { return lastPowerValue; },
   get lastHeartRateValue() { return lastHeartRateValue; },
   get lastCadenceValue() { return lastCadenceValue; },
@@ -282,10 +276,7 @@ function showRestorationDialog(sessionData) {
 
     // Get session info
     const sessionAge = Math.round((Date.now() - sessionData.timestamp) / (1000 * 60)); // minutes
-    const dataCount =
-      (sessionData.powerData?.length || 0) +
-      (sessionData.heartData?.length || 0) +
-      (sessionData.cadenceData?.length || 0);
+    const dataCount = sessionData.powerData?.length || 0;
 
     modal.innerHTML = `
       <h3>Previous Session Found</h3>
@@ -335,14 +326,6 @@ function restoreSessionData(sessionData) {
     if (sessionData.powerData) {
       powerData.length = 0;
       powerData.push(...sessionData.powerData);
-    }
-    if (sessionData.heartData) {
-      heartData.length = 0;
-      heartData.push(...sessionData.heartData);
-    }
-    if (sessionData.cadenceData) {
-      cadenceData.length = 0;
-      cadenceData.push(...sessionData.cadenceData);
     }
 
     // Restore last values

@@ -186,7 +186,7 @@ export function setupMenuItems(elements) {
 /**
  * Function to update dashboard layout based on visible sections
  */
-export function updateDashboardLayout() {
+function updateDashboardLayout() {
     const dashboard = document.querySelector('.dashboard');
     const powerAveragesSection = document.getElementById('powerAveragesSection');
     const powerAveragesHidden = powerAveragesSection && powerAveragesSection.style.display === 'none';

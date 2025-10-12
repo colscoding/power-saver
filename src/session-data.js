@@ -16,8 +16,6 @@ function saveSessionData(dataStore) {
         const sessionData = {
             timestamp: Date.now(),
             powerData: dataStore.powerData,
-            heartData: dataStore.heartData,
-            cadenceData: dataStore.cadenceData,
             lastPowerValue: dataStore.lastPowerValue,
             lastHeartRateValue: dataStore.lastHeartRateValue,
             lastCadenceValue: dataStore.lastCadenceValue,
