@@ -123,7 +123,7 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 
     if (!navigator.bluetooth) {
         callbacks.onStatusUpdate('Web Bluetooth API is not available.');
-        return;
+        return false;
     }
 
     try {
@@ -132,7 +132,20 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             elements.hrConnectionStatus.textContent = 'Connecting...';
         }
 
-        // Show device selection
+        // Clean up any existing connection before creating a new one
+        if (hrBluetoothDevice) {
+            if (hrDisconnectHandler) {
+                hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+                hrDisconnectHandler = null;
+            }
+            if (hrBluetoothDevice.gatt.connected) {
+                hrBluetoothDevice.gatt.disconnect();
+            }
+            hrBluetoothDevice = null;
+        }
+
+        // Show device selection with name prefix filter to help distinguish devices
+        // This allows users to see device names in the selection dialog
         hrBluetoothDevice = await navigator.bluetooth.requestDevice({
             filters: [
                 {
@@ -142,15 +155,36 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             optionalServices: ['device_information', 'battery_service'] // Get additional info if available
         });
 
+        // Validate that we got a device
+        if (!hrBluetoothDevice) {
+            throw new Error('No device selected');
+        }
+
         await connectToHRDevice(hrBluetoothDevice, callbacks, elements);
         return true;
 
     } catch (error) {
-        callbacks.onStatusUpdate(`Error: ${error.message}`);
-        if (elements.hrConnectionStatus) {
-            elements.hrConnectionStatus.textContent = 'Connection Failed';
+        // Handle user cancellation separately from actual errors
+        if (error.name === 'NotFoundError') {
+            callbacks.onStatusUpdate('No device selected.');
+            if (elements.hrConnectionStatus) {
+                elements.hrConnectionStatus.textContent = 'Disconnected';
+            }
+        } else {
+            callbacks.onStatusUpdate(`Error: ${error.message}`);
+            if (elements.hrConnectionStatus) {
+                elements.hrConnectionStatus.textContent = 'Connection Failed';
+            }
+            console.error('Heart rate monitor connection failed:', error);
         }
-        console.error('Connection failed:', error);
+
+        // Clean up on error
+        if (hrBluetoothDevice && hrDisconnectHandler) {
+            hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+            hrDisconnectHandler = null;
+        }
+        hrBluetoothDevice = null;
+
         return false;
     }
 }
@@ -164,31 +198,40 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 async function connectToHRDevice(device, callbacks, elements) {
     callbacks.onStatusUpdate('Connecting to device...');
 
-    // Get enhanced device information
-    const deviceInfo = await getEnhancedDeviceInfo(device);
-    if (elements.hrDeviceName) {
-        elements.hrDeviceName.textContent = `Device: ${deviceInfo}`;
-    }
-
-    // Add disconnect listener
+    // Add disconnect listener BEFORE connecting
     hrDisconnectHandler = () => {
         onHeartRateDisconnected(callbacks, elements);
     };
     device.addEventListener('gattserverdisconnected', hrDisconnectHandler);
 
-    const hrServer = await device.gatt.connect();
-    const hrService = await hrServer.getPrimaryService('heart_rate');
-    const hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
+    try {
+        // Check if already connected, if not, connect
+        const hrServer = device.gatt.connected ? device.gatt : await device.gatt.connect();
 
-    // Start notifications to receive heart rate data
-    await hrCharacteristic.startNotifications();
-    hrCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
-        handleHeartRateChanged(event, callbacks);
-    });
+        // Get enhanced device information AFTER successful connection
+        const deviceInfo = await getEnhancedDeviceInfo(device);
+        if (elements.hrDeviceName) {
+            elements.hrDeviceName.textContent = `Device: ${deviceInfo}`;
+        }
 
-    callbacks.onStatusUpdate('Connected!');
-    if (elements.hrConnectionStatus) {
-        elements.hrConnectionStatus.textContent = 'Connected';
+        const hrService = await hrServer.getPrimaryService('heart_rate');
+        const hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
+
+        // Start notifications to receive heart rate data
+        await hrCharacteristic.startNotifications();
+        hrCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
+            handleHeartRateChanged(event, callbacks);
+        });
+
+        callbacks.onStatusUpdate('Connected!');
+        if (elements.hrConnectionStatus) {
+            elements.hrConnectionStatus.textContent = 'Connected';
+        }
+    } catch (error) {
+        // Clean up event listener on connection failure
+        device.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+        hrDisconnectHandler = null;
+        throw error; // Re-throw to be caught by parent function
     }
 }
 
@@ -201,7 +244,8 @@ async function getEnhancedDeviceInfo(device) {
     let deviceInfo = device.name || 'Unknown Device';
 
     try {
-        const server = await device.gatt.connect();
+        // Don't reconnect if already connected - use existing connection
+        const server = device.gatt.connected ? device.gatt : await device.gatt.connect();
 
         // Try to get device information service for more details
         try {
@@ -464,9 +508,21 @@ function handlePowerMeasurement(event, callbacks) {
 }
 
 function handleHeartRateChanged(event, callbacks) {
-    const value = event.target.value;
-    const heartRate = parseHeartRate(value);
-    callbacks.onHeartRateChange(heartRate);
+    try {
+        const value = event.target.value;
+        const heartRate = parseHeartRate(value);
+
+        // Validate the heart rate is a reasonable number
+        if (isNaN(heartRate) || heartRate < 0) {
+            console.error('Invalid heart rate value:', heartRate);
+            return;
+        }
+
+        callbacks.onHeartRateChange(heartRate);
+    } catch (error) {
+        console.error('Error parsing heart rate data:', error.message);
+        // Don't update the UI with invalid data, just log the error
+    }
 }
 
 function handleSpeedCadenceMeasurement(event, callbacks) {
@@ -545,14 +601,21 @@ function onPowerMeterDisconnected(callbacks, elements) {
 }
 
 function onHeartRateDisconnected(callbacks, elements) {
-    callbacks.onStatusUpdate('Device disconnected.');
+    callbacks.onStatusUpdate('Heart rate monitor disconnected.');
     if (elements.hrConnectionStatus) {
         elements.hrConnectionStatus.textContent = 'Disconnected';
     }
     if (elements.hrDeviceName) {
         elements.hrDeviceName.textContent = '';
     }
+
+    // Clean up event listener
+    if (hrBluetoothDevice && hrDisconnectHandler) {
+        hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+        hrDisconnectHandler = null;
+    }
     hrBluetoothDevice = null;
+
     callbacks.onHeartRateChange(0);
     if (callbacks.onDisconnected) {
         callbacks.onDisconnected();

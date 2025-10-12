@@ -17,16 +17,45 @@ const HR_VALUE_OFFSET = 1;
  * 
  * @param {DataView} value - The Bluetooth characteristic value
  * @returns {number} Heart rate in beats per minute (BPM)
+ * @throws {Error} If the value is invalid or malformed
  */
 function parseHeartRate(value) {
+    // Validate input
+    if (!value || !(value instanceof DataView)) {
+        throw new Error('Invalid heart rate data: value must be a DataView');
+    }
+
+    // Need at least 2 bytes (flags + value)
+    if (value.byteLength < 2) {
+        throw new Error(`Invalid heart rate data: insufficient data (${value.byteLength} bytes)`);
+    }
+
     const flags = value.getUint8(HR_FLAGS_OFFSET);
     const isUint16Format = (flags & HR_VALUE_FORMAT_FLAG) !== 0;
 
     if (isUint16Format) {
-        return value.getUint16(HR_VALUE_OFFSET, /* littleEndian= */ true);
+        // Need at least 3 bytes for 16-bit format (flags + 2-byte value)
+        if (value.byteLength < 3) {
+            throw new Error(`Invalid heart rate data: insufficient data for UINT16 format (${value.byteLength} bytes)`);
+        }
+        const heartRate = value.getUint16(HR_VALUE_OFFSET, /* littleEndian= */ true);
+
+        // Validate reasonable heart rate range (0-300 BPM)
+        if (heartRate > 300) {
+            console.warn(`Unusually high heart rate detected: ${heartRate} BPM`);
+        }
+
+        return heartRate;
     }
 
-    return value.getUint8(HR_VALUE_OFFSET);
+    const heartRate = value.getUint8(HR_VALUE_OFFSET);
+
+    // Validate reasonable heart rate range
+    if (heartRate > 250) {
+        console.warn(`Unusually high heart rate detected: ${heartRate} BPM`);
+    }
+
+    return heartRate;
 }
 
 export { parseHeartRate };
