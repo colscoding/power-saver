@@ -44,7 +44,6 @@ export function showBasicExportModal(dataStore) {
                     await exportAll({
                         powerData: dataStore.powerData,
                         rawPowerMeasurements: dataStore.rawPowerMeasurements,
-                        powerAverages: dataStore.getPowerAverages()
                     });
                     closeModal(modal);
                     alert('All export files downloaded successfully!');

@@ -21,6 +21,8 @@ const RETENTION_BUFFER_MS = 6 * 60 * 1000; // Keep 6 minutes of data (5 min max 
 
 // Power averaging data structures
 let powerReadings = []; // Array to store timestamped power readings
+const currentTenSecondReadings = [];
+const tenSecondAverages = [];
 let powerAverages = {
     '10s': { current: 0, best: 0 },
     '20s': { current: 0, best: 0 },
@@ -85,40 +87,42 @@ export function addPowerReading(power) {
     const retentionCutoff = now - RETENTION_BUFFER_MS;
     powerReadings = powerReadings.filter((reading) => reading.timestamp > retentionCutoff);
 
-    // Calculate current averages
-    calculatePowerAverages();
-    updatePowerAveragesDisplay();
-}
-
-/**
- * Calculate power averages for all time periods
- */
-function calculatePowerAverages() {
-    const now = Date.now();
-
-    for (const [periodKey, periodMs] of Object.entries(TIME_PERIODS_MS)) {
-        const cutoffTime = now - periodMs;
-        const relevantReadings = powerReadings.filter((reading) => reading.timestamp >= cutoffTime);
-
-        if (relevantReadings.length > 0) {
-            const sum = relevantReadings.reduce((total, reading) => total + reading.power, 0);
-            const average = Math.round(sum / relevantReadings.length);
-            powerAverages[periodKey].current = average;
-
-            // Update best if current is better
-            if (average > powerAverages[periodKey].best) {
-                powerAverages[periodKey].best = average;
-            }
-        } else {
-            powerAverages[periodKey].current = 0;
+    // Maintain current ten second readings for 10s average calculation
+    currentTenSecondReadings.push({ timestamp: now, power: power });
+    if (currentTenSecondReadings.length > 0 && currentTenSecondReadings[0].timestamp <= (now - 10 * 1000)) {
+        // current 10s windows is filled
+        const currPowerAverage = Math.round(currentTenSecondReadings.reduce((sum, r) => sum + r.power, 0) / currentTenSecondReadings.length);
+        tenSecondAverages.push(currPowerAverage);
+        // clear currentTenSecondReadings completely
+        currentTenSecondReadings.splice(0, currentTenSecondReadings.length);
+        while (tenSecondAverages.length > 30) { // keep last 5 minutes of 10s averages
+            tenSecondAverages.shift();
         }
+
+        for (const [periodKey, periodMs] of Object.entries(TIME_PERIODS_MS)) {
+            const nWindows = Math.ceil(periodMs / (10 * 1000));
+            if (tenSecondAverages.length >= nWindows) {
+                const avgWindows = tenSecondAverages.slice(-nWindows);
+                const sum = avgWindows.reduce((total, reading) => total + reading.power, 0);
+                const average = Math.round(sum / nWindows);
+                powerAverages[periodKey].current = average;
+
+                // Update best if current is better
+                if (average > powerAverages[periodKey].best) {
+                    powerAverages[periodKey].best = average;
+                }
+            } else {
+                powerAverages[periodKey].current = 0;
+            }
+        }
+        updatePowerAveragesDisplay();
     }
 }
 
 /**
  * Update the power averages display in the UI
  */
-function updatePowerAveragesDisplay() {
+export function updatePowerAveragesDisplay() {
     if (!avg10sCurrentElement) return; // Elements not initialized
 
     avg10sCurrentElement.textContent = powerAverages['10s'].current || '--';
@@ -152,45 +156,5 @@ export function resetPowerAverages() {
         powerAverages[period].current = 0;
         powerAverages[period].best = 0;
     }
-    updatePowerAveragesDisplay();
-}
-
-/**
- * Get current power averages data
- * @returns {Object} Current power averages object
- */
-export function getPowerAverages() {
-    return { ...powerAverages };
-}
-
-/**
- * Set power averages data (used for session restoration)
- * @param {Object} averages - Power averages object to restore
- */
-export function setPowerAverages(averages) {
-    Object.assign(powerAverages, averages);
-    updatePowerAveragesDisplay();
-}
-
-/**
- * Get power readings data
- * @returns {Array} Current power readings array
- */
-export function getPowerReadings() {
-    return [...powerReadings];
-}
-
-/**
- * Set power readings data (used for session restoration)
- * @param {Array} readings - Power readings array to restore
- */
-export function setPowerReadings(readings) {
-    powerReadings = [...readings];
-}
-
-/**
- * Force update of power averages display
- */
-export function updateDisplay() {
     updatePowerAveragesDisplay();
 }

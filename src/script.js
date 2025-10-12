@@ -9,11 +9,7 @@ import {
   initializePowerAveraging,
   addPowerReading,
   resetPowerAverages,
-  getPowerAverages,
-  setPowerAverages,
-  getPowerReadings,
-  setPowerReadings,
-  updateDisplay as updatePowerAveragesDisplay
+  updatePowerAveragesDisplay
 } from "./power-averaging.js";
 import {
   elements,
@@ -118,8 +114,6 @@ const dataStore = {
   get lastHeartRateValue() { return lastHeartRateValue; },
   get lastCadenceValue() { return lastCadenceValue; },
   get sessionStartTime() { return sessionStartTime; },
-  getPowerAverages,
-  getPowerReadings,
   resetAllSessionData,
   elements
 };
@@ -360,14 +354,6 @@ function restoreSessionData(sessionData) {
     if (sessionData.rawPowerMeasurements) {
       rawPowerMeasurements.length = 0;
       rawPowerMeasurements.push(...sessionData.rawPowerMeasurements);
-    }
-    if (sessionData.powerReadings) {
-      setPowerReadings(sessionData.powerReadings);
-    }
-
-    // Restore power averages completely
-    if (sessionData.powerAverages) {
-      setPowerAverages(sessionData.powerAverages);
     }
 
     // Restore last values
