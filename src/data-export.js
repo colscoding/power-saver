@@ -54,41 +54,6 @@ export function exportAsCsv(powerData) {
 }
 
 /**
- * Export raw power measurements as JSON
- * @param {Array} rawPowerMeasurements - Array of raw power measurement data
- * @throws {Error} If raw measurements are invalid or empty
- */
-export function exportRawAsJson(rawPowerMeasurements) {
-    if (!rawPowerMeasurements || !Array.isArray(rawPowerMeasurements) || rawPowerMeasurements.length === 0) {
-        throw new Error('No valid raw power measurements available to export');
-    }
-
-    const jsonString = JSON.stringify(rawPowerMeasurements, null, 2);
-    const blob = new Blob([jsonString], { type: MIME_TYPES.JSON });
-    downloadFile(blob, `raw_power_measurements_${getCurrentDateString()}.json`);
-}
-
-/**
- * Export raw power measurements as CSV
- * @param {Array} rawPowerMeasurements - Array of raw power measurement data
- * @throws {Error} If raw measurements are invalid or empty
- */
-export function exportRawAsCsv(rawPowerMeasurements) {
-    if (!rawPowerMeasurements || !Array.isArray(rawPowerMeasurements) || rawPowerMeasurements.length === 0) {
-        throw new Error('No valid raw power measurements available to export');
-    }
-
-    let csvContent = 'timestamp,flags,dataLength,instantaneousPower,rawBytes\n';
-
-    rawPowerMeasurements.forEach((measurement) => {
-        csvContent += `${measurement.timestamp},${measurement.flags},${measurement.dataLength},${measurement.instantaneousPower},"${measurement.rawBytes}"\n`;
-    });
-
-    const blob = new Blob([csvContent], { type: MIME_TYPES.CSV });
-    downloadFile(blob, `raw_power_measurements_${getCurrentDateString()}.csv`);
-}
-
-/**
  * Export power data as TCX file
  * @param {Array} powerData - Array of power data points
  * @throws {Error} If power data is invalid, empty, or TCX generation fails
@@ -153,14 +118,13 @@ function delay(ms) {
 
 /**
  * Export all data formats at once
- * @param {Object} data - Object containing powerData, rawPowerMeasurements, and powerAverages
+ * @param {Object} data - Object containing powerData, and powerAverages
  * @param {Array} data.powerData - Array of power data points
- * @param {Array} data.rawPowerMeasurements - Array of raw power measurements
  * @param {Object} data.powerAverages - Power averages object
  * @throws {Error} If power data is invalid or if any exports fail
  */
 export async function exportAll(data) {
-    const { powerData, rawPowerMeasurements } = data;
+    const { powerData } = data;
 
     if (!powerData || !Array.isArray(powerData) || powerData.length === 0) {
         throw new Error('No valid power data available for export');
@@ -173,13 +137,6 @@ export async function exportAll(data) {
         { name: 'TCX', fn: () => exportAsTcx(powerData) },
     ];
 
-    // Add raw data exports if available
-    if (rawPowerMeasurements && rawPowerMeasurements.length > 0) {
-        exports.push(
-            { name: 'Raw JSON', fn: () => exportRawAsJson(rawPowerMeasurements) },
-            { name: 'Raw CSV', fn: () => exportRawAsCsv(rawPowerMeasurements) }
-        );
-    }
 
     // Execute exports with delays between them
     for (const { name, fn } of exports) {

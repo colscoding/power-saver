@@ -8,8 +8,6 @@ import {
     exportAsJson,
     exportAsCsv,
     exportAsTcx,
-    exportRawAsJson,
-    exportRawAsCsv,
     exportAll
 } from './data-export.js';
 
@@ -43,7 +41,6 @@ export function showBasicExportModal(dataStore) {
                 try {
                     await exportAll({
                         powerData: dataStore.powerData,
-                        rawPowerMeasurements: dataStore.rawPowerMeasurements,
                     });
                     closeModal(modal);
                     alert('All export files downloaded successfully!');
@@ -88,30 +85,6 @@ export function showBasicExportModal(dataStore) {
                 }
             }
         },
-        {
-            text: '🔍 Export Raw JSON',
-            description: 'Complete measurement data in JSON format',
-            onClick: () => {
-                try {
-                    exportRawAsJson(dataStore.rawPowerMeasurements);
-                    closeModal(modal);
-                } catch (error) {
-                    handleExportError(error, 'raw JSON');
-                }
-            }
-        },
-        {
-            text: '📈 Export Raw CSV',
-            description: 'Complete measurement data in CSV format',
-            onClick: () => {
-                try {
-                    exportRawAsCsv(dataStore.rawPowerMeasurements);
-                    closeModal(modal);
-                } catch (error) {
-                    handleExportError(error, 'raw CSV');
-                }
-            }
-        }
     ];
 
     addButtonsToModal(modal, buttons);

@@ -18,7 +18,6 @@ function saveSessionData(dataStore) {
             powerData: dataStore.powerData,
             heartData: dataStore.heartData,
             cadenceData: dataStore.cadenceData,
-            rawPowerMeasurements: dataStore.rawPowerMeasurements,
             lastPowerValue: dataStore.lastPowerValue,
             lastHeartRateValue: dataStore.lastHeartRateValue,
             lastCadenceValue: dataStore.lastCadenceValue,

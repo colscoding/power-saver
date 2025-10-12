@@ -219,11 +219,11 @@ async function getEnhancedDeviceInfo(device) {
                 deviceInfo += ` ${model}`;
             }
 
-        } catch (e) {
+        } catch (e) { //eslint-disable-line no-unused-vars
             // Device information service not available
         }
 
-    } catch (e) {
+    } catch (e) { //eslint-disable-line no-unused-vars
         // Connection failed or server not available, use basic info
     }
 
@@ -246,7 +246,7 @@ async function readDeviceCharacteristic(service, characteristicName) {
         const characteristic = await service.getCharacteristic(characteristicName);
         const value = await characteristic.readValue();
         return new TextDecoder().decode(value);
-    } catch (e) {
+    } catch (e) { //eslint-disable-line no-unused-vars
         // Characteristic not available
         return null;
     }
@@ -323,10 +323,9 @@ export async function connectSpeedCadenceSensor(callbacks, elements) {
 
 /**
  * Connect to a spy power meter
- * @param {Object} callbacks - Object containing callback functions
  * @param {Object} elements - UI elements object
  */
-export async function connectSpyMeter(callbacks, elements) {
+export async function connectSpyMeter(elements) {
     if (!navigator.bluetooth) {
         console.error('Web Bluetooth API is not available.');
         return;
@@ -455,29 +454,13 @@ export function isSpeedCadenceConnected() {
 // Event handlers
 function handlePowerMeasurement(event, callbacks) {
     const value = event.target.value;
-    const timestamp = Date.now();
-
-    // Store simplified raw measurement data
-    const rawMeasurement = {
-        timestamp: timestamp,
-        flags: value.getUint16(0, true),
-        rawBytes: Array.from(new Uint8Array(value.buffer))
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join(' '),
-        dataLength: value.byteLength,
-    };
 
     // The data is a DataView object with a flags field and the power value.
     // Ref: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.cycling_power_measurement.xml
-    // eslint-disable-next-line no-unused-vars
-    const flags = value.getUint16(0, true);
-    let offset = 2;
-
-    // Power is always present
+    const offset = 2;
     const power = value.getInt16(offset, true);
-    rawMeasurement.instantaneousPower = power;
 
-    callbacks.onPowerMeasurement(power, rawMeasurement);
+    callbacks.onPowerMeasurement(power);
 }
 
 function handleHeartRateChanged(event, callbacks) {

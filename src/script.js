@@ -43,7 +43,6 @@ import {
 
 // Application state variables
 let powerData = [];
-let rawPowerMeasurements = [];
 let heartData = [];
 let cadenceData = [];
 let lastPowerValue = 0;
@@ -84,7 +83,6 @@ function resetAllSessionData() {
   powerData.length = 0;
   heartData.length = 0;
   cadenceData.length = 0;
-  rawPowerMeasurements.length = 0;
 
   // Reset power averages
   resetPowerAverages();
@@ -107,7 +105,6 @@ function resetAllSessionData() {
  */
 const dataStore = {
   get powerData() { return powerData; },
-  get rawPowerMeasurements() { return rawPowerMeasurements; },
   get heartData() { return heartData; },
   get cadenceData() { return cadenceData; },
   get lastPowerValue() { return lastPowerValue; },
@@ -120,12 +117,9 @@ const dataStore = {
 
 // Bluetooth connection callbacks
 const powerMeterCallbacks = {
-  onPowerMeasurement: (power, rawMeasurement) => {
+  onPowerMeasurement: (power) => {
     updatePowerValue(power);
     lastPowerValue = power;
-
-    // Store raw measurement data
-    rawPowerMeasurements.push(rawMeasurement);
 
     // Add power reading to averaging calculations
     addPowerReading(power);
@@ -201,7 +195,6 @@ function setupConnectionEventListeners() {
     elements.powerMeterConnectButton.addEventListener('click', async () => {
       // Reset data from previous session
       powerData.length = 0;
-      rawPowerMeasurements.length = 0;
       lastPowerValue = 0;
       resetPowerAverages();
 
@@ -262,7 +255,7 @@ function setupConnectionEventListeners() {
   if (elements.spyCard) {
     elements.spyCard.addEventListener('click', async () => {
       if (!isSpyMeterConnected()) {
-        await connectSpyMeter({}, elements);
+        await connectSpyMeter(elements);
       } else {
         disconnectSpyMeter(elements);
       }
@@ -350,10 +343,6 @@ function restoreSessionData(sessionData) {
     if (sessionData.cadenceData) {
       cadenceData.length = 0;
       cadenceData.push(...sessionData.cadenceData);
-    }
-    if (sessionData.rawPowerMeasurements) {
-      rawPowerMeasurements.length = 0;
-      rawPowerMeasurements.push(...sessionData.rawPowerMeasurements);
     }
 
     // Restore last values

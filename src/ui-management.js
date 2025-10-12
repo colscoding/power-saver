@@ -30,8 +30,6 @@ export const elements = {
         json: null,
         csv: null,
         tcx: null,
-        rawJson: null,
-        rawCsv: null,
         image: null,
         clearSession: null
     },

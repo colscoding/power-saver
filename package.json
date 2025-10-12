@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "parcel src/index.html --host 0.0.0.0",
-    "build": "rm -rf build/* && parcel build src/index.html --dist-dir build --public-url ./",
+    "build": "rm -rf build && parcel build src/index.html --dist-dir build --public-url ./",
     "get-ip": "hostname -I | awk '{print $1}'",
     "lint": "eslint . --ext .js",
     "lint:fix": "eslint . --ext .js --fix",
