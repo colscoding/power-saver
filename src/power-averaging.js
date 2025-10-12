@@ -80,6 +80,19 @@ export function initializePowerAveraging() {
  * @param {number} power - The instantaneous power value
  */
 export function addPowerReading(power) {
+    // Validate input
+    if (typeof power !== 'number' || isNaN(power)) {
+        console.error('Invalid power reading: must be a number', power);
+        return;
+    }
+
+    // Warn about unusual values but still process them
+    if (power > 3000) {
+        console.warn(`Unusually high power reading: ${power}W`);
+    } else if (power < -500) {
+        console.warn(`Unusually low power reading: ${power}W`);
+    }
+
     const now = Date.now();
     powerReadings.push({ timestamp: now, power: power });
 
@@ -103,7 +116,7 @@ export function addPowerReading(power) {
             const nWindows = Math.ceil(periodMs / (10 * 1000));
             if (tenSecondAverages.length >= nWindows) {
                 const avgWindows = tenSecondAverages.slice(-nWindows);
-                const sum = avgWindows.reduce((total, reading) => total + reading.power, 0);
+                const sum = avgWindows.reduce((total, reading) => total + reading, 0);
                 const average = Math.round(sum / nWindows);
                 powerAverages[periodKey].current = average;
 
@@ -125,26 +138,30 @@ export function addPowerReading(power) {
 export function updatePowerAveragesDisplay() {
     if (!avg10sCurrentElement) return; // Elements not initialized
 
-    avg10sCurrentElement.textContent = powerAverages['10s'].current || '--';
-    avg10sBestElement.textContent = powerAverages['10s'].best || '--';
-    avg20sCurrentElement.textContent = powerAverages['20s'].current || '--';
-    avg20sBestElement.textContent = powerAverages['20s'].best || '--';
-    avg30sCurrentElement.textContent = powerAverages['30s'].current || '--';
-    avg30sBestElement.textContent = powerAverages['30s'].best || '--';
-    avg40sCurrentElement.textContent = powerAverages['40s'].current || '--';
-    avg40sBestElement.textContent = powerAverages['40s'].best || '--';
-    avg50sCurrentElement.textContent = powerAverages['50s'].current || '--';
-    avg50sBestElement.textContent = powerAverages['50s'].best || '--';
-    avg1mCurrentElement.textContent = powerAverages['1m'].current || '--';
-    avg1mBestElement.textContent = powerAverages['1m'].best || '--';
-    avg2mCurrentElement.textContent = powerAverages['2m'].current || '--';
-    avg2mBestElement.textContent = powerAverages['2m'].best || '--';
-    avg3mCurrentElement.textContent = powerAverages['3m'].current || '--';
-    avg3mBestElement.textContent = powerAverages['3m'].best || '--';
-    avg4mCurrentElement.textContent = powerAverages['4m'].current || '--';
-    avg4mBestElement.textContent = powerAverages['4m'].best || '--';
-    avg5mCurrentElement.textContent = powerAverages['5m'].current || '--';
-    avg5mBestElement.textContent = powerAverages['5m'].best || '--';
+    try {
+        avg10sCurrentElement.textContent = powerAverages['10s'].current || '--';
+        avg10sBestElement.textContent = powerAverages['10s'].best || '--';
+        avg20sCurrentElement.textContent = powerAverages['20s'].current || '--';
+        avg20sBestElement.textContent = powerAverages['20s'].best || '--';
+        avg30sCurrentElement.textContent = powerAverages['30s'].current || '--';
+        avg30sBestElement.textContent = powerAverages['30s'].best || '--';
+        avg40sCurrentElement.textContent = powerAverages['40s'].current || '--';
+        avg40sBestElement.textContent = powerAverages['40s'].best || '--';
+        avg50sCurrentElement.textContent = powerAverages['50s'].current || '--';
+        avg50sBestElement.textContent = powerAverages['50s'].best || '--';
+        avg1mCurrentElement.textContent = powerAverages['1m'].current || '--';
+        avg1mBestElement.textContent = powerAverages['1m'].best || '--';
+        avg2mCurrentElement.textContent = powerAverages['2m'].current || '--';
+        avg2mBestElement.textContent = powerAverages['2m'].best || '--';
+        avg3mCurrentElement.textContent = powerAverages['3m'].current || '--';
+        avg3mBestElement.textContent = powerAverages['3m'].best || '--';
+        avg4mCurrentElement.textContent = powerAverages['4m'].current || '--';
+        avg4mBestElement.textContent = powerAverages['4m'].best || '--';
+        avg5mCurrentElement.textContent = powerAverages['5m'].current || '--';
+        avg5mBestElement.textContent = powerAverages['5m'].best || '--';
+    } catch (error) {
+        console.error('Error updating power averages display:', error.message);
+    }
 }
 
 /**

@@ -49,11 +49,23 @@ export async function connectPowerMeter(callbacks, elements) {
 
     if (!navigator.bluetooth) {
         callbacks.onStatusUpdate('Web Bluetooth API is not available.');
-        return;
+        return false;
     }
 
     try {
         callbacks.onStatusUpdate('Scanning for power meters...');
+
+        // Clean up any existing connection before creating a new one
+        if (powerMeterDevice) {
+            if (powerMeterDisconnectHandler) {
+                powerMeterDevice.removeEventListener('gattserverdisconnected', powerMeterDisconnectHandler);
+                powerMeterDisconnectHandler = null;
+            }
+            if (powerMeterDevice.gatt.connected) {
+                powerMeterDevice.gatt.disconnect();
+            }
+            powerMeterDevice = null;
+        }
 
         // Scan specifically for devices advertising the Cycling Power service
         powerMeterDevice = await navigator.bluetooth.requestDevice({
@@ -64,14 +76,21 @@ export async function connectPowerMeter(callbacks, elements) {
             ],
         });
 
+        // Validate that we got a device
+        if (!powerMeterDevice) {
+            throw new Error('No device selected');
+        }
+
         callbacks.onStatusUpdate('Connecting to device...');
         if (elements.deviceNameElement) {
             elements.deviceNameElement.textContent = `Device: ${powerMeterDevice.name || 'Unknown Device'}`;
         }
 
-        powerMeterDevice.addEventListener('gattserverdisconnected', () => {
+        // Add disconnect listener BEFORE connecting
+        powerMeterDisconnectHandler = () => {
             onPowerMeterDisconnected(callbacks, elements);
-        });
+        };
+        powerMeterDevice.addEventListener('gattserverdisconnected', powerMeterDisconnectHandler);
 
         const server = await powerMeterDevice.gatt.connect();
         const service = await server.getPrimaryService(CYCLING_POWER_SERVICE_UUID);
@@ -102,13 +121,23 @@ export async function connectPowerMeter(callbacks, elements) {
 
         return true;
     } catch (error) {
-        callbacks.onStatusUpdate(`Error: ${error.message}`);
-        console.error('Connection failed:', error);
-        if (powerMeterDevice) {
-            powerMeterDevice.removeEventListener('gattserverdisconnected', () => {
-                onPowerMeterDisconnected(callbacks, elements);
-            });
+        // Handle user cancellation separately from actual errors
+        if (error.name === 'NotFoundError') {
+            callbacks.onStatusUpdate('No device selected.');
+        } else {
+            callbacks.onStatusUpdate(`Error: ${error.message}`);
+            console.error('Power meter connection failed:', error);
         }
+
+        // Clean up on error
+        if (powerMeterDevice) {
+            if (powerMeterDisconnectHandler) {
+                powerMeterDevice.removeEventListener('gattserverdisconnected', powerMeterDisconnectHandler);
+                powerMeterDisconnectHandler = null;
+            }
+            powerMeterDevice = null;
+        }
+
         return false;
     }
 }
@@ -372,7 +401,7 @@ export async function connectSpeedCadenceSensor(callbacks, elements) {
 export async function connectSpyMeter(elements) {
     if (!navigator.bluetooth) {
         console.error('Web Bluetooth API is not available.');
-        return;
+        return false;
     }
 
     try {
@@ -384,6 +413,18 @@ export async function connectSpyMeter(elements) {
             elements.spyStatusElement.style.display = 'block';
         }
 
+        // Clean up any existing spy meter connection
+        if (spyMeterDevice) {
+            if (spyMeterDisconnectHandler) {
+                spyMeterDevice.removeEventListener('gattserverdisconnected', spyMeterDisconnectHandler);
+                spyMeterDisconnectHandler = null;
+            }
+            if (spyMeterDevice.gatt.connected) {
+                spyMeterDevice.gatt.disconnect();
+            }
+            spyMeterDevice = null;
+        }
+
         // Scan for devices advertising the Cycling Power service
         spyMeterDevice = await navigator.bluetooth.requestDevice({
             filters: [
@@ -393,13 +434,20 @@ export async function connectSpyMeter(elements) {
             ],
         });
 
+        // Validate that we got a device
+        if (!spyMeterDevice) {
+            throw new Error('No device selected');
+        }
+
         if (elements.spyStatusElement) {
             elements.spyStatusElement.textContent = 'Connecting to spy device...';
         }
 
-        spyMeterDevice.addEventListener('gattserverdisconnected', () => {
+        // Add disconnect listener BEFORE connecting
+        spyMeterDisconnectHandler = () => {
             onSpyDisconnected(elements);
-        });
+        };
+        spyMeterDevice.addEventListener('gattserverdisconnected', spyMeterDisconnectHandler);
 
         const server = await spyMeterDevice.gatt.connect();
         const service = await server.getPrimaryService(CYCLING_POWER_SERVICE_UUID);
@@ -420,16 +468,27 @@ export async function connectSpyMeter(elements) {
 
         return true;
     } catch (error) {
-        if (elements.spyStatusElement) {
-            elements.spyStatusElement.textContent = `Spy Error: ${error.message}`;
+        // Handle user cancellation separately
+        if (error.name === 'NotFoundError') {
+            if (elements.spyStatusElement) {
+                elements.spyStatusElement.textContent = 'No device selected';
+            }
+        } else {
+            if (elements.spyStatusElement) {
+                elements.spyStatusElement.textContent = `Spy Error: ${error.message}`;
+            }
+            console.error('Spy connection failed:', error);
         }
-        console.error('Spy connection failed:', error);
+
+        // Clean up on error
         if (spyMeterDevice) {
-            spyMeterDevice.removeEventListener('gattserverdisconnected', () => {
-                onSpyDisconnected(elements);
-            });
+            if (spyMeterDisconnectHandler) {
+                spyMeterDevice.removeEventListener('gattserverdisconnected', spyMeterDisconnectHandler);
+                spyMeterDisconnectHandler = null;
+            }
             spyMeterDevice = null;
         }
+
         // Show instructions again if connection failed
         setTimeout(() => {
             if (elements.spyStatusElement) {
@@ -439,6 +498,7 @@ export async function connectSpyMeter(elements) {
                 elements.spyInstructionsElement.style.display = 'block';
             }
         }, 3000);
+
         return false;
     }
 }
@@ -497,14 +557,46 @@ export function isSpeedCadenceConnected() {
 
 // Event handlers
 function handlePowerMeasurement(event, callbacks) {
-    const value = event.target.value;
+    try {
+        const value = event.target.value;
 
-    // The data is a DataView object with a flags field and the power value.
-    // Ref: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.cycling_power_measurement.xml
-    const offset = 2;
-    const power = value.getInt16(offset, true);
+        // Validate input
+        if (!value || !(value instanceof DataView)) {
+            console.error('Invalid power measurement data: value must be a DataView');
+            return;
+        }
 
-    callbacks.onPowerMeasurement(power);
+        // Need at least 4 bytes (2 bytes flags + 2 bytes power)
+        if (value.byteLength < 4) {
+            console.error(`Invalid power measurement data: insufficient data (${value.byteLength} bytes)`);
+            return;
+        }
+
+        // The data is a DataView object with a flags field and the power value.
+        // Ref: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.cycling_power_measurement.xml
+        const offset = 2;
+        const power = value.getInt16(offset, true);
+
+        // Validate power is a reasonable value
+        // Negative power can occur (e.g., when coasting with resistance)
+        // but extremely negative values are likely errors
+        if (isNaN(power)) {
+            console.error('Invalid power value: NaN');
+            return;
+        }
+
+        // Warn about unusual values (professional cyclists max ~2000W, errors often show up as very high values)
+        if (power > 3000) {
+            console.warn(`Unusually high power detected: ${power}W`);
+        } else if (power < -500) {
+            console.warn(`Unusually low power detected: ${power}W`);
+        }
+
+        callbacks.onPowerMeasurement(power);
+    } catch (error) {
+        console.error('Error parsing power measurement data:', error.message);
+        // Don't update the UI with invalid data, just log the error
+    }
 }
 
 function handleHeartRateChanged(event, callbacks) {
@@ -569,34 +661,61 @@ function handleSpeedCadenceMeasurement(event, callbacks) {
 }
 
 function handleSpyPowerMeasurement(event, elements) {
-    const value = event.target.value;
-    const data = new Uint8Array(value.buffer);
+    try {
+        const value = event.target.value;
 
-    // Parse cycling power measurement data (same format as main power meter)
-    let instantaneousPower = 0;
+        // Validate input
+        if (!value || !(value instanceof DataView)) {
+            console.error('Invalid spy power measurement data: value must be a DataView');
+            return;
+        }
 
-    if (data.length >= 4) {
-        // Read instantaneous power (16-bit unsigned integer, little endian)
-        instantaneousPower = data[2] + (data[3] << 8);
-    }
+        // Need at least 4 bytes for power data
+        if (value.byteLength < 4) {
+            console.error(`Invalid spy power measurement data: insufficient data (${value.byteLength} bytes)`);
+            return;
+        }
 
-    if (elements.spyValueElement) {
-        elements.spyValueElement.textContent = instantaneousPower;
+        // Parse cycling power measurement data (same format as main power meter)
+        // Read instantaneous power (16-bit signed integer, little endian)
+        const instantaneousPower = value.getInt16(2, true);
+
+        // Validate power value
+        if (isNaN(instantaneousPower)) {
+            console.error('Invalid spy power value: NaN');
+            return;
+        }
+
+        // Warn about unusual values
+        if (instantaneousPower > 3000) {
+            console.warn(`Unusually high spy power detected: ${instantaneousPower}W`);
+        } else if (instantaneousPower < -500) {
+            console.warn(`Unusually low spy power detected: ${instantaneousPower}W`);
+        }
+
+        if (elements.spyValueElement) {
+            elements.spyValueElement.textContent = instantaneousPower;
+        }
+    } catch (error) {
+        console.error('Error parsing spy power measurement data:', error.message);
+        // Don't update the UI with invalid data, just log the error
     }
 }
 
 // Disconnection handlers
 function onPowerMeterDisconnected(callbacks, elements) {
-    callbacks.onStatusUpdate('Device disconnected.');
+    callbacks.onStatusUpdate('Power meter disconnected.');
     if (elements.deviceNameElement) {
         elements.deviceNameElement.textContent = '';
     }
-    if (powerMeterDevice) {
-        powerMeterDevice.removeEventListener('gattserverdisconnected', () => {
-            onPowerMeterDisconnected(callbacks, elements);
-        });
-        powerMeterDevice = null;
+
+    // Clean up event listener
+    if (powerMeterDevice && powerMeterDisconnectHandler) {
+        powerMeterDevice.removeEventListener('gattserverdisconnected', powerMeterDisconnectHandler);
+        powerMeterDisconnectHandler = null;
     }
+    powerMeterDevice = null;
+
     callbacks.onDisconnected();
 }
 
@@ -646,7 +765,13 @@ function onCadenceDisconnected(callbacks, elements) {
 }
 
 function onSpyDisconnected(elements) {
+    // Clean up event listener
+    if (spyMeterDevice && spyMeterDisconnectHandler) {
+        spyMeterDevice.removeEventListener('gattserverdisconnected', spyMeterDisconnectHandler);
+        spyMeterDisconnectHandler = null;
+    }
     spyMeterDevice = null;
+
     if (elements.spyValueElement) {
         elements.spyValueElement.textContent = '--';
     }
