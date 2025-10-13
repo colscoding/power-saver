@@ -4,10 +4,9 @@
   "scripts": {
     "start": "parcel src/index.html --host 0.0.0.0",
     "build": "rm -rf build && parcel build src/index.html --dist-dir build --public-url ./",
-    "get-ip": "hostname -I | awk '{print $1}'",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix",
-    "format": "prettier --write \"**/*.{js,json,html,css}\"",
+    "lint": "eslint src --ext .js",
+    "lint:fix": "eslint src --ext .js --fix",
+    "format": "prettier --write \"src/*.{js,json,html,css}\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

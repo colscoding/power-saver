@@ -15,14 +15,43 @@ const MIME_TYPES = {
 };
 
 /**
+ * Validate power data array and its contents
+ * @param {Array} powerData - Array to validate
+ * @returns {boolean} True if valid
+ * @throws {Error} If data is invalid with specific reason
+ */
+function validatePowerData(powerData) {
+    if (!powerData) {
+        throw new Error('Power data is null or undefined');
+    }
+
+    if (!Array.isArray(powerData)) {
+        throw new Error('Power data must be an array');
+    }
+
+    if (powerData.length === 0) {
+        throw new Error('Power data array is empty');
+    }
+
+    // Validate array contents
+    const invalidItems = powerData.filter(item =>
+        !item || typeof item !== 'object' || item.timestamp === undefined
+    );
+
+    if (invalidItems.length > 0) {
+        throw new Error(`Power data contains ${invalidItems.length} invalid item(s)`);
+    }
+
+    return true;
+}
+
+/**
  * Export power data as JSON
  * @param {Array} powerData - Array of power data points
  * @throws {Error} If power data is invalid or empty
  */
 export function exportAsJson(powerData) {
-    if (!powerData || !Array.isArray(powerData) || powerData.length === 0) {
-        throw new Error('No valid power data available to export as JSON');
-    }
+    validatePowerData(powerData);
 
     const jsonString = JSON.stringify(powerData, null, 2);
     const blob = new Blob([jsonString], { type: MIME_TYPES.JSON });
@@ -35,9 +64,7 @@ export function exportAsJson(powerData) {
  * @throws {Error} If power data is invalid or empty
  */
 export function exportAsCsv(powerData) {
-    if (!powerData || !Array.isArray(powerData) || powerData.length === 0) {
-        throw new Error('No valid power data available to export as CSV');
-    }
+    validatePowerData(powerData);
 
     let csvContent = 'timestamp,power,heartRate,cadence\n';
     powerData.forEach((row) => {
@@ -59,9 +86,7 @@ export function exportAsCsv(powerData) {
  * @throws {Error} If power data is invalid, empty, or TCX generation fails
  */
 export function exportAsTcx(powerData) {
-    if (!powerData || !Array.isArray(powerData) || powerData.length === 0) {
-        throw new Error('No power data available to export as TCX');
-    }
+    validatePowerData(powerData);
 
     try {
         const tcxContent = generateTcxString(powerData);
@@ -126,9 +151,7 @@ function delay(ms) {
 export async function exportAll(data) {
     const { powerData } = data;
 
-    if (!powerData || !Array.isArray(powerData) || powerData.length === 0) {
-        throw new Error('No valid power data available for export');
-    }
+    validatePowerData(powerData);
 
     const errors = [];
     const exports = [

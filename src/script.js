@@ -48,10 +48,12 @@ let lastHeartRateValue = 0;
 let lastCadenceValue = 0;
 let sessionStartTime = null;
 let dataLoggerInterval = null;
+let periodicSaveInterval = null;
 
 // Constants for data logging
 const DATA_LOGGER_INTERVAL_MS = 100; // Log data every 100ms
 const SESSION_SAVE_INTERVAL = 100; // Save session every 100 readings (10 seconds)
+const PERIODIC_SAVE_INTERVAL_MS = 30000; // Save session every 30 seconds as backup
 
 /**
  * Update displays after restoring session data
@@ -348,50 +350,73 @@ function restoreSessionData(sessionData) {
  * Initialize the application
  */
 async function initializeApp() {
-  // Initialize all modules and DOM elements
-  initializeElements();
-  initializePowerAveraging();
-  initializeSections(elements);
+  try {
+    // Initialize all modules and DOM elements
+    initializeElements();
+    initializePowerAveraging();
+    initializeSections(elements);
 
-  // Setup all event listeners
-  setupHamburgerMenu(elements);
-  setupPowerAveragesToggle(elements);
-  setupMetricToggles(elements);
-  setupSpyModeToggle(elements, () => disconnectSpyMeter(elements));
-  setupMenuItems(elements);
-  setupConnectionEventListeners();
-  setupExportMenuListeners(dataStore);
+    // Setup all event listeners
+    setupHamburgerMenu(elements);
+    setupPowerAveragesToggle(elements);
+    setupMetricToggles(elements);
+    setupSpyModeToggle(elements, () => disconnectSpyMeter(elements));
+    setupMenuItems(elements);
+    setupConnectionEventListeners();
+    setupExportMenuListeners(dataStore);
 
-  // Initialize connect button visibility based on current connection states
-  updateAllConnectButtonVisibility();
+    // Initialize connect button visibility based on current connection states
+    updateAllConnectButtonVisibility();
 
-  // Try to load previous session data
-  const sessionData = loadSessionData();
-  if (sessionData) {
-    // Show restoration dialog
-    const shouldRestore = await showRestorationDialog(sessionData);
-    if (shouldRestore) {
-      restoreSessionData(sessionData);
+    // Try to load previous session data
+    const sessionData = loadSessionData();
+    if (sessionData) {
+      // Show restoration dialog
+      const shouldRestore = await showRestorationDialog(sessionData);
+      if (shouldRestore) {
+        restoreSessionData(sessionData);
+      } else {
+        sessionStartTime = Date.now();
+      }
     } else {
       sessionStartTime = Date.now();
     }
-  } else {
-    sessionStartTime = Date.now();
+
+    // Save session data when page is about to be closed/refreshed
+    window.addEventListener('beforeunload', handleAppCleanup);
+
+    // Save session data periodically (every 30 seconds as backup)
+    periodicSaveInterval = setInterval(() => {
+      if (powerData.length > 0) {
+        saveSessionData(dataStore);
+      }
+    }, PERIODIC_SAVE_INTERVAL_MS);
+
+  } catch (error) {
+    console.error('Failed to initialize application:', error);
+    alert('Failed to initialize application. Please refresh the page.');
+  }
+}
+
+/**
+ * Clean up resources when app is closing
+ */
+function handleAppCleanup() {
+  // Save session data
+  if (powerData.length > 0) {
+    saveSessionData(dataStore);
   }
 
-  // Save session data when page is about to be closed/refreshed
-  window.addEventListener('beforeunload', function () {
-    if (powerData.length > 0) {
-      saveSessionData(dataStore);
-    }
-  });
+  // Clear intervals
+  if (dataLoggerInterval) {
+    clearInterval(dataLoggerInterval);
+    dataLoggerInterval = null;
+  }
 
-  // Save session data periodically (every 30 seconds as backup)
-  setInterval(() => {
-    if (powerData.length > 0) {
-      saveSessionData(dataStore);
-    }
-  }, 30000);
+  if (periodicSaveInterval) {
+    clearInterval(periodicSaveInterval);
+    periodicSaveInterval = null;
+  }
 }
 
 // Initialize the application when DOM is ready

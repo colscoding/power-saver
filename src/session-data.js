@@ -29,6 +29,29 @@ function saveSessionData(dataStore) {
 }
 
 /**
+ * Validate session data object
+ * @param {Object} sessionData - Session data to validate
+ * @returns {boolean} True if valid
+ */
+function validateSessionData(sessionData) {
+    if (!sessionData || typeof sessionData !== 'object') {
+        return false;
+    }
+
+    // Check required properties
+    if (!sessionData.timestamp || !sessionData.powerData) {
+        return false;
+    }
+
+    // Validate powerData is an array
+    if (!Array.isArray(sessionData.powerData)) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Load session data from localStorage if available and recent
  * @returns {Object|null} Session data object if available and valid, null otherwise
  */
@@ -40,11 +63,20 @@ function loadSessionData() {
         }
 
         const sessionData = JSON.parse(savedData);
+
+        // Validate session data structure
+        if (!validateSessionData(sessionData)) {
+            console.warn('Invalid session data structure, clearing...');
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            return null;
+        }
+
         const now = Date.now();
         const sessionAge = now - sessionData.timestamp;
 
         // Check if session has expired (older than 24 hours)
         if (sessionAge > SESSION_TIMEOUT_MS) {
+            console.log('Session expired, clearing...');
             localStorage.removeItem(SESSION_STORAGE_KEY);
             return null;
         }
