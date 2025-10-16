@@ -29,17 +29,19 @@ function isValidTimestamp(timestamp) {
 function createTrackpoint(dataPoint) {
   const xmlBuilders = {
     time: (time) => `<Time>${new Date(time).toISOString()}</Time>`,
-    heartRate: (hr) => `
-<HeartRateBpm>
-  <Value>${hr}</Value>
-</HeartRateBpm>`.trim(),
-    cadence: (cad) => `<Cadence>${cad}</Cadence>`,
-    power: (pw) => `
-<Extensions>
-  <ns2:TPX>
-    <ns2:Watts>${pw}</ns2:Watts>
-  </ns2:TPX>
-</Extensions>`.trim(),
+    heartRate: (hr) => `<HeartRateBpm>
+      <Value>${Math.round(hr)}</Value>
+    </HeartRateBpm>`,
+    cadence: (cad) => `<Cadence>${Math.round(cad)}</Cadence>`,
+    power: (pw) => {
+      // Ensure power is a non-negative integer (TCX spec: unsignedShort 0-65535)
+      const watts = Math.max(0, Math.min(2000, Math.round(pw)));
+      return `<Extensions>
+      <TPX xmlns="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+        <Watts>${watts}</Watts>
+      </TPX>
+    </Extensions>`;
+    },
   };
 
   const contents = Object.keys(xmlBuilders)
@@ -52,10 +54,9 @@ function createTrackpoint(dataPoint) {
     .filter(Boolean) // Remove empty strings
     .join('\n');
 
-  return `
-<Trackpoint>
-  ${contents}
-</Trackpoint>`.trim();
+  return `<Trackpoint>
+${contents}
+</Trackpoint>`;
 }
 
 /**
@@ -91,6 +92,23 @@ function trimEmptyPowerEntries(dataPoints) {
   }
 
   return result;
+}
+
+/**
+ * Calculate total time in seconds from start to end of data
+ * @param {Array<Object>} dataPoints - Array of data points with time property
+ * @returns {number} Total time in seconds
+ */
+function calculateTotalTime(dataPoints) {
+  if (dataPoints.length === 0) {
+    return 0;
+  }
+
+  const startTime = dataPoints[0].time;
+  const endTime = dataPoints[dataPoints.length - 1].time;
+
+  // Convert milliseconds to seconds
+  return Math.round((endTime - startTime) / 1000);
 }
 
 /**
@@ -133,20 +151,27 @@ function generateTcxString(powerData) {
   const startTime = trimmedData[0].time;
   const startTimeISO = new Date(startTime).toISOString();
 
-  // Build complete TCX document
+  // Calculate total time for lap summary
+  const totalTimeSeconds = calculateTotalTime(trimmedData);
+
+  // Build complete TCX document with proper formatting and required fields
   const tcxXml = `<?xml version="1.0" encoding="UTF-8"?>
 <TrainingCenterDatabase
   xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd"
-  xmlns:ns2="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+  xsi:schemaLocation="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2
+    http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd">
   <Activities>
     <Activity Sport="Biking">
       <Id>${startTimeISO}</Id>
-      <Name>E Bike Indoor Cycling Trainer</Name>
       <Lap StartTime="${startTimeISO}">
+        <TotalTimeSeconds>${totalTimeSeconds}</TotalTimeSeconds>
+        <DistanceMeters>0</DistanceMeters>
+        <Calories>0</Calories>
+        <Intensity>Active</Intensity>
+        <TriggerMethod>Manual</TriggerMethod>
         <Track>
-        ${trackpoints}
+${trackpoints}
         </Track>
       </Lap>
     </Activity>
