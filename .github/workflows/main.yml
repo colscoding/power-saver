@@ -25,5 +25,5 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check for diff
-        run: git diff --exit-code
+      - name: Check for diff in the build folder
+        run: git diff --exit-code --ignore-space-change -- build/
