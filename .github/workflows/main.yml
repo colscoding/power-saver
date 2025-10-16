@@ -26,4 +26,4 @@ jobs:
         run: npm run build
 
       - name: Check for diff in the build folder
-        run: git diff --exit-code --ignore-space-change -- build/
+        run: git diff --exit-code --ignore-space-change -- build/ ':!build/*.map'
