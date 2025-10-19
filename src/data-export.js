@@ -11,7 +11,7 @@ const EXPORT_DELAY_MS = 100; // Delay between downloads to prevent browser block
 const MIME_TYPES = {
     JSON: 'application/json;charset=utf-8;',
     CSV: 'text/csv;charset=utf-8;',
-    XML: 'application/xml;charset=utf-8;',
+    XML: 'application/vnd.garmin.tcx+xml;charset=utf-8;', // Garmin TCX specific MIME type
 };
 
 /**
