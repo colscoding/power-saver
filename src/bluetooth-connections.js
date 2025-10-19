@@ -31,6 +31,10 @@ let hrDisconnectHandler = null;
 let speedCadenceDisconnectHandler = null;
 let spyMeterDisconnectHandler = null;
 
+// Store characteristics for proper cleanup and persistent connections
+let hrCharacteristic = null;
+let hrCharacteristicHandler = null;
+
 // Cadence calculation variables
 let lastCrankRevs = 0;
 let lastCrankTime = 0;
@@ -163,6 +167,17 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 
         // Clean up any existing connection before creating a new one
         if (hrBluetoothDevice) {
+            // Clean up characteristic handler
+            if (hrCharacteristic && hrCharacteristicHandler) {
+                try {
+                    hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
+                } catch (e) {
+                    console.warn('Error removing HR characteristic listener:', e);
+                }
+                hrCharacteristicHandler = null;
+                hrCharacteristic = null;
+            }
+
             if (hrDisconnectHandler) {
                 hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
                 hrDisconnectHandler = null;
@@ -208,6 +223,16 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         }
 
         // Clean up on error
+        if (hrCharacteristic && hrCharacteristicHandler) {
+            try {
+                hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
+            } catch (e) {
+                // Ignore cleanup errors
+            }
+            hrCharacteristicHandler = null;
+            hrCharacteristic = null;
+        }
+
         if (hrBluetoothDevice && hrDisconnectHandler) {
             hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
             hrDisconnectHandler = null;
@@ -244,19 +269,43 @@ async function connectToHRDevice(device, callbacks, elements) {
         }
 
         const hrService = await hrServer.getPrimaryService('heart_rate');
-        const hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
+        hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
+
+        // Clean up any existing handler before adding a new one
+        if (hrCharacteristicHandler) {
+            try {
+                hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
+            } catch (e) {
+                console.warn('Error removing old HR characteristic listener:', e);
+            }
+        }
 
         // Start notifications to receive heart rate data
         await hrCharacteristic.startNotifications();
-        hrCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
+
+        // Store the handler reference for proper cleanup
+        hrCharacteristicHandler = (event) => {
             handleHeartRateChanged(event, callbacks);
-        });
+        };
+
+        hrCharacteristic.addEventListener('characteristicvaluechanged', hrCharacteristicHandler);
 
         callbacks.onStatusUpdate('Connected!');
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Connected';
         }
     } catch (error) {
+        // Clean up characteristic handler on connection failure
+        if (hrCharacteristic && hrCharacteristicHandler) {
+            try {
+                hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
+            } catch (e) {
+                // Ignore cleanup errors
+            }
+            hrCharacteristicHandler = null;
+            hrCharacteristic = null;
+        }
+
         // Clean up event listener on connection failure
         device.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
         hrDisconnectHandler = null;
@@ -726,6 +775,17 @@ function onHeartRateDisconnected(callbacks, elements) {
     }
     if (elements.hrDeviceName) {
         elements.hrDeviceName.textContent = '';
+    }
+
+    // Clean up characteristic handler
+    if (hrCharacteristic && hrCharacteristicHandler) {
+        try {
+            hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
+        } catch (e) {
+            console.warn('Error removing HR characteristic listener on disconnect:', e);
+        }
+        hrCharacteristicHandler = null;
+        hrCharacteristic = null;
     }
 
     // Clean up event listener
