@@ -40,6 +40,7 @@ import {
   setupMenuItems,
   initializeSections
 } from "./ui-event-handlers.js";
+import { initializeMetricIcons } from "./metric-icons.js";
 
 // Application state variables
 let powerData = [];
@@ -355,6 +356,7 @@ async function initializeApp() {
     initializeElements();
     initializePowerAveraging();
     initializeSections(elements);
+    initializeMetricIcons();
 
     // Setup all event listeners
     setupHamburgerMenu(elements);

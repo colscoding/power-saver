@@ -64,12 +64,9 @@
   <main class="dashboard">
     <div class="metrics-grid" role="group" aria-label="Power meter metrics">
       <div class="metric-card power-card">
+        <button class="metric-icon" id="powerIcon" title="Click for info" aria-label="Power metric info">⚡</button>
         <div class="metric-row">
           <div class="metric-value" id="power-value" aria-live="polite">--</div>
-          <div class="metric-info">
-            <div class="metric-label">Power Output</div>
-            <div class="metric-unit">Watts</div>
-          </div>
         </div>
         <button class="metric-connect-button" id="connectButton">
           Connect Power Meter
@@ -79,12 +76,9 @@
       </div>
 
       <div class="metric-card hr-card">
+        <button class="metric-icon" id="hrIcon" title="Click for info" aria-label="Heart rate metric info">❤️</button>
         <div class="metric-row">
           <div class="metric-value" id="hr-value" aria-live="polite">--</div>
-          <div class="metric-info">
-            <div class="metric-label">Heart Rate</div>
-            <div class="metric-unit">BPM</div>
-          </div>
         </div>
         <div class="status-text" id="hrStatus"></div>
         <button class="metric-connect-button" id="hrConnectButton">
@@ -95,12 +89,9 @@
       </div>
 
       <div class="metric-card cadence-card">
+        <button class="metric-icon" id="cadenceIcon" title="Click for info" aria-label="Cadence metric info">🚴</button>
         <div class="metric-row">
           <div class="metric-value" id="cadence-value" aria-live="polite">--</div>
-          <div class="metric-info">
-            <div class="metric-label">Cadence</div>
-            <div class="metric-unit">RPM</div>
-          </div>
         </div>
         <div class="status-text" id="cadenceStatus"></div>
         <button class="metric-connect-button" id="speedCadenceConnectButton">
@@ -151,19 +142,19 @@
           <tbody>
             <tr>
               <td class="row-label">Current</td>
-              <td><span id="avg10s-current">--</span> W</td>
-              <td><span id="avg20s-current">--</span> W</td>
-              <td><span id="avg30s-current">--</span> W</td>
-              <td><span id="avg40s-current">--</span> W</td>
-              <td><span id="avg50s-current">--</span> W</td>
+              <td><span id="avg10s-current">--</span></td>
+              <td><span id="avg20s-current">--</span></td>
+              <td><span id="avg30s-current">--</span></td>
+              <td><span id="avg40s-current">--</span></td>
+              <td><span id="avg50s-current">--</span></td>
             </tr>
             <tr>
               <td class="row-label">Best</td>
-              <td><span id="avg10s-best">--</span> W</td>
-              <td><span id="avg20s-best">--</span> W</td>
-              <td><span id="avg30s-best">--</span> W</td>
-              <td><span id="avg40s-best">--</span> W</td>
-              <td><span id="avg50s-best">--</span> W</td>
+              <td><span id="avg10s-best">--</span></td>
+              <td><span id="avg20s-best">--</span></td>
+              <td><span id="avg30s-best">--</span></td>
+              <td><span id="avg40s-best">--</span></td>
+              <td><span id="avg50s-best">--</span></td>
             </tr>
           </tbody>
         </table>
@@ -185,19 +176,19 @@
           <tbody>
             <tr>
               <td class="row-label">Current</td>
-              <td><span id="avg1m-current">--</span> W</td>
-              <td><span id="avg2m-current">--</span> W</td>
-              <td><span id="avg3m-current">--</span> W</td>
-              <td><span id="avg4m-current">--</span> W</td>
-              <td><span id="avg5m-current">--</span> W</td>
+              <td><span id="avg1m-current">--</span></td>
+              <td><span id="avg2m-current">--</span></td>
+              <td><span id="avg3m-current">--</span></td>
+              <td><span id="avg4m-current">--</span></td>
+              <td><span id="avg5m-current">--</span></td>
             </tr>
             <tr>
               <td class="row-label">Best</td>
-              <td><span id="avg1m-best">--</span> W</td>
-              <td><span id="avg2m-best">--</span> W</td>
-              <td><span id="avg3m-best">--</span> W</td>
-              <td><span id="avg4m-best">--</span> W</td>
-              <td><span id="avg5m-best">--</span> W</td>
+              <td><span id="avg1m-best">--</span></td>
+              <td><span id="avg2m-best">--</span></td>
+              <td><span id="avg3m-best">--</span></td>
+              <td><span id="avg4m-best">--</span></td>
+              <td><span id="avg5m-best">--</span></td>
             </tr>
           </tbody>
         </table>

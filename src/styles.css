@@ -83,6 +83,37 @@ body {
     background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, transparent 100%);
 }
 
+/* Metric Icon Button */
+.metric-icon {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid var(--accent-color, #f39c12);
+    border-radius: 12px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    padding: 0;
+    backdrop-filter: blur(10px);
+}
+
+.metric-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.metric-icon:active {
+    transform: scale(0.95);
+}
+
 .power-card {
     grid-column: 1;
     grid-row: 1 / 3;
@@ -639,6 +670,99 @@ button:disabled::before {
     transform: translateX(20px);
 }
 
+/* Metric Info Modal Styling */
+.metric-info-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.metric-info-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.metric-info-content {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%);
+    border-radius: 20px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.metric-info-modal.active .metric-info-content {
+    transform: scale(1);
+}
+
+.metric-info-header {
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.metric-info-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #f39c12;
+    font-weight: 600;
+}
+
+.metric-info-close {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.metric-info-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(90deg);
+}
+
+.metric-info-body {
+    padding: 2rem;
+    overflow-y: auto;
+    max-height: calc(80vh - 80px);
+}
+
+.metric-info-body p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #dddddd;
+}
+
 /* Export Modal Styling */
 .export-modal {
     position: fixed;
@@ -1120,6 +1244,15 @@ button:disabled::before {
         gap: 12px;
         margin: 1rem 0;
     }
+
+    /* Metric icons on tablet */
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+        top: 10px;
+        left: 10px;
+    }
 }
 
 /* Compact layout for very small screens */
@@ -1160,6 +1293,15 @@ button:disabled::before {
     .hr-card .metric-value,
     .cadence-card .metric-value {
         font-size: clamp(2.5rem, 10vw, 3.5rem);
+    }
+
+    /* Metric icons on very small screens */
+    .metric-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+        top: 8px;
+        left: 8px;
     }
 }
 
@@ -1278,6 +1420,37 @@ button:disabled::before {
 
     .export-buttons button {
         width: 100%;
+    }
+
+    /* Metric icons on mobile */
+    .metric-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 20px;
+        top: 8px;
+        left: 8px;
+    }
+
+    /* Metric info modal on mobile */
+    .metric-info-content {
+        width: 95%;
+        max-width: none;
+    }
+
+    .metric-info-header {
+        padding: 1.2rem 1.5rem;
+    }
+
+    .metric-info-header h3 {
+        font-size: 1.3rem;
+    }
+
+    .metric-info-body {
+        padding: 1.5rem;
+    }
+
+    .metric-info-body p {
+        font-size: 0.95rem;
     }
 
     .toggle-button {
