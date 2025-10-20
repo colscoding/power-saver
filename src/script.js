@@ -4,6 +4,7 @@
  */
 
 // Import all required modules
+import { initializePWA } from "./pwa-install.js";
 import { loadSessionData, saveSessionData, clearSessionData } from "./session-data.js";
 import {
   initializePowerAveraging,
@@ -423,3 +424,6 @@ function handleAppCleanup() {
 
 // Initialize the application when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
+
+// Initialize PWA features (service worker, install prompt)
+initializePWA();

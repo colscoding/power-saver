@@ -1,0 +1,14 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background circle -->
+    <circle cx="256" cy="256" r="246" fill="#00ff00" />
+
+    <!-- Inner circle -->
+    <circle cx="256" cy="256" r="206" fill="#1a1a1a" />
+
+    <!-- Lightning bolt path -->
+    <path d="M 280 120 L 200 260 L 250 260 L 232 392 L 340 220 L 280 220 Z"
+        fill="#00ff00"
+        stroke="#00ff00"
+        stroke-width="4"
+        stroke-linejoin="round" />
+</svg>
