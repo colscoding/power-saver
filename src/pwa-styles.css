@@ -1,0 +1,436 @@
+/**
+ * PWA UI Styles
+ * Styles for PWA-specific UI components: install prompt, update banner, offline indicator
+ */
+
+/* ==========================================================================
+   Install Banner
+   ========================================================================== */
+
+.pwa-install-banner {
+    position: fixed;
+    bottom: -100px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+    border-top: 3px solid #00ff00;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    padding: 16px 20px;
+    z-index: 10000;
+    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pwa-install-banner-visible {
+    bottom: 0;
+}
+
+.pwa-install-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pwa-install-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.pwa-install-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pwa-install-text strong {
+    color: #00ff00;
+    font-size: 1rem;
+}
+
+.pwa-install-text span {
+    color: #b0b0b0;
+    font-size: 0.875rem;
+}
+
+.pwa-install-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Update Banner
+   ========================================================================== */
+
+.pwa-update-banner {
+    position: fixed;
+    top: -100px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #2a1e1e 0%, #3a2a2a 100%);
+    border-bottom: 3px solid #ffaa00;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    padding: 16px 20px;
+    z-index: 10000;
+    transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pwa-update-banner-visible {
+    top: 0;
+}
+
+.pwa-update-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pwa-update-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.pwa-update-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pwa-update-text strong {
+    color: #ffaa00;
+    font-size: 1rem;
+}
+
+.pwa-update-text span {
+    color: #b0b0b0;
+    font-size: 0.875rem;
+}
+
+.pwa-update-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Offline Indicator
+   ========================================================================== */
+
+.pwa-offline-indicator {
+    position: fixed;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4444;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+    z-index: 9999;
+    transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pwa-offline-indicator-visible {
+    top: 0;
+}
+
+.pwa-offline-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pwa-offline-icon {
+    font-size: 1.5rem;
+}
+
+.pwa-offline-text {
+    font-weight: 600;
+    font-size: 0.938rem;
+}
+
+/* ==========================================================================
+   Toast Notifications
+   ========================================================================== */
+
+.pwa-toast {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    padding: 16px 24px;
+    z-index: 10001;
+    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 400px;
+}
+
+.pwa-toast-visible {
+    bottom: 24px;
+}
+
+.pwa-toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+}
+
+.pwa-toast-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.pwa-toast-success {
+    border-left: 4px solid #00ff00;
+}
+
+.pwa-toast-info {
+    border-left: 4px solid #00aaff;
+}
+
+.pwa-toast-warning {
+    border-left: 4px solid #ffaa00;
+}
+
+.pwa-toast-error {
+    border-left: 4px solid #ff4444;
+}
+
+/* ==========================================================================
+   iOS Install Instructions
+   ========================================================================== */
+
+.pwa-ios-instructions {
+    position: fixed;
+    bottom: -200px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+    border-top: 3px solid #007aff;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    z-index: 10000;
+    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pwa-ios-instructions-visible {
+    bottom: 0;
+}
+
+.pwa-ios-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.pwa-ios-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.pwa-ios-icon {
+    font-size: 1.5rem;
+}
+
+.pwa-ios-header strong {
+    flex: 1;
+    color: #007aff;
+    font-size: 1rem;
+}
+
+.pwa-ios-close {
+    background: transparent;
+    border: none;
+    color: #b0b0b0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.pwa-ios-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pwa-ios-steps {
+    color: #e0e0e0;
+    font-size: 0.938rem;
+    line-height: 1.5;
+}
+
+.pwa-ios-steps p {
+    margin: 0;
+}
+
+/* ==========================================================================
+   PWA Buttons
+   ========================================================================== */
+
+.pwa-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.938rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.pwa-btn-primary {
+    background: #00ff00;
+    color: #000;
+}
+
+.pwa-btn-primary:hover {
+    background: #00dd00;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 255, 0, 0.3);
+}
+
+.pwa-btn-secondary {
+    background: transparent;
+    color: #b0b0b0;
+    border: 1px solid #444;
+}
+
+.pwa-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    border-color: #666;
+}
+
+.pwa-btn:active {
+    transform: translateY(0);
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+
+    .pwa-install-banner,
+    .pwa-update-banner {
+        padding: 12px 16px;
+    }
+
+    .pwa-install-content,
+    .pwa-update-content {
+        gap: 12px;
+    }
+
+    .pwa-install-icon,
+    .pwa-update-icon {
+        font-size: 1.5rem;
+    }
+
+    .pwa-install-text strong,
+    .pwa-update-text strong {
+        font-size: 0.938rem;
+    }
+
+    .pwa-install-text span,
+    .pwa-update-text span {
+        font-size: 0.813rem;
+    }
+
+    .pwa-install-actions,
+    .pwa-update-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .pwa-btn {
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        width: 100%;
+    }
+
+    .pwa-offline-indicator {
+        left: 16px;
+        right: 16px;
+        transform: none;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .pwa-toast {
+        left: 16px;
+        right: 16px;
+        transform: none;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .pwa-install-content,
+    .pwa-update-content {
+        flex-wrap: wrap;
+    }
+
+    .pwa-install-text,
+    .pwa-update-text {
+        width: 100%;
+    }
+
+    .pwa-install-actions,
+    .pwa-update-actions {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.pwa-btn:focus {
+    outline: 2px solid #00ff00;
+    outline-offset: 2px;
+}
+
+.pwa-ios-close:focus {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .pwa-install-banner,
+    .pwa-update-banner,
+    .pwa-offline-indicator,
+    .pwa-toast,
+    .pwa-ios-instructions {
+        transition: none;
+    }
+
+    .pwa-update-icon {
+        animation: none;
+    }
+}

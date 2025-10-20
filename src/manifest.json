@@ -51,6 +51,44 @@
             "purpose": "any maskable"
         }
     ],
+    "shortcuts": [
+        {
+            "name": "Start Workout",
+            "short_name": "Start",
+            "description": "Quick start a new workout session",
+            "url": "./?action=start",
+            "icons": [
+                {
+                    "src": "./icons/icon-192x192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "View History",
+            "short_name": "History",
+            "description": "View workout history and data",
+            "url": "./?action=history",
+            "icons": [
+                {
+                    "src": "./icons/icon-192x192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Export Data",
+            "short_name": "Export",
+            "description": "Export workout data",
+            "url": "./?action=export",
+            "icons": [
+                {
+                    "src": "./icons/icon-192x192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
     "categories": [
         "sports",
         "health",

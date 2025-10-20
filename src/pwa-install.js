@@ -3,7 +3,12 @@
  * Manages service worker registration and install prompts
  */
 
+import { InstallPrompt, UpdateBanner, OfflineIndicator, showIOSInstallInstructions } from './pwa-ui.js';
+
 let deferredPrompt = null;
+let installPrompt = null;
+let updateBanner = null;
+let offlineIndicator = null;
 
 /**
  * Register the service worker
@@ -49,21 +54,24 @@ export function registerServiceWorker() {
  * Show update notification and allow user to update
  */
 function showUpdateNotification(worker) {
-    // You can implement a custom notification UI here
     console.log('[PWA] Update available. New version can be activated.');
 
-    // For now, auto-update on next reload
-    // You could add a user prompt here instead
-    if (confirm('A new version is available. Reload to update?')) {
-        worker.postMessage({ type: 'SKIP_WAITING' });
-        window.location.reload();
+    // Show the custom update banner
+    if (!updateBanner) {
+        updateBanner = new UpdateBanner();
     }
+    updateBanner.show(worker);
 }
 
 /**
  * Setup install prompt handler
  */
 export function setupInstallPrompt() {
+    // Initialize install prompt UI
+    if (!installPrompt) {
+        installPrompt = new InstallPrompt();
+    }
+
     // Capture the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
         console.log('[PWA] Install prompt available');
@@ -74,35 +82,26 @@ export function setupInstallPrompt() {
         // Store the event so it can be triggered later
         deferredPrompt = e;
 
-        // Optionally show your own install button
-        showInstallButton();
+        // Show custom install banner
+        installPrompt.show(e);
     });
 
     // Handle successful installation
     window.addEventListener('appinstalled', () => {
         console.log('[PWA] App successfully installed');
         deferredPrompt = null;
-        hideInstallButton();
+        if (installPrompt) {
+            installPrompt.hide();
+        }
     });
+
+    // Show iOS-specific instructions
+    setTimeout(() => {
+        showIOSInstallInstructions();
+    }, 2000);
 }
 
-/**
- * Show install button (if you want to add a custom install UI)
- */
-function showInstallButton() {
-    // You can implement a custom install button in your UI
-    // For example:
-    // document.getElementById('installButton').style.display = 'block';
-    console.log('[PWA] Install button available (implement custom UI if desired)');
-}
 
-/**
- * Hide install button
- */
-function hideInstallButton() {
-    // Hide the custom install button
-    // document.getElementById('installButton').style.display = 'none';
-}
 
 /**
  * Trigger install prompt programmatically
@@ -140,6 +139,12 @@ export function isInstalled() {
 export function initializePWA() {
     registerServiceWorker();
     setupInstallPrompt();
+
+    // Initialize offline indicator
+    if (!offlineIndicator) {
+        offlineIndicator = new OfflineIndicator();
+    }
+    offlineIndicator.init();
 
     // Log installation status
     if (isInstalled()) {
