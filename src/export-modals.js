@@ -105,7 +105,22 @@ export function showUtilitiesModal(dataStore) {
 
     const buttons = [
         {
-            text: '🗑️ Clear Session Data',
+            text: '� Clear App Cache',
+            description: 'Clear cached files and force reload (ensures fresh version)',
+            className: 'primary',
+            onClick: async () => {
+                const confirmed = confirm(
+                    'This will clear the app cache and reload to get the latest version. Continue?'
+                );
+                if (confirmed) {
+                    await clearAppCache();
+                    alert('Cache cleared! The page will now reload.');
+                    window.location.reload(true);
+                }
+            }
+        },
+        {
+            text: '�🗑️ Clear Session Data',
             description: 'Clear all session data (cannot be undone)',
             className: 'danger',
             onClick: () => {
@@ -123,6 +138,43 @@ export function showUtilitiesModal(dataStore) {
 
     addButtonsToModal(modal, buttons);
     showModal(modal);
+}
+
+/**
+ * Clear app cache and service worker cache
+ */
+async function clearAppCache() {
+    try {
+        // Clear all caches
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames.map(cacheName => {
+                    console.log('Deleting cache:', cacheName);
+                    return caches.delete(cacheName);
+                })
+            );
+            console.log('All caches cleared');
+        }
+
+        // Tell service worker to clear its cache
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'CLEAR_CACHE'
+            });
+        }
+
+        // Unregister service worker to ensure clean reload
+        if (navigator.serviceWorker) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+                console.log('Service worker unregistered');
+            }
+        }
+    } catch (error) {
+        console.error('Error clearing cache:', error);
+    }
 }
 
 /**

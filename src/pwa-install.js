@@ -19,26 +19,42 @@ export function registerServiceWorker() {
             try {
                 const registration = await navigator.serviceWorker.register(
                     new URL('./service-worker.js', import.meta.url),
-                    { type: 'module' }
+                    { type: 'module', updateViaCache: 'none' }
                 );
                 console.log('[PWA] Service Worker registered:', registration.scope);
 
-                // Check for updates periodically
+                // Check for updates immediately
+                registration.update();
+
+                // Check for updates periodically (every 5 minutes)
                 setInterval(() => {
+                    console.log('[PWA] Checking for updates...');
                     registration.update();
-                }, 60000); // Check every minute
+                }, 300000); // Check every 5 minutes
 
                 // Handle updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
+                    console.log('[PWA] Update found, installing new service worker...');
 
                     newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('[PWA] New service worker available');
-                            // Optionally show a notification to user about update
-                            showUpdateNotification(newWorker);
+                        if (newWorker.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                // New service worker available
+                                console.log('[PWA] New version available');
+                                showUpdateNotification(newWorker);
+                            } else {
+                                // First time install
+                                console.log('[PWA] Content cached for offline use');
+                            }
                         }
                     });
+                });
+
+                // Listen for controlling service worker change
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('[PWA] Controller changed, reloading page...');
+                    window.location.reload();
                 });
 
             } catch (error) {
