@@ -42,6 +42,8 @@ import {
   setupAdditionalSensorMenuItems,
   updateAdditionalSensorValue
 } from "./additional-sensors-ui.js";
+import { initializeTheme, showThemeSelector } from "./theme-manager.js";
+import { initializeLayout, showLayoutSelector } from "./layout-manager.js";
 
 // Application state variables
 let powerData = [];
@@ -402,6 +404,10 @@ function restoreSessionData(sessionData) {
  */
 async function initializeApp() {
   try {
+    // Initialize theme and layout first (before other UI elements)
+    initializeTheme();
+    initializeLayout();
+
     // Initialize all modules and DOM elements
     initializeElements();
     initializePowerAveraging();
@@ -412,7 +418,7 @@ async function initializeApp() {
     setupHamburgerMenu(elements);
     setupPowerAveragesToggle(elements);
     setupMetricToggles(elements);
-    setupMenuItems(elements);
+    setupMenuItems(elements, showThemeSelector, showLayoutSelector);
     setupConnectionEventListeners();
     setupAdditionalSensorHandlers();
     setupExportMenuListeners(dataStore);

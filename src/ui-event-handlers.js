@@ -131,8 +131,9 @@ export function setupMetricToggles(elements) {
 /**
  * Setup menu item functionality
  * @param {Object} elements - UI elements object
+ * @param {Function} showThemeSelector - Function to show theme selector
  */
-export function setupMenuItems(elements) {
+export function setupMenuItems(elements, showThemeSelector, showLayoutSelector) {
     // Info functionality
     if (elements.showInfoMenuItem) {
         elements.showInfoMenuItem.addEventListener('click', function () {
@@ -144,6 +145,30 @@ export function setupMenuItems(elements) {
         });
     } else {
         console.error('Show info menu item not found');
+    }
+
+    // Theme selector functionality
+    const themeMenuItem = document.getElementById('themeMenuItem');
+    if (themeMenuItem && showThemeSelector) {
+        themeMenuItem.addEventListener('click', function () {
+            showThemeSelector();
+            // Close the menu after opening theme selector
+            if (elements.menuDropdown) {
+                elements.menuDropdown.classList.remove('active');
+            }
+        });
+    }
+
+    // Layout selector functionality
+    const layoutMenuItem = document.getElementById('layoutMenuItem');
+    if (layoutMenuItem && showLayoutSelector) {
+        layoutMenuItem.addEventListener('click', function () {
+            showLayoutSelector();
+            // Close the menu after opening layout selector
+            if (elements.menuDropdown) {
+                elements.menuDropdown.classList.remove('active');
+            }
+        });
     }
 }
 
