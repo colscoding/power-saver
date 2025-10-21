@@ -41,6 +41,7 @@ export function showBasicExportModal(dataStore) {
                 try {
                     await exportAll({
                         powerData: dataStore.powerData,
+                        additionalSensorsData: dataStore.additionalSensorsData
                     });
                     closeModal(modal);
                     alert('All export files downloaded successfully!');
@@ -54,7 +55,7 @@ export function showBasicExportModal(dataStore) {
             description: 'JavaScript Object Notation format',
             onClick: () => {
                 try {
-                    exportAsJson(dataStore.powerData);
+                    exportAsJson(dataStore.powerData, dataStore.additionalSensorsData);
                     closeModal(modal);
                 } catch (error) {
                     handleExportError(error, 'JSON');
@@ -66,7 +67,7 @@ export function showBasicExportModal(dataStore) {
             description: 'Comma-Separated Values format',
             onClick: () => {
                 try {
-                    exportAsCsv(dataStore.powerData);
+                    exportAsCsv(dataStore.powerData, dataStore.additionalSensorsData);
                     closeModal(modal);
                 } catch (error) {
                     handleExportError(error, 'CSV');

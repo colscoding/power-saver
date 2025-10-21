@@ -20,6 +20,7 @@ function saveSessionData(dataStore) {
             lastHeartRateValue: dataStore.lastHeartRateValue,
             lastCadenceValue: dataStore.lastCadenceValue,
             sessionStartTime: dataStore.sessionStartTime,
+            additionalSensorsData: dataStore.additionalSensorsData || {}
         };
 
         localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));

@@ -129,42 +129,6 @@ export function setupMetricToggles(elements) {
 
 
 /**
- * Setup spy mode toggle functionality
- * @param {Object} elements - UI elements object
- * @param {Function} disconnectSpyCallback - Callback to disconnect spy meter
- */
-export function setupSpyModeToggle(elements, disconnectSpyCallback) {
-    if (!elements.spyModeToggle || !elements.spyModeSection) {
-        console.error('Spy mode toggle elements not found');
-        return;
-    }
-
-    let spyModeVisible = false; // Start hidden by default
-
-    elements.spyModeToggle.addEventListener('click', function () {
-        spyModeVisible = !spyModeVisible;
-
-        if (spyModeVisible) {
-            elements.spyModeSection.style.display = 'block';
-            elements.spyModeToggle.classList.add('active');
-            // Make sure instructions are visible when first enabling spy mode
-            if (elements.spyInstructionsElement) {
-                elements.spyInstructionsElement.style.display = 'block';
-            }
-        } else {
-            elements.spyModeSection.style.display = 'none';
-            elements.spyModeToggle.classList.remove('active');
-            // Disconnect spy device if connected
-            disconnectSpyCallback();
-            // Reset spy display elements
-            if (elements.spyValueElement) elements.spyValueElement.textContent = '--';
-            if (elements.spyStatusElement) elements.spyStatusElement.style.display = 'none';
-            if (elements.spyInstructionsElement) elements.spyInstructionsElement.style.display = 'block';
-        }
-    });
-}
-
-/**
  * Setup menu item functionality
  * @param {Object} elements - UI elements object
  */

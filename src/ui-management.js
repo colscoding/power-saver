@@ -45,19 +45,11 @@ export const elements = {
     heartRateMetricToggle: null,
     cadenceMetricToggle: null,
     showInfoMenuItem: null,
-    spyModeToggle: null,
 
     // Metric card elements
     powerCard: null,
     heartRateCard: null,
-    cadenceCard: null,
-    spyCard: null,
-    spyModeSection: null,
-
-    // Spy mode elements
-    spyValueElement: null,
-    spyStatusElement: null,
-    spyInstructionsElement: null
+    cadenceCard: null
 };
 
 /**
@@ -97,19 +89,11 @@ export function initializeElements() {
     elements.heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
     elements.cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
     elements.showInfoMenuItem = document.getElementById('showInfoMenuItem');
-    elements.spyModeToggle = document.getElementById('spyModeToggle');
 
     // Metric card elements
     elements.powerCard = document.querySelector('.power-card');
     elements.heartRateCard = document.querySelector('.hr-card');
     elements.cadenceCard = document.querySelector('.cadence-card');
-    elements.spyCard = document.querySelector('.spy-card');
-    elements.spyModeSection = document.getElementById('spyModeSection');
-
-    // Spy mode elements
-    elements.spyValueElement = document.getElementById('spy-value');
-    elements.spyStatusElement = document.getElementById('spyStatus');
-    elements.spyInstructionsElement = document.getElementById('spyInstructions');
 
     // Initialize connection status to disconnected state
     if (elements.hrConnectionStatus) elements.hrConnectionStatus.textContent = 'Disconnected';
