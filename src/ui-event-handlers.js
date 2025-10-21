@@ -131,9 +131,9 @@ export function setupMetricToggles(elements) {
 /**
  * Setup menu item functionality
  * @param {Object} elements - UI elements object
- * @param {Function} showThemeSelector - Function to show theme selector
+ * @param {Function} showLayoutSelector - Function to show layout selector
  */
-export function setupMenuItems(elements, showThemeSelector, showLayoutSelector) {
+export function setupMenuItems(elements, showLayoutSelector) {
     // Info functionality
     if (elements.showInfoMenuItem) {
         elements.showInfoMenuItem.addEventListener('click', function () {
@@ -145,18 +145,6 @@ export function setupMenuItems(elements, showThemeSelector, showLayoutSelector) 
         });
     } else {
         console.error('Show info menu item not found');
-    }
-
-    // Theme selector functionality
-    const themeMenuItem = document.getElementById('themeMenuItem');
-    if (themeMenuItem && showThemeSelector) {
-        themeMenuItem.addEventListener('click', function () {
-            showThemeSelector();
-            // Close the menu after opening theme selector
-            if (elements.menuDropdown) {
-                elements.menuDropdown.classList.remove('active');
-            }
-        });
     }
 
     // Layout selector functionality

@@ -48,19 +48,14 @@ function validatePowerData(powerData) {
 /**
  * Export power data as JSON
  * @param {Array} powerData - Array of power data points
- * @param {Object} additionalSensorsData - Additional sensors data
  * @throws {Error} If power data is invalid or empty
  */
-export function exportAsJson(powerData, additionalSensorsData = null) {
+export function exportAsJson(powerData) {
     validatePowerData(powerData);
 
     const exportData = {
         mainSensors: powerData
     };
-
-    if (additionalSensorsData) {
-        exportData.additionalSensors = additionalSensorsData;
-    }
 
     const jsonString = JSON.stringify(exportData, null, 2);
     const blob = new Blob([jsonString], { type: MIME_TYPES.JSON });
@@ -70,34 +65,13 @@ export function exportAsJson(powerData, additionalSensorsData = null) {
 /**
  * Export power data as CSV
  * @param {Array} powerData - Array of power data points
- * @param {Object} additionalSensorsData - Additional sensors data
  * @throws {Error} If power data is invalid or empty
  */
-export function exportAsCsv(powerData, additionalSensorsData = null) {
+export function exportAsCsv(powerData) {
     validatePowerData(powerData);
 
     // Build header with main columns
-    let csvContent = 'timestamp,power,heartRate,cadence';
-
-    // Collect all additional sensor columns
-    const additionalSensorInfo = [];
-    if (additionalSensorsData) {
-        for (const [type, sensors] of Object.entries(additionalSensorsData)) {
-            for (const [sensorId, sensorData] of Object.entries(sensors)) {
-                if (sensorData && sensorData.name) {
-                    const columnName = `${type}_${sensorData.name.replace(/[,\s]/g, '_')}`;
-                    additionalSensorInfo.push({
-                        type,
-                        sensorId,
-                        columnName,
-                        readings: sensorData.readings || []
-                    });
-                    csvContent += `,${columnName}`;
-                }
-            }
-        }
-    }
-    csvContent += '\n';
+    let csvContent = 'timestamp,power,heartRate,cadence\n';
 
     // Add data rows - main sensor data
     powerData.forEach((row) => {
@@ -105,32 +79,8 @@ export function exportAsCsv(powerData, additionalSensorsData = null) {
         const power = row.power ?? '';
         const heartRate = row.heartRate ?? '';
         const cadence = row.cadence ?? '';
-        csvContent += `${timestamp},${power},${heartRate},${cadence}`;
-
-        // For each additional sensor, find the reading closest to this timestamp
-        for (const sensorInfo of additionalSensorInfo) {
-            let closestValue = '';
-            if (sensorInfo.readings.length > 0) {
-                // Find reading with closest timestamp
-                const closestReading = sensorInfo.readings.reduce((prev, curr) => {
-                    const prevDiff = Math.abs(prev.timestamp - timestamp);
-                    const currDiff = Math.abs(curr.timestamp - timestamp);
-                    return currDiff < prevDiff ? curr : prev;
-                });
-
-                // Only use value if within 1 second of main timestamp
-                if (Math.abs(closestReading.timestamp - timestamp) < 1000) {
-                    closestValue = closestReading.value;
-                }
-            }
-            csvContent += `,${closestValue}`;
-        }
-
-        csvContent += '\n';
+        csvContent += `${timestamp},${power},${heartRate},${cadence}\n`;
     });
-
-    // Optionally add additional sensor readings that don't match main timestamps
-    // (commented out to keep CSV focused on main session data)
 
     const blob = new Blob([csvContent], { type: MIME_TYPES.CSV });
     downloadFile(blob, `power_data_${getCurrentDateString()}.csv`);
@@ -199,20 +149,19 @@ function delay(ms) {
 
 /**
  * Export all data formats at once
- * @param {Object} data - Object containing powerData and additionalSensorsData
+ * @param {Object} data - Object containing powerData
  * @param {Array} data.powerData - Array of power data points
- * @param {Object} data.additionalSensorsData - Additional sensors data
  * @throws {Error} If power data is invalid or if any exports fail
  */
 export async function exportAll(data) {
-    const { powerData, additionalSensorsData } = data;
+    const { powerData } = data;
 
     validatePowerData(powerData);
 
     const errors = [];
     const exports = [
-        { name: 'Summary JSON', fn: () => exportAsJson(powerData, additionalSensorsData) },
-        { name: 'Summary CSV', fn: () => exportAsCsv(powerData, additionalSensorsData) },
+        { name: 'Summary JSON', fn: () => exportAsJson(powerData) },
+        { name: 'Summary CSV', fn: () => exportAsCsv(powerData) },
         { name: 'TCX', fn: () => exportAsTcx(powerData) },
     ];
 

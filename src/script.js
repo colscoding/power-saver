@@ -41,11 +41,6 @@ import {
   initializeSections
 } from "./ui-event-handlers.js";
 import { initializeMetricIcons } from "./metric-icons.js";
-import {
-  setupAdditionalSensorMenuItems,
-  updateAdditionalSensorValue
-} from "./additional-sensors-ui.js";
-import { initializeTheme, showThemeSelector } from "./theme-manager.js";
 import { initializeLayout, showLayoutSelector } from "./layout-manager.js";
 
 // Application state variables
@@ -56,14 +51,6 @@ let lastCadenceValue = 0;
 let sessionStartTime = null;
 let dataLoggerInterval = null;
 let periodicSaveInterval = null;
-
-// Additional sensors data storage
-const additionalSensorsData = {
-  power: {},
-  heartRate: {},
-  cadence: {},
-  speed: {}
-};
 
 // Constants for data logging
 const DATA_LOGGER_INTERVAL_MS = 100; // Log data every 100ms
@@ -122,7 +109,6 @@ const dataStore = {
   get lastHeartRateValue() { return lastHeartRateValue; },
   get lastCadenceValue() { return lastCadenceValue; },
   get sessionStartTime() { return sessionStartTime; },
-  get additionalSensorsData() { return additionalSensorsData; },
   resetAllSessionData,
   elements
 };
@@ -292,57 +278,6 @@ function setupConnectionEventListeners() {
 }
 
 /**
- * Handle additional sensor measurements
- * @param {string} sensorId - Sensor ID
- * @param {number} value - Sensor value
- * @param {string} deviceName - Device name
- * @param {string} sensorType - Sensor type (power, heartRate, cadence, speed)
- * @param {boolean} isDisconnect - Whether this is a disconnect event
- */
-function handleAdditionalSensorMeasurement(sensorId, value, deviceName, sensorType, isDisconnect = false) {
-  if (isDisconnect) {
-    // Remove sensor data on disconnect
-    if (additionalSensorsData[sensorType]) {
-      delete additionalSensorsData[sensorType][sensorId];
-    }
-    return;
-  }
-
-  const timestamp = Date.now();
-
-  // Initialize sensor data storage if needed
-  if (!additionalSensorsData[sensorType][sensorId]) {
-    additionalSensorsData[sensorType][sensorId] = {
-      name: deviceName,
-      readings: []
-    };
-  }
-
-  // Store the reading with timestamp
-  additionalSensorsData[sensorType][sensorId].readings.push({
-    timestamp,
-    value
-  });
-
-  // Keep last 10000 readings per sensor (about 16 minutes at 10Hz)
-  const maxReadings = 10000;
-  const readings = additionalSensorsData[sensorType][sensorId].readings;
-  if (readings.length > maxReadings) {
-    readings.splice(0, readings.length - maxReadings);
-  }
-
-  // Update the UI
-  updateAdditionalSensorValue(sensorId, value);
-}
-
-/**
- * Setup additional sensor menu item handlers
- */
-function setupAdditionalSensorHandlers() {
-  setupAdditionalSensorMenuItems(elements, handleAdditionalSensorMeasurement);
-}
-
-/**
  * Session restoration functionality
  */
 
@@ -434,8 +369,7 @@ function restoreSessionData(sessionData) {
  */
 async function initializeApp() {
   try {
-    // Initialize theme and layout first (before other UI elements)
-    initializeTheme();
+    // Initialize layout first (before other UI elements)
     initializeLayout();
 
     // Initialize all modules and DOM elements
@@ -448,9 +382,8 @@ async function initializeApp() {
     setupHamburgerMenu(elements);
     setupPowerAveragesToggle(elements);
     setupMetricToggles(elements);
-    setupMenuItems(elements, showThemeSelector, showLayoutSelector);
+    setupMenuItems(elements, showLayoutSelector);
     setupConnectionEventListeners();
-    setupAdditionalSensorHandlers();
     setupExportMenuListeners(dataStore);
 
     // Initialize connect button visibility based on current connection states
