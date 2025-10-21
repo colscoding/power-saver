@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang=en><script type=importmap>{"imports":{"7qU26":"./service-worker.js"}}</script><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><meta name=description content="Real-time cycling power meter with Bluetooth connectivity for tracking power, heart rate, and cadence data"><meta http-equiv=Cache-Control content="no-cache, no-store, must-revalidate"><meta http-equiv=Pragma content=no-cache><meta http-equiv=Expires content=0><title>Web Bluetooth Power Meter</title><link rel=manifest href=manifest.webmanifest><meta name=theme-color content=#00ff00><meta name=apple-mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-status-bar-style content=black-translucent><meta name=apple-mobile-web-app-title content="Power Meter"><link rel=apple-touch-icon href=icon-152x152.e96d3266.png><link rel=apple-touch-icon sizes=72x72 href=icon-72x72.597e94cb.png><link rel=apple-touch-icon sizes=96x96 href=icon-96x96.e1fb8875.png><link rel=apple-touch-icon sizes=128x128 href=icon-128x128.d4f44c70.png><link rel=apple-touch-icon sizes=144x144 href=icon-144x144.9bf25df2.png><link rel=apple-touch-icon sizes=152x152 href=icon-152x152.e96d3266.png><link rel=apple-touch-icon sizes=192x192 href=icon-192x192.442cabdb.png><meta name=msapplication-TileColor content=#1a1a1a><meta name=msapplication-TileImage content=icon-144x144.9bf25df2.png><link rel=icon type=image/png sizes=32x32 href=icon-72x72.597e94cb.png><link rel=stylesheet href=power-saver.faae3566.css><link rel=stylesheet href=power-saver.76f5bf30.css><body>
+<!DOCTYPE html><html lang=en><script type=importmap>{"imports":{"7qU26":"./service-worker.js"}}</script><meta charset=UTF-8><meta name=viewport content="width=device-width, initial-scale=1.0"><meta name=description content="Real-time cycling power meter with Bluetooth connectivity for tracking power, heart rate, and cadence data"><meta http-equiv=Cache-Control content="no-cache, no-store, must-revalidate"><meta http-equiv=Pragma content=no-cache><meta http-equiv=Expires content=0><title>Web Bluetooth Power Meter</title><link rel=manifest href=manifest.webmanifest><meta name=theme-color content=#00ff00><meta name=apple-mobile-web-app-capable content=yes><meta name=apple-mobile-web-app-status-bar-style content=black-translucent><meta name=apple-mobile-web-app-title content="Power Meter"><link rel=apple-touch-icon href=icon-152x152.e96d3266.png><link rel=apple-touch-icon sizes=72x72 href=icon-72x72.597e94cb.png><link rel=apple-touch-icon sizes=96x96 href=icon-96x96.e1fb8875.png><link rel=apple-touch-icon sizes=128x128 href=icon-128x128.d4f44c70.png><link rel=apple-touch-icon sizes=144x144 href=icon-144x144.9bf25df2.png><link rel=apple-touch-icon sizes=152x152 href=icon-152x152.e96d3266.png><link rel=apple-touch-icon sizes=192x192 href=icon-192x192.442cabdb.png><meta name=msapplication-TileColor content=#1a1a1a><meta name=msapplication-TileImage content=icon-144x144.9bf25df2.png><link rel=icon type=image/png sizes=32x32 href=icon-72x72.597e94cb.png><link rel=stylesheet href=power-saver.dd2def56.css><link rel=stylesheet href=power-saver.76f5bf30.css><body>
   
   <div class=hamburger-menu>
     <button class=hamburger-button id=hamburgerButton>
@@ -48,9 +48,6 @@
       <div class=menu-item id=themeMenuItem>
         <span class=menu-item-text>🎨 Change Theme</span>
       </div>
-      <div class=menu-item id=layoutMenuItem>
-        <span class=menu-item-text>📐 Change Layout</span>
-      </div>
       <div class=menu-item id=exportMenuItem>
         <span class=menu-item-text>📤 Export workout data</span>
       </div>
@@ -64,45 +61,41 @@
   </div>
 
   <main class=dashboard>
-    <div class=metrics-grid role=group aria-label="Power meter metrics">
-      <div class="metric-card power-card">
-        <button class=metric-icon id=powerIcon title="Click for info" aria-label="Power metric info">⚡</button>
-        <div class=metric-row>
-          <div class=metric-value id=power-value aria-live=polite>--</div>
-        </div>
-        <button class=metric-connect-button id=connectButton>
-          Connect Power Meter
-          <div class=status-text id=status>Disconnected</div>
-          <div class=device-name id=device-name></div>
+    
+    <div class="metric-card power-card">
+      <div class=metric-display>
+        <button class=metric-connect-button id=connectButton data-connected=false aria-label="Connect Power Meter">
+          <span class=emoji>⚡</span>
+          <span class=connect-text>Connect</span>
         </button>
+        <div class=metric-value id=power-value aria-live=polite>--</div>
+        <span class=metric-unit>watts</span>
       </div>
+    </div>
 
+    
+    <div class=metrics-row>
       <div class="hr-card metric-card">
-        <button class=metric-icon id=hrIcon title="Click for info" aria-label="Heart rate metric info">❤️</button>
-        <div class=metric-row>
+        <div class=metric-display>
+          <button class=metric-connect-button id=hrConnectButton data-connected=false aria-label="Connect Heart Rate">
+            <span class=emoji>❤️</span>
+            <span class=connect-text>Connect</span>
+          </button>
           <div class=metric-value id=hr-value aria-live=polite>--</div>
+          <span class=metric-unit>bpm</span>
         </div>
-        <div class=status-text id=hrStatus></div>
-        <button class=metric-connect-button id=hrConnectButton>
-          Connect Heart Rate Monitor
-          <div class=status-text id=hrConnectionStatus>Disconnected</div>
-          <div class=device-name id=hrDeviceName></div>
-        </button>
       </div>
 
       <div class="cadence-card metric-card">
-        <button class=metric-icon id=cadenceIcon title="Click for info" aria-label="Cadence metric info">🚴</button>
-        <div class=metric-row>
+        <div class=metric-display>
+          <button class=metric-connect-button id=speedCadenceConnectButton data-connected=false aria-label="Connect Cadence">
+            <span class=emoji>🚴</span>
+            <span class=connect-text>Connect</span>
+          </button>
           <div class=metric-value id=cadence-value aria-live=polite>--</div>
+          <span class=metric-unit>rpm</span>
         </div>
-        <div class=status-text id=cadenceStatus></div>
-        <button class=metric-connect-button id=speedCadenceConnectButton>
-          Connect Speed &amp; Cadence
-          <div class=status-text id=cadenceConnectionStatus>Disconnected</div>
-          <div class=device-name id=cadenceDeviceName></div>
-        </button>
       </div>
-
     </div>
   </main>
 
@@ -187,6 +180,6 @@
     </div>
   </section>
 
-  <script type=module src=power-saver.b298f79d.js></script>
+  <script type=module src=power-saver.b813b37c.js></script>
 
 

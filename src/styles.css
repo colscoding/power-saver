@@ -45,6 +45,8 @@ body {
     background: var(--bg-primary);
     color: var(--text-primary);
     transition: background 0.3s ease, color 0.3s ease;
+    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
 }
 
 /* ==========================================================================
@@ -52,11 +54,180 @@ body {
    ========================================================================== */
 
 .dashboard {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Metric Cards - Simplified Layout */
+.metric-card {
+    background: var(--bg-card);
+    padding: 2rem;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, transparent 100%);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 50px var(--shadow-color);
+}
+
+/* Metric Display - Horizontal Layout */
+.metric-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.metric-connect-button {
+    background: linear-gradient(135deg, var(--accent-color, #f39c12) 0%, var(--accent-color, #f39c12) 100%);
+    color: #1a1a1a;
+    font-weight: 700;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.metric-connect-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.metric-connect-button:active {
+    transform: translateY(0);
+}
+
+.metric-connect-button .emoji {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.metric-connect-button .connect-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+/* When connected, hide the text and only show emoji */
+.metric-connect-button[data-connected="true"] .connect-text {
+    display: none;
+}
+
+.metric-connect-button[data-connected="true"] {
+    padding: 8px 12px;
+}
+
+/* Hide metric value and unit when not connected */
+.metric-connect-button[data-connected="false"]~.metric-value,
+.metric-connect-button[data-connected="false"]~.metric-unit {
+    display: none !important;
+}
+
+.metric-icon-button {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.metric-icon-button:hover {
+    transform: scale(1.1);
+}
+
+.metric-icon-button:active {
+    transform: scale(0.95);
+}
+
+.metric-unit {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: lowercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+/* Metric Values */
+.metric-value {
+    font-size: clamp(6rem, 12vw, 10rem);
+    font-weight: 900;
+    color: var(--accent-color, #ffffff);
+    line-height: 1;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Row 2: Heart Rate and Cadence side by side */
+.metrics-row {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.metrics-row .metric-card .metric-value {
+    font-size: clamp(4rem, 8vw, 6rem);
+}
+
+.metrics-row .metric-card .metric-connect-button .emoji {
+    font-size: 1.2rem;
+}
+
+.metrics-row .metric-card .metric-connect-button .connect-text {
+    font-size: 0.8rem;
+}
+
+.metrics-row .metric-card .metric-unit {
+    font-size: 0.85rem;
+}
+
+/* Accent Colors for Cards */
+.power-card {
+    --accent-color: var(--accent-power);
+}
+
+.hr-card {
+    --accent-color: var(--accent-hr);
+}
+
+.cadence-card {
+    --accent-color: var(--accent-cadence);
 }
 
 .header {
@@ -68,17 +239,124 @@ body {
     border: 1px solid var(--border-color);
 }
 
-.metrics-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    grid-template-rows: auto auto auto;
-    gap: 4px;
-}
-
 /* ==========================================================================
    3. Components (Cards, Buttons, etc.)
    ========================================================================== */
 
+/* Metric Icon Button */
+.metric-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid var(--accent-color, #f39c12);
+    border-radius: 12px;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+}
+
+.metric-icon:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.metric-icon:active {
+    transform: scale(0.95);
+}
+
+/* Connect Buttons */
+.connect-button {
+    background: linear-gradient(135deg, var(--accent-color, #f39c12) 0%, var(--accent-color, #f39c12) 100%);
+    color: #1a1a1a;
+    font-weight: 600;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.connect-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    transition: left 0.5s;
+}
+
+.connect-button:hover::before {
+    left: 100%;
+}
+
+.connect-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.connect-button:active {
+    transform: translateY(0);
+}
+
+.connect-button:disabled {
+    background: #444;
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.connect-button:disabled::before {
+    display: none;
+}
+
+.button-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.connection-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.7rem;
+    opacity: 0.85;
+}
+
+.device-name {
+    font-weight: 600;
+    color: currentColor;
+    font-size: 0.7rem;
+    display: none;
+}
+
+.status-text {
+    color: currentColor;
+    font-size: 0.65rem;
+    font-style: italic;
+    display: none;
+}
+
+/* Old metric-card and metric-connect-button classes kept for backward compatibility */
 .metric-card {
     background: var(--bg-card);
     padding: 0.5rem;
@@ -101,69 +379,64 @@ body {
     background: linear-gradient(90deg, var(--accent-color, #f39c12) 0%, transparent 100%);
 }
 
-/* Metric Icon Button */
-.metric-icon {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    width: 44px;
-    height: 44px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid var(--accent-color, #f39c12);
-    border-radius: 12px;
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.metric-connect-button {
+    background: linear-gradient(135deg, var(--accent-color, #f39c12) 0%, var(--accent-color, #f39c12) 100%);
+    color: var(--bg-primary);
+    font-weight: 600;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 10;
-    padding: 0;
-    backdrop-filter: blur(10px);
-}
-
-.metric-icon:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.metric-icon:active {
-    transform: scale(0.95);
-}
-
-.power-card {
-    grid-column: 1;
-    grid-row: 1 / 3;
-    --accent-color: var(--accent-power);
+    margin: 8px 0 0 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     position: relative;
+    overflow: hidden;
+    width: 100%;
+    opacity: 0.9;
 }
 
-.power-card::after {
+.metric-connect-button::before {
     content: '';
     position: absolute;
-    inset: -1px;
-    border-radius: 20px;
-    padding: 2px;
-    background: linear-gradient(135deg, var(--accent-power) 0%, var(--accent-power) 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    opacity: 0.5;
-    pointer-events: none;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
 }
 
-.hr-card {
-    grid-column: 2;
-    grid-row: 1;
-    --accent-color: var(--accent-hr);
+.metric-connect-button:hover::before {
+    left: 100%;
 }
 
-.cadence-card {
-    grid-column: 3;
-    grid-row: 1 / 2;
-    --accent-color: var(--accent-cadence);
+.metric-connect-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 1;
+}
+
+.metric-connect-button:disabled {
+    background: #555;
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: translateY(0);
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+.metric-connect-button:disabled::before {
+    display: none;
+}
+
+.metric-connect-button .status-text,
+.metric-connect-button .device-name {
+    font-size: 0.6rem;
+    margin-top: 2px;
+    line-height: 1.2;
+    opacity: 0.8;
 }
 
 /* Additional Sensors Section */
@@ -1118,23 +1391,94 @@ button:disabled::before {
 }
 
 /* Power Averages Section */
+.power-averages-panel {
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+}
+
+.panel-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.panel-toggle:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.panel-icon {
+    font-size: 1.5rem;
+}
+
+.panel-title {
+    flex: 1;
+    text-align: left;
+    letter-spacing: 0.5px;
+}
+
+.toggle-chevron {
+    font-size: 0.875rem;
+    transition: transform 0.3s ease;
+    color: var(--text-secondary);
+}
+
+.power-averages-panel:not(.collapsed) .toggle-chevron {
+    transform: rotate(180deg);
+}
+
+.panel-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+    padding: 0 1.5rem;
+}
+
+.power-averages-panel:not(.collapsed) .panel-content {
+    max-height: 800px;
+    padding: 0 1.5rem 1.5rem;
+}
+
+/* Legacy power-averages-section for backward compatibility */
 .power-averages-section {
     background: var(--bg-secondary);
     padding: 2rem;
     border-radius: 20px;
     box-shadow: 0 8px 32px var(--shadow-color);
     border: 1px solid var(--border-color);
-    margin-top: 1rem;
+    display: block;
+}
+
+/* Hide power averages section when power meter is not connected */
+.power-averages-section[data-connected="false"] {
+    display: none;
+}
+
+.power-averages-panel {
     display: none;
 }
 
 .averages-tables {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
 }
 
-.averages-table-container {
+.averages-table-container,
+.averages-table-container2 {
     background: rgba(255, 255, 255, 0.05);
     padding: 1.5rem;
     border-radius: 16px;
@@ -1187,6 +1531,11 @@ button:disabled::before {
 
 .power-averages-table tbody tr:hover {
     background: rgba(255, 255, 255, 0.05);
+}
+
+.power-averages-table td span {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
 }
 
 /* Maximized power display when sections are hidden */
@@ -1266,10 +1615,30 @@ button:disabled::before {
         gap: 12px;
     }
 
-    .metrics-grid {
+    /* Stack metrics vertically on mobile */
+    .metrics-row {
         grid-template-columns: 1fr;
-        grid-template-rows: repeat(3, auto);
-        gap: 10px;
+        gap: 12px;
+    }
+
+    .metric-card {
+        padding: 1.5rem;
+    }
+
+    .metric-value {
+        font-size: clamp(5rem, 15vw, 8rem);
+    }
+
+    .metrics-row .metric-card .metric-value {
+        font-size: clamp(4rem, 12vw, 6rem);
+    }
+
+    .metric-icon-button {
+        font-size: 2.5rem;
+    }
+
+    .metrics-row .metric-card .metric-icon-button {
+        font-size: 2rem;
     }
 
     .power-card,

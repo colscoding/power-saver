@@ -93,9 +93,6 @@
       <div class="menu-item" id="themeMenuItem">
         <span class="menu-item-text">🎨 Change Theme</span>
       </div>
-      <div class="menu-item" id="layoutMenuItem">
-        <span class="menu-item-text">📐 Change Layout</span>
-      </div>
       <div class="menu-item" id="exportMenuItem">
         <span class="menu-item-text">📤 Export workout data</span>
       </div>
@@ -109,45 +106,44 @@
   </div>
 
   <main class="dashboard">
-    <div class="metrics-grid" role="group" aria-label="Power meter metrics">
-      <div class="metric-card power-card">
-        <button class="metric-icon" id="powerIcon" title="Click for info" aria-label="Power metric info">⚡</button>
-        <div class="metric-row">
-          <div class="metric-value" id="power-value" aria-live="polite">--</div>
-        </div>
-        <button class="metric-connect-button" id="connectButton">
-          Connect Power Meter
-          <div class="status-text" id="status">Disconnected</div>
-          <div class="device-name" id="device-name"></div>
+    <!-- Row 1: Power Metric -->
+    <div class="metric-card power-card">
+      <div class="metric-display">
+        <button class="metric-connect-button" id="connectButton" data-connected="false"
+          aria-label="Connect Power Meter">
+          <span class="emoji">⚡</span>
+          <span class="connect-text">Connect</span>
         </button>
+        <div class="metric-value" id="power-value" aria-live="polite">--</div>
+        <span class="metric-unit">watts</span>
       </div>
+    </div>
 
+    <!-- Row 2: Heart Rate and Cadence -->
+    <div class="metrics-row">
       <div class="metric-card hr-card">
-        <button class="metric-icon" id="hrIcon" title="Click for info" aria-label="Heart rate metric info">❤️</button>
-        <div class="metric-row">
+        <div class="metric-display">
+          <button class="metric-connect-button" id="hrConnectButton" data-connected="false"
+            aria-label="Connect Heart Rate">
+            <span class="emoji">❤️</span>
+            <span class="connect-text">Connect</span>
+          </button>
           <div class="metric-value" id="hr-value" aria-live="polite">--</div>
+          <span class="metric-unit">bpm</span>
         </div>
-        <div class="status-text" id="hrStatus"></div>
-        <button class="metric-connect-button" id="hrConnectButton">
-          Connect Heart Rate Monitor
-          <div class="status-text" id="hrConnectionStatus">Disconnected</div>
-          <div class="device-name" id="hrDeviceName"></div>
-        </button>
       </div>
 
       <div class="metric-card cadence-card">
-        <button class="metric-icon" id="cadenceIcon" title="Click for info" aria-label="Cadence metric info">🚴</button>
-        <div class="metric-row">
+        <div class="metric-display">
+          <button class="metric-connect-button" id="speedCadenceConnectButton" data-connected="false"
+            aria-label="Connect Cadence">
+            <span class="emoji">🚴</span>
+            <span class="connect-text">Connect</span>
+          </button>
           <div class="metric-value" id="cadence-value" aria-live="polite">--</div>
+          <span class="metric-unit">rpm</span>
         </div>
-        <div class="status-text" id="cadenceStatus"></div>
-        <button class="metric-connect-button" id="speedCadenceConnectButton">
-          Connect Speed & Cadence
-          <div class="status-text" id="cadenceConnectionStatus">Disconnected</div>
-          <div class="device-name" id="cadenceDeviceName"></div>
-        </button>
       </div>
-
     </div>
   </main>
 
@@ -159,7 +155,7 @@
     </div>
   </section>
 
-  <!-- Power Averages Section -->
+  <!-- Row 3: Power Averages Section - Always Visible -->
   <section class="power-averages-section" id="powerAveragesSection">
     <div class="averages-tables">
       <!-- Short Duration Table -->

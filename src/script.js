@@ -26,7 +26,10 @@ import {
   connectSpeedCadenceSensor,
   isPowerMeterConnected,
   isHeartRateConnected,
-  isSpeedCadenceConnected
+  isSpeedCadenceConnected,
+  disconnectPowerMeter,
+  disconnectHeartRate,
+  disconnectSpeedCadence
 } from "./bluetooth-connections.js";
 import { setupExportMenuListeners } from "./export-modals.js";
 import { showSessionRestoredNotification } from "./notifications.js";
@@ -202,6 +205,15 @@ function setupConnectionEventListeners() {
   // Power meter connection
   if (elements.powerMeterConnectButton) {
     elements.powerMeterConnectButton.addEventListener('click', async () => {
+      // Check if already connected - if so, show disconnect confirmation
+      if (isPowerMeterConnected()) {
+        const shouldDisconnect = confirm('Disconnect power meter?');
+        if (shouldDisconnect) {
+          disconnectPowerMeter();
+        }
+        return;
+      }
+
       // Reset data from previous session
       powerData.length = 0;
       lastPowerValue = 0;
@@ -243,6 +255,15 @@ function setupConnectionEventListeners() {
   // Heart rate monitor connection
   if (elements.hrConnectButton) {
     elements.hrConnectButton.addEventListener('click', async () => {
+      // Check if already connected - if so, show disconnect confirmation
+      if (isHeartRateConnected()) {
+        const shouldDisconnect = confirm('Disconnect heart rate monitor?');
+        if (shouldDisconnect) {
+          disconnectHeartRate();
+        }
+        return;
+      }
+
       const connected = await connectHeartRateMonitor(heartRateCallbacks, elements);
       if (connected) {
         updateAllConnectButtonVisibility();
@@ -253,6 +274,15 @@ function setupConnectionEventListeners() {
   // Speed/cadence sensor connection
   if (elements.speedCadenceConnectButton) {
     elements.speedCadenceConnectButton.addEventListener('click', async () => {
+      // Check if already connected - if so, show disconnect confirmation
+      if (isSpeedCadenceConnected()) {
+        const shouldDisconnect = confirm('Disconnect cadence sensor?');
+        if (shouldDisconnect) {
+          disconnectSpeedCadence();
+        }
+        return;
+      }
+
       const connected = await connectSpeedCadenceSensor(cadenceCallbacks, elements);
       if (connected) {
         updateAllConnectButtonVisibility();
@@ -424,9 +454,7 @@ async function initializeApp() {
     setupExportMenuListeners(dataStore);
 
     // Initialize connect button visibility based on current connection states
-    updateAllConnectButtonVisibility();
-
-    // Try to load previous session data
+    updateAllConnectButtonVisibility();    // Try to load previous session data
     const sessionData = loadSessionData();
     if (sessionData) {
       // Show restoration dialog
@@ -477,8 +505,58 @@ function handleAppCleanup() {
   }
 }
 
+/**
+ * Prevent accidental pull-to-refresh
+ * Ask user for confirmation before refreshing the page
+ */
+function preventAccidentalRefresh() {
+  let startY = 0;
+  let isPulling = false;
+
+  // Prevent pull-to-refresh gesture on mobile
+  document.body.addEventListener('touchstart', (e) => {
+    if (window.scrollY === 0) {
+      startY = e.touches[0].pageY;
+      isPulling = true;
+    }
+  }, { passive: true });
+
+  document.body.addEventListener('touchmove', (e) => {
+    if (isPulling && window.scrollY === 0) {
+      const currentY = e.touches[0].pageY;
+      const pullDistance = currentY - startY;
+
+      // If pulling down more than 10px, prevent default
+      if (pullDistance > 10) {
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
+  document.body.addEventListener('touchend', () => {
+    isPulling = false;
+  });
+
+  // Prevent default browser refresh behavior
+  window.addEventListener('beforeunload', (e) => {
+    // Only ask for confirmation if there's active data
+    if (powerData.length > 0 || isPowerMeterConnected() || isHeartRateConnected() || isSpeedCadenceConnected()) {
+      const message = 'You have active data or connections. Are you sure you want to refresh?';
+      e.preventDefault();
+      e.returnValue = message;
+      return message;
+    }
+  });
+
+  // Add CSS to prevent overscroll on body
+  document.body.style.overscrollBehavior = 'contain';
+}
+
 // Initialize the application when DOM is ready
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', () => {
+  initializeApp();
+  preventAccidentalRefresh();
+});
 
 // Initialize PWA features (service worker, install prompt)
 initializePWA();

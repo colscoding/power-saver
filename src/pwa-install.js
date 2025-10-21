@@ -14,6 +14,22 @@ let offlineIndicator = null;
  * Register the service worker
  */
 export function registerServiceWorker() {
+    // Skip service worker registration in development mode
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port) {
+        console.log('[PWA] Development mode detected - skipping service worker registration');
+
+        // Unregister any existing service workers in development
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(registration => {
+                    registration.unregister();
+                    console.log('[PWA] Unregistered existing service worker for development');
+                });
+            });
+        }
+        return;
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {

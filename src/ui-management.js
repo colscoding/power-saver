@@ -117,8 +117,8 @@ export function updatePowerValue(value) {
  * @param {Object} values - Object containing power, heartRate, and cadence values
  */
 export function updateMetricDisplays(values) {
-    if (values.power !== undefined) {
-        updatePowerValue(values.power);
+    if (values.power !== undefined && elements.powerValueElement) {
+        elements.powerValueElement.textContent = values.power || '--';
     }
 
     if (values.heartRate !== undefined && elements.hrValueElement) {
@@ -134,7 +134,7 @@ export function updateMetricDisplays(values) {
  * Reset all metric displays to default values
  */
 export function resetMetricDisplays() {
-    updatePowerValue('--');
+    if (elements.powerValueElement) elements.powerValueElement.textContent = '--';
     if (elements.hrValueElement) elements.hrValueElement.textContent = '--';
     if (elements.cadenceValueElement) elements.cadenceValueElement.textContent = '--';
 }
@@ -147,19 +147,24 @@ export function resetMetricDisplays() {
  * @param {boolean} connectionStates.speedCadence - Speed/cadence sensor connection state
  */
 export function updateConnectButtonVisibility(connectionStates) {
-    // Hide/show power meter connect button
+    // Update power meter connect button state
     if (elements.powerMeterConnectButton) {
-        elements.powerMeterConnectButton.style.display = connectionStates.powerMeter ? 'none' : 'block';
+        elements.powerMeterConnectButton.setAttribute('data-connected', connectionStates.powerMeter ? 'true' : 'false');
     }
 
-    // Hide/show heart rate connect button
+    // Update heart rate connect button state
     if (elements.hrConnectButton) {
-        elements.hrConnectButton.style.display = connectionStates.heartRate ? 'none' : 'block';
+        elements.hrConnectButton.setAttribute('data-connected', connectionStates.heartRate ? 'true' : 'false');
     }
 
-    // Hide/show speed/cadence connect button
+    // Update speed/cadence connect button state
     if (elements.speedCadenceConnectButton) {
-        elements.speedCadenceConnectButton.style.display = connectionStates.speedCadence ? 'none' : 'block';
+        elements.speedCadenceConnectButton.setAttribute('data-connected', connectionStates.speedCadence ? 'true' : 'false');
+    }
+
+    // Update power averages section visibility based on power meter connection
+    if (elements.powerAveragesSection) {
+        elements.powerAveragesSection.setAttribute('data-connected', connectionStates.powerMeter ? 'true' : 'false');
     }
 }
 

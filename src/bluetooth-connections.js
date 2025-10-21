@@ -465,6 +465,33 @@ export function isSpeedCadenceConnected() {
     return speedCadenceBluetoothDevice && speedCadenceBluetoothDevice.gatt.connected;
 }
 
+/**
+ * Disconnect power meter
+ */
+export function disconnectPowerMeter() {
+    if (powerMeterDevice && powerMeterDevice.gatt.connected) {
+        powerMeterDevice.gatt.disconnect();
+    }
+}
+
+/**
+ * Disconnect heart rate monitor
+ */
+export function disconnectHeartRate() {
+    if (hrBluetoothDevice && hrBluetoothDevice.gatt.connected) {
+        hrBluetoothDevice.gatt.disconnect();
+    }
+}
+
+/**
+ * Disconnect speed/cadence sensor
+ */
+export function disconnectSpeedCadence() {
+    if (speedCadenceBluetoothDevice && speedCadenceBluetoothDevice.gatt.connected) {
+        speedCadenceBluetoothDevice.gatt.disconnect();
+    }
+}
+
 // Additional sensors storage
 const additionalSensors = {
     power: [],
