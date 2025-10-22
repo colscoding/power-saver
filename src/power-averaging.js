@@ -165,6 +165,79 @@ export function updatePowerAveragesDisplay() {
 }
 
 /**
+ * Recalculate power averages from restored data
+ * @param {Array} restoredPowerData - Array of power data points with timestamp and power
+ */
+export function recalculatePowerAveragesFromData(restoredPowerData) {
+    if (!Array.isArray(restoredPowerData) || restoredPowerData.length === 0) {
+        return;
+    }
+
+    console.log(`Recalculating power averages from ${restoredPowerData.length} data points...`);
+
+    // Reset current averages
+    powerReadings = [];
+    for (const period of Object.keys(powerAverages)) {
+        powerAverages[period].current = 0;
+        powerAverages[period].best = 0;
+    }
+
+    // Re-add all power readings to recalculate averages
+    restoredPowerData.forEach(dataPoint => {
+        if (dataPoint.power !== undefined && dataPoint.power !== null) {
+            // Temporarily store as timestamped reading
+            powerReadings.push({
+                timestamp: dataPoint.timestamp,
+                power: dataPoint.power
+            });
+        }
+    });
+
+    // Calculate best averages from the restored data
+    calculateBestAveragesFromHistory();
+
+    // Update the display
+    updatePowerAveragesDisplay();
+
+    console.log('Power averages recalculated');
+}
+
+/**
+ * Calculate best averages from historical data
+ */
+function calculateBestAveragesFromHistory() {
+    if (powerReadings.length === 0) return;
+
+    // For each time period, scan through the data to find the best average
+    for (const [period, durationMs] of Object.entries(TIME_PERIODS_MS)) {
+        let bestAvg = 0;
+
+        // Scan through the data with a sliding window
+        for (let i = 0; i < powerReadings.length; i++) {
+            const startTime = powerReadings[i].timestamp;
+            const endTime = startTime + durationMs;
+
+            // Collect all readings within this window
+            const windowReadings = powerReadings.filter(r =>
+                r.timestamp >= startTime && r.timestamp < endTime
+            );
+
+            if (windowReadings.length > 0) {
+                // Calculate average for this window
+                const sum = windowReadings.reduce((acc, r) => acc + r.power, 0);
+                const avg = Math.round(sum / windowReadings.length);
+
+                if (avg > bestAvg) {
+                    bestAvg = avg;
+                }
+            }
+        }
+
+        powerAverages[period].best = bestAvg;
+    }
+}
+
+/**
  * Reset all power averages to zero
  */
 export function resetPowerAverages() {
@@ -175,3 +248,4 @@ export function resetPowerAverages() {
     }
     updatePowerAveragesDisplay();
 }
+

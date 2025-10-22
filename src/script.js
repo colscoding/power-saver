@@ -10,7 +10,8 @@ import {
   initializePowerAveraging,
   addPowerReading,
   resetPowerAverages,
-  updatePowerAveragesDisplay
+  updatePowerAveragesDisplay,
+  recalculatePowerAveragesFromData
 } from "./power-averaging.js";
 import {
   elements,
@@ -51,6 +52,7 @@ let lastCadenceValue = 0;
 let sessionStartTime = null;
 let dataLoggerInterval = null;
 let periodicSaveInterval = null;
+let sessionRestored = false; // Track if session was restored
 
 // Constants for data logging
 const DATA_LOGGER_INTERVAL_MS = 100; // Log data every 100ms
@@ -92,6 +94,7 @@ function resetAllSessionData() {
   lastHeartRateValue = 0;
   lastCadenceValue = 0;
   sessionStartTime = null;
+  sessionRestored = false;
 
   // Update displays
   resetMetricDisplays();
@@ -124,7 +127,10 @@ const powerMeterCallbacks = {
   },
   onDisconnected: () => {
     resetMetricDisplays();
-    resetPowerAverages();
+    // Only reset power averages if we don't have historical data
+    if (powerData.length === 0) {
+      resetPowerAverages();
+    }
     if (dataLoggerInterval) {
       clearInterval(dataLoggerInterval);
       dataLoggerInterval = null;
@@ -200,10 +206,12 @@ function setupConnectionEventListeners() {
         return;
       }
 
-      // Reset data from previous session
-      powerData.length = 0;
-      lastPowerValue = 0;
-      resetPowerAverages();
+      // Only reset data if session was not restored
+      if (!sessionRestored) {
+        powerData.length = 0;
+        lastPowerValue = 0;
+        resetPowerAverages();
+      }
 
       if (dataLoggerInterval) {
         clearInterval(dataLoggerInterval);
@@ -212,7 +220,7 @@ function setupConnectionEventListeners() {
       const connected = await connectPowerMeter(powerMeterCallbacks, elements);
 
       if (connected) {
-        // Start session if this is the first connection
+        // Start session if this is the first connection and no session was restored
         if (!sessionStartTime) {
           sessionStartTime = Date.now();
         }
@@ -231,6 +239,9 @@ function setupConnectionEventListeners() {
             saveSessionData(dataStore);
           }
         }, DATA_LOGGER_INTERVAL_MS);
+
+        // Clear the sessionRestored flag after first connection
+        sessionRestored = false;
 
         // Update button visibility
         updateAllConnectButtonVisibility();
@@ -319,6 +330,7 @@ function showRestorationDialog(sessionData) {
     modal.querySelector('#startFresh').addEventListener('click', () => {
       document.body.removeChild(backdrop);
       clearSessionData();
+      sessionRestored = false;
       resolve(false);
     });
 
@@ -331,6 +343,7 @@ function showRestorationDialog(sessionData) {
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) {
         document.body.removeChild(backdrop);
+        sessionRestored = false;
         resolve(false);
       }
     });
@@ -354,8 +367,18 @@ function restoreSessionData(sessionData) {
     if (sessionData.lastCadenceValue !== undefined) lastCadenceValue = sessionData.lastCadenceValue;
     if (sessionData.sessionStartTime !== undefined) sessionStartTime = sessionData.sessionStartTime;
 
+    // Mark that session was restored
+    sessionRestored = true;
+
+    // Recalculate power averages from restored data
+    if (powerData.length > 0) {
+      recalculatePowerAveragesFromData(powerData);
+    }
+
     // Update displays with restored data
     updateDisplaysFromRestoredData();
+
+    console.log(`Session restored: ${powerData.length} data points from ${new Date(sessionStartTime).toLocaleString()}`);
 
     return true;
   } catch (error) {
