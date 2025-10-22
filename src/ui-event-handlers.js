@@ -79,56 +79,6 @@ export function setupHamburgerMenu(elements) {
 }
 
 /**
- * Setup power averages toggle functionality
- * @param {Object} elements - UI elements object
- */
-export function setupPowerAveragesToggle(elements) {
-    if (!elements.powerAveragesToggle || !elements.powerAveragesSection) {
-        console.error('Power averages toggle elements not found:', {
-            powerAveragesToggle: !!elements.powerAveragesToggle,
-            powerAveragesSection: !!elements.powerAveragesSection,
-        });
-        return;
-    }
-
-    createToggleHandler(
-        elements.powerAveragesToggle,
-        elements.powerAveragesSection,
-        true, // Initially visible
-        manageCollapsedSectionsLayout
-    );
-}
-
-/**
- * Setup metric toggle functionality
- * @param {Object} elements - UI elements object
- */
-export function setupMetricToggles(elements) {
-    // Power metric toggle
-    if (elements.powerMetricToggle && elements.powerCard) {
-        createToggleHandler(elements.powerMetricToggle, elements.powerCard, true);
-    } else {
-        console.error('Power metric toggle elements not found');
-    }
-
-    // Heart rate metric toggle
-    if (elements.heartRateMetricToggle && elements.heartRateCard) {
-        createToggleHandler(elements.heartRateMetricToggle, elements.heartRateCard, true);
-    } else {
-        console.error('Heart rate metric toggle elements not found');
-    }
-
-    // Cadence metric toggle
-    if (elements.cadenceMetricToggle && elements.cadenceCard) {
-        createToggleHandler(elements.cadenceMetricToggle, elements.cadenceCard, true);
-    } else {
-        console.error('Cadence metric toggle elements not found');
-    }
-}
-
-
-
-/**
  * Setup menu item functionality
  * @param {Object} elements - UI elements object
  */

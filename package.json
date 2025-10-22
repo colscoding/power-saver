@@ -2,7 +2,7 @@
   "name": "power-saver",
   "version": "1.0.0",
   "scripts": {
-    "start": "parcel src/index.html --host 0.0.0.0 --no-cache",
+    "start": "parcel src/index.html --host 0.0.0.0 --no-cache --https",
     "build": "rm -rf build && parcel build src/index.html --dist-dir build --public-url ./ && node scripts/inject-version.js",
     "lint": "eslint src --ext .js",
     "lint:fix": "eslint src --ext .js --fix",

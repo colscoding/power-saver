@@ -36,8 +36,6 @@ import { setupExportMenuListeners } from "./export-modals.js";
 import { showSessionRestoredNotification } from "./notifications.js";
 import {
   setupHamburgerMenu,
-  setupPowerAveragesToggle,
-  setupMetricToggles,
   setupMenuItems,
   initializeSections
 } from "./ui-event-handlers.js";
@@ -399,8 +397,6 @@ async function initializeApp() {
 
     // Setup all event listeners
     setupHamburgerMenu(elements);
-    setupPowerAveragesToggle(elements);
-    setupMetricToggles(elements);
     setupMenuItems(elements);
     setupConnectionEventListeners();
     setupExportMenuListeners(dataStore);
