@@ -42,7 +42,6 @@ import {
   initializeSections
 } from "./ui-event-handlers.js";
 import { initializeMetricIcons } from "./metric-icons.js";
-import { initializeLayout, showLayoutSelector } from "./layout-manager.js";
 
 // Application state variables
 let powerData = [];
@@ -392,9 +391,6 @@ function restoreSessionData(sessionData) {
  */
 async function initializeApp() {
   try {
-    // Initialize layout first (before other UI elements)
-    initializeLayout();
-
     // Initialize all modules and DOM elements
     initializeElements();
     initializePowerAveraging();
@@ -405,7 +401,7 @@ async function initializeApp() {
     setupHamburgerMenu(elements);
     setupPowerAveragesToggle(elements);
     setupMetricToggles(elements);
-    setupMenuItems(elements, showLayoutSelector);
+    setupMenuItems(elements);
     setupConnectionEventListeners();
     setupExportMenuListeners(dataStore);
 

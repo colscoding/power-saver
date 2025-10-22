@@ -243,7 +243,7 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 
 /**
  * Connect to HR device with enhanced device information
- * @param {BluetoothDevice} device - The Bluetooth device to connect to
+ * @param {hrBluetoothDevice} device - The Bluetooth device to connect to
  * @param {Object} callbacks - Object containing callback functions
  * @param {Object} elements - UI elements object
  */
