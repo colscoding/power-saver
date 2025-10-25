@@ -6,46 +6,7 @@
 import { showAppInfo } from './app-info-modal.js';
 
 /**
- * Create a toggle handler for showing/hiding UI sections
- * @param {HTMLElement} toggleElement - The toggle button element
- * @param {HTMLElement} targetElement - The element to show/hide
- * @param {boolean} initiallyVisible - Whether the section should start visible
- * @param {Function} onChangeCallback - Optional callback to run when visibility changes
- * @returns {Function} Cleanup function to remove the event listener
- */
-function createToggleHandler(toggleElement, targetElement, initiallyVisible = true, onChangeCallback = null) {
-    let isVisible = initiallyVisible;
-
-    // Set initial state
-    if (initiallyVisible) {
-        toggleElement.classList.add('active');
-        targetElement.style.display = 'block';
-    } else {
-        toggleElement.classList.remove('active');
-        targetElement.style.display = 'none';
-    }
-
-    const handler = () => {
-        isVisible = !isVisible;
-
-        if (isVisible) {
-            targetElement.style.display = 'block';
-            toggleElement.classList.add('active');
-        } else {
-            targetElement.style.display = 'none';
-            toggleElement.classList.remove('active');
-        }
-
-        if (onChangeCallback) {
-            onChangeCallback();
-        }
-    };
-
-    toggleElement.addEventListener('click', handler);
-
-    // Return cleanup function
-    return () => toggleElement.removeEventListener('click', handler);
-}
+ * Set up hamburger menu functionality
 
 /**
  * Setup hamburger menu functionality

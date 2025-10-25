@@ -12,7 +12,15 @@ export default defineConfig([
   },
   {
     files: ["src/**/*.js"],
+    ignores: ["src/icons/generate-icons.js"],
     languageOptions: { sourceType: "module" }
+  },
+  {
+    files: ["src/icons/generate-icons.js", "scripts/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: globals.node
+    }
   },
   {
     files: ["**/*.js"],

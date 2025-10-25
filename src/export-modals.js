@@ -8,7 +8,8 @@ import {
     exportAsJson,
     exportAsCsv,
     exportAsTcx,
-    exportAll
+    exportAll,
+    uploadToIntervalsIcu
 } from './data-export.js';
 
 // Constants for modal animations
@@ -85,15 +86,48 @@ export function showBasicExportModal(dataStore) {
                 }
             }
         },
+        {
+            text: '☁️ Upload to intervals.icu',
+            description: 'Upload workout directly to intervals.icu',
+            onClick: async (event) => {
+                const apiKey = prompt(
+                    'Enter your intervals.icu API key:\n\n' +
+                    'Format: athleteId:apiKey or just apiKey\n' +
+                    'Find it at: intervals.icu → Settings → Developer Settings\n\n' +
+                    'Note: API key is not stored and only used for this upload.'
+                );
+
+                if (!apiKey) {
+                    return; // User cancelled
+                }
+
+                const button = event.target.closest('button');
+                if (!button) {
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    button.innerHTML = '<span>⏳ Uploading...</span><small style="opacity: 0.7; font-size: 0.8em;">Please wait</small>';
+                    button.disabled = true;
+
+                    await uploadToIntervalsIcu(dataStore.powerData, apiKey);
+
+                    closeModal(modal);
+                    alert('✅ Successfully uploaded workout to intervals.icu!');
+                } catch (error) {
+                    // Restore button state
+                    button.innerHTML = '<span>☁️ Upload to intervals.icu</span><small style="opacity: 0.7; font-size: 0.8em;">Upload workout directly to intervals.icu</small>';
+                    button.disabled = false;
+                    handleExportError(error, 'intervals.icu upload');
+                }
+            }
+        },
     ];
 
     addButtonsToModal(modal, buttons);
     showModal(modal);
 }
-
-
-
-
 
 /**
  * Create and show utilities modal

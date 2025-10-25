@@ -224,7 +224,7 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         if (hrCharacteristic && hrCharacteristicHandler) {
             try {
                 hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
-            } catch (e) {
+            } catch {
                 // Ignore cleanup errors
             }
             hrCharacteristicHandler = null;
@@ -297,7 +297,7 @@ async function connectToHRDevice(device, callbacks, elements) {
         if (hrCharacteristic && hrCharacteristicHandler) {
             try {
                 hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
-            } catch (e) {
+            } catch {
                 // Ignore cleanup errors
             }
             hrCharacteristicHandler = null;

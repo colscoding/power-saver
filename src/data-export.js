@@ -148,6 +148,68 @@ function delay(ms) {
 }
 
 /**
+ * Upload workout to intervals.icu
+ * @param {Array} powerData - Array of power data points
+ * @param {string} apiKey - intervals.icu API key (athlete ID:API key format)
+ * @throws {Error} If power data is invalid, API key is missing, or upload fails
+ */
+export async function uploadToIntervalsIcu(powerData, apiKey) {
+    validatePowerData(powerData);
+
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
+        throw new Error('API key is required');
+    }
+
+    try {
+        // Generate TCX content
+        const tcxContent = generateTcxString(powerData);
+
+        if (!tcxContent) {
+            throw new Error('Failed to generate TCX content for upload');
+        }
+
+        // Parse API key (format: "athleteId:apiKey" or just "apiKey")
+        const apiKeyTrimmed = apiKey.trim();
+        const hasAthleteId = apiKeyTrimmed.includes(':');
+
+        // Create file for upload
+        const blob = new Blob([tcxContent], { type: MIME_TYPES.XML });
+        const file = new File([blob], `workout_${getCurrentDateString()}.tcx`, {
+            type: MIME_TYPES.XML
+        });
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Make request to intervals.icu API
+        const apiUrl = 'https://intervals.icu/api/v1/athlete/i' + (hasAthleteId ? '' : '0') + '/activities';
+        const headers = {
+            'Authorization': `Basic ${btoa(apiKeyTrimmed)}`
+        };
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Successfully uploaded to intervals.icu:', result);
+
+        return result;
+    } catch (error) {
+        console.error('Error uploading to intervals.icu:', error);
+        throw error;
+    }
+}
+
+/**
  * Export all data formats at once
  * @param {Object} data - Object containing powerData
  * @param {Array} data.powerData - Array of power data points
