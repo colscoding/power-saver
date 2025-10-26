@@ -12,7 +12,6 @@ export const elements = {
 
     // Device info displays
     deviceNameElement: null,
-    hrDeviceName: null,
     cadenceDeviceName: null,
 
     // Status displays
@@ -47,7 +46,6 @@ export function initializeElements() {
 
     // Device info displays
     elements.deviceNameElement = document.getElementById('device-name');
-    elements.hrDeviceName = document.getElementById('hrDeviceName');
     elements.cadenceDeviceName = document.getElementById('cadenceDeviceName');
 
     // Status displays

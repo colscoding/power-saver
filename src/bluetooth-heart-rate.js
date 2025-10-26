@@ -6,9 +6,6 @@
 import { parseHeartRate } from './heart-rate.js';
 import { requestWakeLock } from './wake-lock.js';
 
-// Constants for device identification
-const DEVICE_ID_SUFFIX_LENGTH = 6; // Characters to show from device ID
-
 // Device connection state
 let hrBluetoothDevice = null;
 let hrDisconnectHandler = null;
@@ -24,26 +21,31 @@ let hrCharacteristicHandler = null;
  */
 export async function connectHeartRateMonitor(callbacks, elements) {
     await requestWakeLock();
+    console.log('[HR] Connect heart rate monitor requested');
 
     if (!navigator.bluetooth) {
-        callbacks.onStatusUpdate('Web Bluetooth API is not available.');
+        const message = 'Web Bluetooth API is not available.';
+        console.error('[HR]', message);
+        callbacks.onStatusUpdate(message);
         return false;
     }
 
     try {
         callbacks.onStatusUpdate('Scanning for devices...');
+        console.log('[HR] Requesting device...');
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Connecting...';
         }
 
         // Clean up any existing connection before creating a new one
         if (hrBluetoothDevice) {
+            console.log('[HR] Cleaning up existing connection');
             // Clean up characteristic handler
             if (hrCharacteristic && hrCharacteristicHandler) {
                 try {
                     hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
                 } catch (e) {
-                    console.warn('Error removing HR characteristic listener:', e);
+                    console.warn('[HR] Error removing HR characteristic listener:', e);
                 }
                 hrCharacteristicHandler = null;
                 hrCharacteristic = null;
@@ -61,6 +63,7 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 
         // Show device selection with name prefix filter to help distinguish devices
         // This allows users to see device names in the selection dialog
+        console.log('[HR] Opening device picker...');
         hrBluetoothDevice = await navigator.bluetooth.requestDevice({
             filters: [
                 {
@@ -75,22 +78,26 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             throw new Error('No device selected');
         }
 
+        console.log('[HR] Device selected:', hrBluetoothDevice.name || 'Unknown');
         await connectToHRDevice(hrBluetoothDevice, callbacks, elements);
         return true;
 
     } catch (error) {
         // Handle user cancellation separately from actual errors
         if (error.name === 'NotFoundError') {
-            callbacks.onStatusUpdate('No device selected.');
+            const message = 'No device selected.';
+            console.log('[HR]', message);
+            callbacks.onStatusUpdate(message);
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Disconnected';
             }
         } else {
-            callbacks.onStatusUpdate(`Error: ${error.message}`);
+            const message = `Error: ${error.message}`;
+            console.error('[HR] Connection failed:', error);
+            callbacks.onStatusUpdate(message);
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Connection Failed';
             }
-            console.error('Heart rate monitor connection failed:', error);
         }
 
         // Clean up on error
@@ -116,12 +123,13 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 
 /**
  * Connect to HR device with enhanced device information
- * @param {hrBluetoothDevice} device - The Bluetooth device to connect to
+ * @param {BluetoothDevice} device - The Bluetooth device to connect to
  * @param {Object} callbacks - Object containing callback functions
  * @param {Object} elements - UI elements object
  */
 async function connectToHRDevice(device, callbacks, elements) {
     callbacks.onStatusUpdate('Connecting to device...');
+    console.log('[HR] Starting connection to:', device.name || 'Unknown Device');
 
     // Add disconnect listener BEFORE connecting
     hrDisconnectHandler = () => {
@@ -130,16 +138,14 @@ async function connectToHRDevice(device, callbacks, elements) {
     device.addEventListener('gattserverdisconnected', hrDisconnectHandler);
 
     try {
-        // Check if already connected, if not, connect
-        const hrServer = device.gatt.connected ? device.gatt : await device.gatt.connect();
+        // Connect to GATT server
+        console.log('[HR] Connecting to GATT server...');
+        const hrServer = await device.gatt.connect();
+        console.log('[HR] GATT server connected');
 
-        // Get enhanced device information AFTER successful connection
-        const deviceInfo = await getEnhancedDeviceInfo(device);
-        if (elements.hrDeviceName) {
-            elements.hrDeviceName.textContent = `Device: ${deviceInfo}`;
-        }
-
+        console.log('[HR] Getting heart rate service...');
         const hrService = await hrServer.getPrimaryService('heart_rate');
+        console.log('[HR] Getting heart rate characteristic...');
         hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
 
         // Clean up any existing handler before adding a new one
@@ -147,11 +153,12 @@ async function connectToHRDevice(device, callbacks, elements) {
             try {
                 hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
             } catch (e) {
-                console.warn('Error removing old HR characteristic listener:', e);
+                console.warn('[HR] Error removing old characteristic listener:', e);
             }
         }
 
         // Start notifications to receive heart rate data
+        console.log('[HR] Starting notifications...');
         await hrCharacteristic.startNotifications();
 
         // Store the handler reference for proper cleanup
@@ -161,11 +168,13 @@ async function connectToHRDevice(device, callbacks, elements) {
 
         hrCharacteristic.addEventListener('characteristicvaluechanged', hrCharacteristicHandler);
 
+        console.log('[HR] Connection complete!');
         callbacks.onStatusUpdate('Connected!');
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Connected';
         }
     } catch (error) {
+        console.error('[HR] Connection error:', error);
         // Clean up characteristic handler on connection failure
         if (hrCharacteristic && hrCharacteristicHandler) {
             try {
@@ -181,67 +190,6 @@ async function connectToHRDevice(device, callbacks, elements) {
         device.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
         hrDisconnectHandler = null;
         throw error; // Re-throw to be caught by parent function
-    }
-}
-
-/**
- * Get enhanced device information for better identification
- * @param {BluetoothDevice} device - The Bluetooth device
- * @returns {Promise<string>} Enhanced device information string
- */
-async function getEnhancedDeviceInfo(device) {
-    let deviceInfo = device.name || 'Unknown Device';
-
-    try {
-        // Don't reconnect if already connected - use existing connection
-        const server = device.gatt.connected ? device.gatt : await device.gatt.connect();
-
-        // Try to get device information service for more details
-        try {
-            const deviceInfoService = await server.getPrimaryService('device_information');
-
-            // Try to get manufacturer name
-            const manufacturer = await readDeviceCharacteristic(deviceInfoService, 'manufacturer_name_string');
-            if (manufacturer) {
-                deviceInfo += ` (${manufacturer})`;
-            }
-
-            // Try to get model number
-            const model = await readDeviceCharacteristic(deviceInfoService, 'model_number_string');
-            if (model) {
-                deviceInfo += ` ${model}`;
-            }
-
-        } catch (e) { //eslint-disable-line no-unused-vars
-            // Device information service not available
-        }
-
-    } catch (e) { //eslint-disable-line no-unused-vars
-        // Connection failed or server not available, use basic info
-    }
-
-    // Add device ID as fallback identifier to distinguish identical names
-    if (device.id) {
-        deviceInfo += ` [${device.id.slice(-DEVICE_ID_SUFFIX_LENGTH)}]`;
-    }
-
-    return deviceInfo;
-}
-
-/**
- * Read a string characteristic from a Bluetooth service
- * @param {BluetoothRemoteGATTService} service - The Bluetooth GATT service
- * @param {string} characteristicName - Name of the characteristic to read
- * @returns {Promise<string|null>} Decoded string value or null if not available
- */
-async function readDeviceCharacteristic(service, characteristicName) {
-    try {
-        const characteristic = await service.getCharacteristic(characteristicName);
-        const value = await characteristic.readValue();
-        return new TextDecoder().decode(value);
-    } catch (e) { //eslint-disable-line no-unused-vars
-        // Characteristic not available
-        return null;
     }
 }
 
@@ -294,9 +242,6 @@ function onHeartRateDisconnected(callbacks, elements) {
     callbacks.onStatusUpdate('Heart rate monitor disconnected.');
     if (elements.hrConnectionStatus) {
         elements.hrConnectionStatus.textContent = 'Disconnected';
-    }
-    if (elements.hrDeviceName) {
-        elements.hrDeviceName.textContent = '';
     }
 
     // Clean up characteristic handler
