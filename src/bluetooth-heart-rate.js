@@ -10,6 +10,9 @@ import { addLogEntry } from './connection-log.js';
 // Device connection state
 let hrBluetoothDevice = null;
 let hrDisconnectHandler = null;
+let reconnectionAttempts = 0;
+const MAX_RECONNECTION_ATTEMPTS = 3;
+let reconnectionTimeout = null;
 
 // Store characteristics for proper cleanup and persistent connections
 let hrCharacteristic = null;
@@ -21,6 +24,15 @@ let hrCharacteristicHandler = null;
  * @param {Object} elements - UI elements object
  */
 export async function connectHeartRateMonitor(callbacks, elements) {
+    // Stop any ongoing reconnection attempts before starting a new manual connection
+    if (reconnectionTimeout) {
+        clearTimeout(reconnectionTimeout);
+        reconnectionTimeout = null;
+        console.log('[HR] Canceled automatic reconnection due to new connection attempt.');
+        addLogEntry('Manual connection started, auto-reconnect canceled.', 'info');
+    }
+    reconnectionAttempts = 0; // Reset counter
+
     await requestWakeLock();
     console.log('[HR] Connect heart rate monitor requested');
     addLogEntry('Heart rate connection requested', 'info');
@@ -271,6 +283,8 @@ async function connectToHRDevice(device, callbacks, elements) {
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Connected';
         }
+        // Reset reconnection attempts on successful connection
+        reconnectionAttempts = 0;
     } catch (error) {
         console.error('[HR] Connection error:', error);
 
@@ -323,6 +337,14 @@ export function isHeartRateConnected() {
  * Disconnect heart rate monitor
  */
 export function disconnectHeartRate() {
+    // Stop any pending reconnection attempts
+    if (reconnectionTimeout) {
+        clearTimeout(reconnectionTimeout);
+        reconnectionTimeout = null;
+        console.log('[HR] Canceled automatic reconnection due to manual disconnect.');
+    }
+    reconnectionAttempts = 0;
+
     // Enhanced disconnect for mobile compatibility
     if (hrBluetoothDevice) {
         // Clean up characteristic listener first
@@ -387,14 +409,18 @@ function handleHeartRateChanged(event, callbacks) {
  * @param {Object} callbacks - Object containing callback functions
  * @param {Object} elements - UI elements object
  */
-function onHeartRateDisconnected(callbacks, elements) {
+async function onHeartRateDisconnected(callbacks, elements) {
     console.log('[HR] Device disconnected event triggered');
     addLogEntry('Heart rate device disconnected', 'warning');
 
     callbacks.onStatusUpdate('Heart rate monitor disconnected.');
     if (elements.hrConnectionStatus) {
         elements.hrConnectionStatus.textContent = 'Disconnected';
-    }    // Clean up characteristic handler
+    }
+
+    const wasConnected = hrBluetoothDevice !== null;
+
+    // Clean up characteristic handler
     if (hrCharacteristic && hrCharacteristicHandler) {
         try {
             hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
@@ -414,11 +440,59 @@ function onHeartRateDisconnected(callbacks, elements) {
         }
         hrDisconnectHandler = null;
     }
-    hrBluetoothDevice = null;
 
-    callbacks.onHeartRateChange(0);
-    if (callbacks.onDisconnected) {
-        callbacks.onDisconnected();
+    // Only attempt to reconnect if there was a device connected previously
+    if (wasConnected && reconnectionAttempts < MAX_RECONNECTION_ATTEMPTS) {
+        reconnectionAttempts++;
+        const delay = 5000; // 5-second delay before attempting to reconnect
+        console.log(`[HR] Reconnection attempt ${reconnectionAttempts}/${MAX_RECONNECTION_ATTEMPTS} in ${delay / 1000}s`);
+        addLogEntry(`Reconnecting... (Attempt ${reconnectionAttempts})`, 'warning');
+        callbacks.onStatusUpdate('Reconnecting...');
+        if (elements.hrConnectionStatus) {
+            elements.hrConnectionStatus.textContent = 'Reconnecting...';
+        }
+
+        reconnectionTimeout = setTimeout(async () => {
+            try {
+                console.log('[HR] Attempting to reconnect...');
+                addLogEntry('Attempting to reconnect...', 'info');
+                await connectToHRDevice(hrBluetoothDevice, callbacks, elements);
+                console.log('[HR] Reconnection successful!');
+                addLogEntry('Reconnection successful!', 'success');
+            } catch (error) {
+                console.error('[HR] Reconnection failed:', error);
+                addLogEntry(`Reconnection failed: ${error.message}`, 'error');
+                // The disconnect handler will be called again, triggering the next attempt if applicable
+            }
+        }, delay);
+    } else {
+        if (wasConnected) {
+            console.log('[HR] Maximum reconnection attempts reached.');
+            addLogEntry('Could not reconnect to device.', 'error');
+            callbacks.onStatusUpdate('Disconnected. Max reconnect attempts reached.');
+        }
+        hrBluetoothDevice = null;
+        callbacks.onHeartRateChange(0);
+        if (callbacks.onDisconnected) {
+            callbacks.onDisconnected();
+        }
+    }
+}
+
+/**
+ * Clean up heart rate Bluetooth event listeners
+ * Call this function when the app is closing or resetting connections
+ */
+export function cleanupHeartRateEventListeners() {
+    // Stop any pending reconnection attempts
+    if (reconnectionTimeout) {
+        clearTimeout(reconnectionTimeout);
+        reconnectionTimeout = null;
+    }
+
+    if (hrBluetoothDevice && hrDisconnectHandler) {
+        hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+        hrDisconnectHandler = null;
     }
 }
 
