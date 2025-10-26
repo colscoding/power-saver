@@ -32,8 +32,7 @@ export const elements = {
     // Hamburger menu elements
     hamburgerBtn: null,
     menuDropdown: null,
-    showInfoMenuItem: null,
-    toggleLogMenuItem: null
+    showInfoMenuItem: null
 };
 
 /**
@@ -68,7 +67,6 @@ export function initializeElements() {
     elements.hamburgerBtn = document.getElementById('hamburgerButton');
     elements.menuDropdown = document.getElementById('menuDropdown');
     elements.showInfoMenuItem = document.getElementById('showInfoMenuItem');
-    elements.toggleLogMenuItem = document.getElementById('toggleLogMenuItem');
 
     // Initialize connection status to disconnected state
     if (elements.hrConnectionStatus) elements.hrConnectionStatus.textContent = 'Disconnected';

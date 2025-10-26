@@ -5,7 +5,6 @@
 
 import { parseHeartRate } from './heart-rate.js';
 import { requestWakeLock } from './wake-lock.js';
-import { addLogEntry } from './connection-log.js';
 
 // Device connection state
 let hrBluetoothDevice = null;
@@ -29,25 +28,21 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         clearTimeout(reconnectionTimeout);
         reconnectionTimeout = null;
         console.log('[HR] Canceled automatic reconnection due to new connection attempt.');
-        addLogEntry('Manual connection started, auto-reconnect canceled.', 'info');
     }
     reconnectionAttempts = 0; // Reset counter
 
     await requestWakeLock();
     console.log('[HR] Connect heart rate monitor requested');
-    addLogEntry('Heart rate connection requested', 'info');
 
     if (!navigator.bluetooth) {
         const message = 'Web Bluetooth API is not available.';
         console.error('[HR]', message);
         callbacks.onStatusUpdate(message);
-        addLogEntry(message, 'error');
         return false;
     }
 
     try {
         callbacks.onStatusUpdate('Scanning for devices...');
-        addLogEntry('Scanning for heart rate devices...', 'info');
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Scanning...';
         }
@@ -55,7 +50,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         // Clean up any existing connection before creating a new one
         if (hrBluetoothDevice) {
             callbacks.onStatusUpdate('Cleaning up previous connection...');
-            addLogEntry('Cleaning up previous connection', 'warning');
             // Clean up characteristic handler
             if (hrCharacteristic && hrCharacteristicHandler) {
                 try {
@@ -100,7 +94,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         const deviceName = hrBluetoothDevice.name || 'Unknown';
         callbacks.onStatusUpdate(`Device selected: ${deviceName}`);
         console.log('[HR] Device selected:', deviceName);
-        addLogEntry(`Device selected: ${deviceName}`, 'success');
 
         // Mobile compatibility: Ensure we're still in a valid execution context
         // Some mobile browsers are strict about timing after user gesture
@@ -113,7 +106,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             const message = 'No device selected.';
             console.log('[HR]', message);
             callbacks.onStatusUpdate(message);
-            addLogEntry(message, 'info');
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Disconnected';
             }
@@ -122,7 +114,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             const message = 'Connection failed. Check Bluetooth is enabled and device is nearby.';
             console.error('[HR] Network error (mobile Bluetooth issue):', error);
             callbacks.onStatusUpdate(message);
-            addLogEntry(message, 'error');
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Connection Failed';
             }
@@ -131,7 +122,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             const message = 'Heart rate monitor not supported on this device.';
             console.error('[HR] Not supported error:', error);
             callbacks.onStatusUpdate(message);
-            addLogEntry(message, 'error');
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Not Supported';
             }
@@ -140,7 +130,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             const message = 'Connection blocked. Ensure HTTPS and try again.';
             console.error('[HR] Security error (HTTPS or user gesture required):', error);
             callbacks.onStatusUpdate(message);
-            addLogEntry(message, 'error');
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Security Error';
             }
@@ -148,7 +137,6 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             const message = `Error: ${error.message}`;
             console.error('[HR] Connection failed:', error);
             callbacks.onStatusUpdate(message);
-            addLogEntry(`Connection failed: ${error.message}`, 'error');
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Connection Failed';
             }
@@ -206,7 +194,6 @@ async function connectToHRDevice(device, callbacks, elements) {
 
         // Connect to GATT server
         callbacks.onStatusUpdate('Establishing GATT connection...');
-        addLogEntry('Establishing GATT connection...', 'info');
         const hrServer = await device.gatt.connect();
 
         // Validate connection was successful (mobile compatibility check)
@@ -219,7 +206,6 @@ async function connectToHRDevice(device, callbacks, elements) {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         callbacks.onStatusUpdate('Getting heart rate service...');
-        addLogEntry('Getting heart rate service', 'info');
 
         // Add timeout for service discovery (mobile can hang here)
         const hrService = await Promise.race([
@@ -233,7 +219,6 @@ async function connectToHRDevice(device, callbacks, elements) {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         callbacks.onStatusUpdate('Configuring notifications...');
-        addLogEntry('Configuring heart rate notifications', 'info');
 
         // Add timeout for characteristic discovery
         hrCharacteristic = await Promise.race([
@@ -254,7 +239,6 @@ async function connectToHRDevice(device, callbacks, elements) {
 
         // Start notifications to receive heart rate data
         callbacks.onStatusUpdate('Starting heart rate notifications...');
-        addLogEntry('Starting notifications...', 'info');
 
         // Add timeout for startNotifications (can hang on mobile)
         await Promise.race([
@@ -267,7 +251,6 @@ async function connectToHRDevice(device, callbacks, elements) {
         // Validate notifications started successfully (mobile compatibility)
         if (!hrCharacteristic || !hrCharacteristic.value) {
             callbacks.onStatusUpdate('Waiting for heart rate data...');
-            addLogEntry('Waiting for first heart rate reading...', 'info');
         }
 
         // Store the handler reference for proper cleanup
@@ -279,7 +262,6 @@ async function connectToHRDevice(device, callbacks, elements) {
 
         console.log('[HR] Connection complete!');
         callbacks.onStatusUpdate(`Connected to ${deviceName}!`);
-        addLogEntry(`Successfully connected to ${deviceName}`, 'success');
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Connected';
         }
@@ -292,16 +274,13 @@ async function connectToHRDevice(device, callbacks, elements) {
         if (error.message && error.message.includes('timeout')) {
             const msg = error.message;
             callbacks.onStatusUpdate(msg);
-            addLogEntry(msg, 'error');
             console.error('[HR] Timeout - device may be out of range or connection is slow');
         } else if (error.message && error.message.includes('GATT')) {
             const msg = 'GATT connection failed (check device is on and nearby)';
             callbacks.onStatusUpdate(msg);
-            addLogEntry(msg, 'error');
             console.error('[HR] GATT connection issue - common on mobile devices');
         } else {
             callbacks.onStatusUpdate(`Connection failed: ${error.message}`);
-            addLogEntry(`Connection failed: ${error.message}`, 'error');
         }
 
         // Clean up characteristic handler on connection failure
@@ -411,7 +390,6 @@ function handleHeartRateChanged(event, callbacks) {
  */
 async function onHeartRateDisconnected(callbacks, elements) {
     console.log('[HR] Device disconnected event triggered');
-    addLogEntry('Heart rate device disconnected', 'warning');
 
     callbacks.onStatusUpdate('Heart rate monitor disconnected.');
     if (elements.hrConnectionStatus) {
@@ -446,7 +424,6 @@ async function onHeartRateDisconnected(callbacks, elements) {
         reconnectionAttempts++;
         const delay = 5000; // 5-second delay before attempting to reconnect
         console.log(`[HR] Reconnection attempt ${reconnectionAttempts}/${MAX_RECONNECTION_ATTEMPTS} in ${delay / 1000}s`);
-        addLogEntry(`Reconnecting... (Attempt ${reconnectionAttempts})`, 'warning');
         callbacks.onStatusUpdate('Reconnecting...');
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Reconnecting...';
@@ -455,20 +432,16 @@ async function onHeartRateDisconnected(callbacks, elements) {
         reconnectionTimeout = setTimeout(async () => {
             try {
                 console.log('[HR] Attempting to reconnect...');
-                addLogEntry('Attempting to reconnect...', 'info');
                 await connectToHRDevice(hrBluetoothDevice, callbacks, elements);
                 console.log('[HR] Reconnection successful!');
-                addLogEntry('Reconnection successful!', 'success');
             } catch (error) {
                 console.error('[HR] Reconnection failed:', error);
-                addLogEntry(`Reconnection failed: ${error.message}`, 'error');
                 // The disconnect handler will be called again, triggering the next attempt if applicable
             }
         }, delay);
     } else {
         if (wasConnected) {
             console.log('[HR] Maximum reconnection attempts reached.');
-            addLogEntry('Could not reconnect to device.', 'error');
             callbacks.onStatusUpdate('Disconnected. Max reconnect attempts reached.');
         }
         hrBluetoothDevice = null;

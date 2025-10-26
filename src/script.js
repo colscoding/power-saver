@@ -39,7 +39,6 @@ import {
   initializeSections
 } from "./ui-event-handlers.js";
 import { initializeMetricIcons } from "./metric-icons.js";
-import { initializeConnectionLog } from "./connection-log.js";
 
 // Application state variables
 let powerData = [];
@@ -389,7 +388,6 @@ async function initializeApp() {
     initializePowerAveraging();
     initializeSections(elements);
     initializeMetricIcons();
-    initializeConnectionLog();
 
     // Setup all event listeners
     setupHamburgerMenu(elements);
