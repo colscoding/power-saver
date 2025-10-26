@@ -349,6 +349,16 @@ export function disconnectHeartRate() {
 
         hrCharacteristic = null;
 
+        // Remove disconnect handler to prevent automatic reconnection
+        if (hrDisconnectHandler) {
+            try {
+                hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+                hrDisconnectHandler = null;
+            } catch (e) {
+                console.warn('[HR] Error removing disconnect handler:', e);
+            }
+        }
+
         // Disconnect GATT
         if (hrBluetoothDevice.gatt && hrBluetoothDevice.gatt.connected) {
             try {
@@ -357,6 +367,9 @@ export function disconnectHeartRate() {
                 console.warn('[HR] Error disconnecting GATT:', e);
             }
         }
+
+        // Reset the device reference
+        hrBluetoothDevice = null;
     }
 }
 
@@ -463,17 +476,6 @@ export function cleanupHeartRateEventListeners() {
         reconnectionTimeout = null;
     }
 
-    if (hrBluetoothDevice && hrDisconnectHandler) {
-        hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
-        hrDisconnectHandler = null;
-    }
-}
-
-/**
- * Clean up heart rate Bluetooth event listeners
- * Call this function when the app is closing or resetting connections
- */
-export function cleanupHeartRateEventListeners() {
     if (hrBluetoothDevice && hrDisconnectHandler) {
         hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
         hrDisconnectHandler = null;

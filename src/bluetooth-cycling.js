@@ -247,8 +247,28 @@ export function isSpeedCadenceConnected() {
  * Disconnect power meter
  */
 export function disconnectPowerMeter() {
-    if (powerMeterDevice && powerMeterDevice.gatt.connected) {
-        powerMeterDevice.gatt.disconnect();
+    if (powerMeterDevice) {
+        // Remove disconnect handler to prevent it from firing during manual disconnect
+        if (powerMeterDisconnectHandler) {
+            try {
+                powerMeterDevice.removeEventListener('gattserverdisconnected', powerMeterDisconnectHandler);
+                powerMeterDisconnectHandler = null;
+            } catch (e) {
+                console.warn('[Power] Error removing disconnect handler:', e);
+            }
+        }
+
+        // Disconnect GATT
+        if (powerMeterDevice.gatt && powerMeterDevice.gatt.connected) {
+            try {
+                powerMeterDevice.gatt.disconnect();
+            } catch (e) {
+                console.warn('[Power] Error disconnecting GATT:', e);
+            }
+        }
+
+        // Reset the device reference
+        powerMeterDevice = null;
     }
 }
 
@@ -256,8 +276,36 @@ export function disconnectPowerMeter() {
  * Disconnect speed/cadence sensor
  */
 export function disconnectSpeedCadence() {
-    if (speedCadenceBluetoothDevice && speedCadenceBluetoothDevice.gatt.connected) {
-        speedCadenceBluetoothDevice.gatt.disconnect();
+    if (speedCadenceBluetoothDevice) {
+        // Remove disconnect handler to prevent it from firing during manual disconnect
+        if (speedCadenceDisconnectHandler) {
+            try {
+                speedCadenceBluetoothDevice.removeEventListener('gattserverdisconnected', speedCadenceDisconnectHandler);
+                speedCadenceDisconnectHandler = null;
+            } catch (e) {
+                console.warn('[Cadence] Error removing disconnect handler:', e);
+            }
+        }
+
+        // Disconnect GATT
+        if (speedCadenceBluetoothDevice.gatt && speedCadenceBluetoothDevice.gatt.connected) {
+            try {
+                speedCadenceBluetoothDevice.gatt.disconnect();
+            } catch (e) {
+                console.warn('[Cadence] Error disconnecting GATT:', e);
+            }
+        }
+
+        // Reset the device reference
+        speedCadenceBluetoothDevice = null;
+
+        // Clear cadence reset timer and reset variables
+        if (cadenceResetTimer) {
+            clearTimeout(cadenceResetTimer);
+            cadenceResetTimer = null;
+        }
+        lastCrankRevs = 0;
+        lastCrankTime = 0;
     }
 }
 

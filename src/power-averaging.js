@@ -94,6 +94,9 @@ export function addPowerReading(power) {
             powerAverages[periodKey].best = nextAvg;
         }
     }
+
+    // Update the display after calculating new averages
+    updatePowerAveragesDisplay();
 }
 
 /**
