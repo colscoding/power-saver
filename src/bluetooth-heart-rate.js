@@ -32,14 +32,13 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 
     try {
         callbacks.onStatusUpdate('Scanning for devices...');
-        console.log('[HR] Requesting device...');
         if (elements.hrConnectionStatus) {
-            elements.hrConnectionStatus.textContent = 'Connecting...';
+            elements.hrConnectionStatus.textContent = 'Scanning...';
         }
 
         // Clean up any existing connection before creating a new one
         if (hrBluetoothDevice) {
-            console.log('[HR] Cleaning up existing connection');
+            callbacks.onStatusUpdate('Cleaning up previous connection...');
             // Clean up characteristic handler
             if (hrCharacteristic && hrCharacteristicHandler) {
                 try {
@@ -63,7 +62,7 @@ export async function connectHeartRateMonitor(callbacks, elements) {
 
         // Show device selection with name prefix filter to help distinguish devices
         // This allows users to see device names in the selection dialog
-        console.log('[HR] Opening device picker...');
+        callbacks.onStatusUpdate('Opening device picker...');
 
         // CRITICAL: requestDevice must be called directly in user gesture context on mobile
         // Cannot be deferred or wrapped in Promise on mobile browsers
@@ -81,7 +80,9 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             throw new Error('No device selected');
         }
 
-        console.log('[HR] Device selected:', hrBluetoothDevice.name || 'Unknown');
+        const deviceName = hrBluetoothDevice.name || 'Unknown';
+        callbacks.onStatusUpdate(`Device selected: ${deviceName}`);
+        console.log('[HR] Device selected:', deviceName);
 
         // Mobile compatibility: Ensure we're still in a valid execution context
         // Some mobile browsers are strict about timing after user gesture
@@ -158,8 +159,9 @@ export async function connectHeartRateMonitor(callbacks, elements) {
  * @param {Object} elements - UI elements object
  */
 async function connectToHRDevice(device, callbacks, elements) {
-    callbacks.onStatusUpdate('Connecting to device...');
-    console.log('[HR] Starting connection to:', device.name || 'Unknown Device');
+    const deviceName = device.name || 'Unknown Device';
+    callbacks.onStatusUpdate(`Connecting to ${deviceName}...`);
+    console.log('[HR] Starting connection to:', deviceName);
 
     // Add disconnect listener BEFORE connecting
     // CRITICAL: Use async function to prevent blocking on mobile
@@ -173,14 +175,14 @@ async function connectToHRDevice(device, callbacks, elements) {
     try {
         // Validate device is not already connected (mobile compatibility)
         if (device.gatt.connected) {
-            console.log('[HR] Device already connected, disconnecting first');
+            callbacks.onStatusUpdate('Resetting existing connection...');
             device.gatt.disconnect();
             // Wait for disconnect to complete on mobile
             await new Promise(resolve => setTimeout(resolve, 200));
         }
 
         // Connect to GATT server
-        console.log('[HR] Connecting to GATT server...');
+        callbacks.onStatusUpdate('Establishing GATT connection...');
         const hrServer = await device.gatt.connect();
 
         // Validate connection was successful (mobile compatibility check)
@@ -188,11 +190,10 @@ async function connectToHRDevice(device, callbacks, elements) {
             throw new Error('GATT server connection failed - device not connected');
         }
 
-        console.log('[HR] GATT server connected');
-
-        console.log('[HR] Getting heart rate service...');
+        callbacks.onStatusUpdate('Getting heart rate service...');
         const hrService = await hrServer.getPrimaryService('heart_rate');
-        console.log('[HR] Getting heart rate characteristic...');
+
+        callbacks.onStatusUpdate('Configuring notifications...');
         hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
 
         // Clean up any existing handler before adding a new one
@@ -205,12 +206,12 @@ async function connectToHRDevice(device, callbacks, elements) {
         }
 
         // Start notifications to receive heart rate data
-        console.log('[HR] Starting notifications...');
+        callbacks.onStatusUpdate('Starting heart rate notifications...');
         await hrCharacteristic.startNotifications();
 
         // Validate notifications started successfully (mobile compatibility)
         if (!hrCharacteristic || !hrCharacteristic.value) {
-            console.log('[HR] Waiting for first notification...');
+            callbacks.onStatusUpdate('Waiting for heart rate data...');
         }
 
         // Store the handler reference for proper cleanup
@@ -221,7 +222,7 @@ async function connectToHRDevice(device, callbacks, elements) {
         hrCharacteristic.addEventListener('characteristicvaluechanged', hrCharacteristicHandler);
 
         console.log('[HR] Connection complete!');
-        callbacks.onStatusUpdate('Connected!');
+        callbacks.onStatusUpdate(`Connected to ${deviceName}!`);
         if (elements.hrConnectionStatus) {
             elements.hrConnectionStatus.textContent = 'Connected';
         }
@@ -230,7 +231,10 @@ async function connectToHRDevice(device, callbacks, elements) {
 
         // Mobile-specific error messages
         if (error.message && error.message.includes('GATT')) {
+            callbacks.onStatusUpdate('GATT connection failed (check device is on and nearby)');
             console.error('[HR] GATT connection issue - common on mobile devices');
+        } else {
+            callbacks.onStatusUpdate(`Connection failed: ${error.message}`);
         }
 
         // Clean up characteristic handler on connection failure
