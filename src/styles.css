@@ -715,86 +715,6 @@ button:disabled::before {
     white-space: pre-line;
 }
 
-#clearSessionButton {
-    background: #f44336;
-    margin-top: 1rem;
-}
-
-/* Toggle Button Styles */
-.toggle-controls {
-    text-align: center;
-    margin: 1rem 0;
-}
-
-.toggle-button {
-    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-    box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    padding: 12px 20px;
-    min-width: 200px;
-    justify-content: center;
-}
-
-.toggle-button:hover {
-    box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
-    background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
-}
-
-.toggle-icon {
-    font-size: 12px;
-    transition: transform 0.3s ease;
-}
-
-.toggle-button.collapsed .toggle-icon {
-    transform: rotate(180deg);
-}
-
-/* Section Header Styles for integrated toggle buttons */
-.section-header {
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 1rem;
-}
-
-.section-toggle-button {
-    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-    box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    padding: 12px 20px;
-    min-width: 200px;
-    justify-content: center;
-    width: 100%;
-    border-radius: 12px;
-}
-
-.section-toggle-button:hover {
-    box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
-    background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
-}
-
-.section-toggle-button .toggle-icon {
-    font-size: 12px;
-    transition: transform 0.3s ease;
-}
-
-.section-toggle-button.collapsed .toggle-icon {
-    transform: rotate(180deg);
-}
-
-/* Bottom Controls Section */
-.bottom-controls {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
 /* Hamburger Menu Styles */
 .hamburger-menu {
     position: fixed;
@@ -1531,19 +1451,6 @@ button:disabled::before {
 }
 
 /* Connection status styling in buttons */
-#hrConnectionStatus,
-#cadenceConnectionStatus {
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 400;
-    color: rgba(18, 18, 18, 0.7);
-}
-
-button:disabled #hrConnectionStatus,
-button:disabled #cadenceConnectionStatus {
-    color: rgba(136, 136, 136, 0.8);
-}
-
 /* Improved scrollbar for webkit browsers */
 ::-webkit-scrollbar {
     width: 8px;

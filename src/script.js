@@ -11,7 +11,6 @@ import {
   addPowerReading,
   resetPowerAverages,
   updatePowerAveragesDisplay,
-  recalculatePowerAveragesFromData
 } from "./power-averaging.js";
 import {
   elements,
@@ -366,11 +365,6 @@ function restoreSessionData(sessionData) {
 
     // Mark that session was restored
     sessionRestored = true;
-
-    // Recalculate power averages from restored data
-    if (powerData.length > 0) {
-      recalculatePowerAveragesFromData(powerData);
-    }
 
     // Update displays with restored data
     updateDisplaysFromRestoredData();

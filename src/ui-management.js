@@ -26,13 +26,6 @@ export const elements = {
     powerMeterConnectButton: null,
     hrConnectButton: null,
     speedCadenceConnectButton: null,
-    exportButtons: {
-        json: null,
-        csv: null,
-        tcx: null,
-        image: null,
-        clearSession: null
-    },
 
     // Toggle elements
     powerAveragesSection: null,
@@ -40,16 +33,7 @@ export const elements = {
     // Hamburger menu elements
     hamburgerBtn: null,
     menuDropdown: null,
-    powerAveragesToggle: null,
-    powerMetricToggle: null,
-    heartRateMetricToggle: null,
-    cadenceMetricToggle: null,
-    showInfoMenuItem: null,
-
-    // Metric card elements
-    powerCard: null,
-    heartRateCard: null,
-    cadenceCard: null
+    showInfoMenuItem: null
 };
 
 /**
@@ -84,16 +68,7 @@ export function initializeElements() {
     // Hamburger menu elements
     elements.hamburgerBtn = document.getElementById('hamburgerButton');
     elements.menuDropdown = document.getElementById('menuDropdown');
-    elements.powerAveragesToggle = document.getElementById('powerAveragesToggle');
-    elements.powerMetricToggle = document.getElementById('powerMetricToggle');
-    elements.heartRateMetricToggle = document.getElementById('heartRateMetricToggle');
-    elements.cadenceMetricToggle = document.getElementById('cadenceMetricToggle');
     elements.showInfoMenuItem = document.getElementById('showInfoMenuItem');
-
-    // Metric card elements
-    elements.powerCard = document.querySelector('.power-card');
-    elements.heartRateCard = document.querySelector('.hr-card');
-    elements.cadenceCard = document.querySelector('.cadence-card');
 
     // Initialize connection status to disconnected state
     if (elements.hrConnectionStatus) elements.hrConnectionStatus.textContent = 'Disconnected';

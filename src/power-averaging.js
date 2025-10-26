@@ -1,8 +1,3 @@
-/**
- * Power Averaging Module
- * Handles power data collection, averaging calculations, and display updates
- */
-
 // Constants for time periods
 const TIME_PERIODS_MS = {
     '10s': 10 * 1000,
@@ -17,12 +12,10 @@ const TIME_PERIODS_MS = {
     '5m': 300 * 1000,
 };
 
-const RETENTION_BUFFER_MS = 6 * 60 * 1000; // Keep 6 minutes of data (5 min max period + buffer)
+// Timestamp of last power reading
+let lastPowerTimestamp = Date.now();
 
 // Power averaging data structures
-let powerReadings = []; // Array to store timestamped power readings
-const currentTenSecondReadings = [];
-const tenSecondAverages = [];
 let powerAverages = {
     '10s': { current: 0, best: 0 },
     '20s': { current: 0, best: 0 },
@@ -82,53 +75,24 @@ export function initializePowerAveraging() {
 export function addPowerReading(power) {
     // Validate input
     if (typeof power !== 'number' || isNaN(power)) {
-        console.error('Invalid power reading: must be a number', power);
+        return;
+    }
+    if (power > 3000 || power < 0) {
         return;
     }
 
-    // Warn about unusual values but still process them
-    if (power > 3000) {
-        console.warn(`Unusually high power reading: ${power}W`);
-    } else if (power < -500) {
-        console.warn(`Unusually low power reading: ${power}W`);
-    }
-
+    // update power averages
     const now = Date.now();
-    powerReadings.push({ timestamp: now, power: power });
-
-    // Keep only the last 5 minutes of readings (plus buffer to ensure we have enough data)
-    const retentionCutoff = now - RETENTION_BUFFER_MS;
-    powerReadings = powerReadings.filter((reading) => reading.timestamp > retentionCutoff);
-
-    // Maintain current ten second readings for 10s average calculation
-    currentTenSecondReadings.push({ timestamp: now, power: power });
-    if (currentTenSecondReadings.length > 0 && currentTenSecondReadings[0].timestamp <= (now - 10 * 1000)) {
-        // current 10s windows is filled
-        const currPowerAverage = Math.round(currentTenSecondReadings.reduce((sum, r) => sum + r.power, 0) / currentTenSecondReadings.length);
-        tenSecondAverages.push(currPowerAverage);
-        // clear currentTenSecondReadings completely
-        currentTenSecondReadings.splice(0, currentTenSecondReadings.length);
-        while (tenSecondAverages.length > 30) { // keep last 5 minutes of 10s averages
-            tenSecondAverages.shift();
+    const timeDelta = now - lastPowerTimestamp;
+    lastPowerTimestamp = now;
+    for (const [periodKey, periodMs] of Object.entries(TIME_PERIODS_MS)) {
+        const currentAvg = powerAverages[periodKey].current || 0;
+        const nextAvg = Math.round(((currentAvg * (periodMs - timeDelta)) + (power * timeDelta)) / periodMs);
+        powerAverages[periodKey].current = nextAvg;
+        // Update best if current is better
+        if (nextAvg > powerAverages[periodKey].best) {
+            powerAverages[periodKey].best = nextAvg;
         }
-
-        for (const [periodKey, periodMs] of Object.entries(TIME_PERIODS_MS)) {
-            const nWindows = Math.ceil(periodMs / (10 * 1000));
-            if (tenSecondAverages.length >= nWindows) {
-                const avgWindows = tenSecondAverages.slice(-nWindows);
-                const sum = avgWindows.reduce((total, reading) => total + reading, 0);
-                const average = Math.round(sum / nWindows);
-                powerAverages[periodKey].current = average;
-
-                // Update best if current is better
-                if (average > powerAverages[periodKey].best) {
-                    powerAverages[periodKey].best = average;
-                }
-            } else {
-                powerAverages[periodKey].current = 0;
-            }
-        }
-        updatePowerAveragesDisplay();
     }
 }
 
@@ -165,83 +129,9 @@ export function updatePowerAveragesDisplay() {
 }
 
 /**
- * Recalculate power averages from restored data
- * @param {Array} restoredPowerData - Array of power data points with timestamp and power
- */
-export function recalculatePowerAveragesFromData(restoredPowerData) {
-    if (!Array.isArray(restoredPowerData) || restoredPowerData.length === 0) {
-        return;
-    }
-
-    console.log(`Recalculating power averages from ${restoredPowerData.length} data points...`);
-
-    // Reset current averages
-    powerReadings = [];
-    for (const period of Object.keys(powerAverages)) {
-        powerAverages[period].current = 0;
-        powerAverages[period].best = 0;
-    }
-
-    // Re-add all power readings to recalculate averages
-    restoredPowerData.forEach(dataPoint => {
-        if (dataPoint.power !== undefined && dataPoint.power !== null) {
-            // Temporarily store as timestamped reading
-            powerReadings.push({
-                timestamp: dataPoint.timestamp,
-                power: dataPoint.power
-            });
-        }
-    });
-
-    // Calculate best averages from the restored data
-    calculateBestAveragesFromHistory();
-
-    // Update the display
-    updatePowerAveragesDisplay();
-
-    console.log('Power averages recalculated');
-}
-
-/**
- * Calculate best averages from historical data
- */
-function calculateBestAveragesFromHistory() {
-    if (powerReadings.length === 0) return;
-
-    // For each time period, scan through the data to find the best average
-    for (const [period, durationMs] of Object.entries(TIME_PERIODS_MS)) {
-        let bestAvg = 0;
-
-        // Scan through the data with a sliding window
-        for (let i = 0; i < powerReadings.length; i++) {
-            const startTime = powerReadings[i].timestamp;
-            const endTime = startTime + durationMs;
-
-            // Collect all readings within this window
-            const windowReadings = powerReadings.filter(r =>
-                r.timestamp >= startTime && r.timestamp < endTime
-            );
-
-            if (windowReadings.length > 0) {
-                // Calculate average for this window
-                const sum = windowReadings.reduce((acc, r) => acc + r.power, 0);
-                const avg = Math.round(sum / windowReadings.length);
-
-                if (avg > bestAvg) {
-                    bestAvg = avg;
-                }
-            }
-        }
-
-        powerAverages[period].best = bestAvg;
-    }
-}
-
-/**
  * Reset all power averages to zero
  */
 export function resetPowerAverages() {
-    powerReadings = [];
     for (const period of Object.keys(powerAverages)) {
         powerAverages[period].current = 0;
         powerAverages[period].best = 0;
