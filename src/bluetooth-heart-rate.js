@@ -64,6 +64,9 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         // Show device selection with name prefix filter to help distinguish devices
         // This allows users to see device names in the selection dialog
         console.log('[HR] Opening device picker...');
+
+        // CRITICAL: requestDevice must be called directly in user gesture context on mobile
+        // Cannot be deferred or wrapped in Promise on mobile browsers
         hrBluetoothDevice = await navigator.bluetooth.requestDevice({
             filters: [
                 {
@@ -79,6 +82,9 @@ export async function connectHeartRateMonitor(callbacks, elements) {
         }
 
         console.log('[HR] Device selected:', hrBluetoothDevice.name || 'Unknown');
+
+        // Mobile compatibility: Ensure we're still in a valid execution context
+        // Some mobile browsers are strict about timing after user gesture
         await connectToHRDevice(hrBluetoothDevice, callbacks, elements);
         return true;
 
@@ -90,6 +96,30 @@ export async function connectHeartRateMonitor(callbacks, elements) {
             callbacks.onStatusUpdate(message);
             if (elements.hrConnectionStatus) {
                 elements.hrConnectionStatus.textContent = 'Disconnected';
+            }
+        } else if (error.name === 'NetworkError') {
+            // Network errors are common on mobile when Bluetooth is off or device out of range
+            const message = 'Connection failed. Check Bluetooth is enabled and device is nearby.';
+            console.error('[HR] Network error (mobile Bluetooth issue):', error);
+            callbacks.onStatusUpdate(message);
+            if (elements.hrConnectionStatus) {
+                elements.hrConnectionStatus.textContent = 'Connection Failed';
+            }
+        } else if (error.name === 'NotSupportedError') {
+            // Mobile browser may not support all Bluetooth features
+            const message = 'Heart rate monitor not supported on this device.';
+            console.error('[HR] Not supported error:', error);
+            callbacks.onStatusUpdate(message);
+            if (elements.hrConnectionStatus) {
+                elements.hrConnectionStatus.textContent = 'Not Supported';
+            }
+        } else if (error.name === 'SecurityError') {
+            // Security errors can happen if not in secure context or user gesture missing
+            const message = 'Connection blocked. Ensure HTTPS and try again.';
+            console.error('[HR] Security error (HTTPS or user gesture required):', error);
+            callbacks.onStatusUpdate(message);
+            if (elements.hrConnectionStatus) {
+                elements.hrConnectionStatus.textContent = 'Security Error';
             }
         } else {
             const message = `Error: ${error.message}`;
@@ -132,15 +162,32 @@ async function connectToHRDevice(device, callbacks, elements) {
     console.log('[HR] Starting connection to:', device.name || 'Unknown Device');
 
     // Add disconnect listener BEFORE connecting
-    hrDisconnectHandler = () => {
+    // CRITICAL: Use async function to prevent blocking on mobile
+    hrDisconnectHandler = async () => {
+        // Add small delay to allow GATT state to settle on mobile
+        await new Promise(resolve => setTimeout(resolve, 100));
         onHeartRateDisconnected(callbacks, elements);
     };
     device.addEventListener('gattserverdisconnected', hrDisconnectHandler);
 
     try {
+        // Validate device is not already connected (mobile compatibility)
+        if (device.gatt.connected) {
+            console.log('[HR] Device already connected, disconnecting first');
+            device.gatt.disconnect();
+            // Wait for disconnect to complete on mobile
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
         // Connect to GATT server
         console.log('[HR] Connecting to GATT server...');
         const hrServer = await device.gatt.connect();
+
+        // Validate connection was successful (mobile compatibility check)
+        if (!hrServer || !device.gatt.connected) {
+            throw new Error('GATT server connection failed - device not connected');
+        }
+
         console.log('[HR] GATT server connected');
 
         console.log('[HR] Getting heart rate service...');
@@ -161,6 +208,11 @@ async function connectToHRDevice(device, callbacks, elements) {
         console.log('[HR] Starting notifications...');
         await hrCharacteristic.startNotifications();
 
+        // Validate notifications started successfully (mobile compatibility)
+        if (!hrCharacteristic || !hrCharacteristic.value) {
+            console.log('[HR] Waiting for first notification...');
+        }
+
         // Store the handler reference for proper cleanup
         hrCharacteristicHandler = (event) => {
             handleHeartRateChanged(event, callbacks);
@@ -175,6 +227,12 @@ async function connectToHRDevice(device, callbacks, elements) {
         }
     } catch (error) {
         console.error('[HR] Connection error:', error);
+
+        // Mobile-specific error messages
+        if (error.message && error.message.includes('GATT')) {
+            console.error('[HR] GATT connection issue - common on mobile devices');
+        }
+
         // Clean up characteristic handler on connection failure
         if (hrCharacteristic && hrCharacteristicHandler) {
             try {
@@ -198,15 +256,49 @@ async function connectToHRDevice(device, callbacks, elements) {
  * @returns {boolean}
  */
 export function isHeartRateConnected() {
-    return hrBluetoothDevice && hrBluetoothDevice.gatt.connected;
+    // Enhanced check for mobile compatibility - verify both device and GATT state
+    return hrBluetoothDevice &&
+        hrBluetoothDevice.gatt &&
+        hrBluetoothDevice.gatt.connected === true;
 }
 
 /**
  * Disconnect heart rate monitor
  */
 export function disconnectHeartRate() {
-    if (hrBluetoothDevice && hrBluetoothDevice.gatt.connected) {
-        hrBluetoothDevice.gatt.disconnect();
+    // Enhanced disconnect for mobile compatibility
+    if (hrBluetoothDevice) {
+        // Clean up characteristic listener first
+        if (hrCharacteristic && hrCharacteristicHandler) {
+            try {
+                hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
+                hrCharacteristicHandler = null;
+            } catch (e) {
+                console.warn('[HR] Error cleaning up characteristic listener:', e);
+            }
+        }
+
+        // Stop notifications if possible
+        if (hrCharacteristic && hrBluetoothDevice.gatt && hrBluetoothDevice.gatt.connected) {
+            try {
+                hrCharacteristic.stopNotifications().catch(() => {
+                    // Ignore stopNotifications errors
+                });
+            } catch (e) {
+                console.warn('[HR] Error stopping notifications:', e);
+            }
+        }
+
+        hrCharacteristic = null;
+
+        // Disconnect GATT
+        if (hrBluetoothDevice.gatt && hrBluetoothDevice.gatt.connected) {
+            try {
+                hrBluetoothDevice.gatt.disconnect();
+            } catch (e) {
+                console.warn('[HR] Error disconnecting GATT:', e);
+            }
+        }
     }
 }
 
@@ -239,6 +331,8 @@ function handleHeartRateChanged(event, callbacks) {
  * @param {Object} elements - UI elements object
  */
 function onHeartRateDisconnected(callbacks, elements) {
+    console.log('[HR] Device disconnected event triggered');
+
     callbacks.onStatusUpdate('Heart rate monitor disconnected.');
     if (elements.hrConnectionStatus) {
         elements.hrConnectionStatus.textContent = 'Disconnected';
@@ -249,7 +343,7 @@ function onHeartRateDisconnected(callbacks, elements) {
         try {
             hrCharacteristic.removeEventListener('characteristicvaluechanged', hrCharacteristicHandler);
         } catch (e) {
-            console.warn('Error removing HR characteristic listener on disconnect:', e);
+            console.warn('[HR] Error removing HR characteristic listener on disconnect:', e);
         }
         hrCharacteristicHandler = null;
         hrCharacteristic = null;
@@ -257,7 +351,11 @@ function onHeartRateDisconnected(callbacks, elements) {
 
     // Clean up event listener
     if (hrBluetoothDevice && hrDisconnectHandler) {
-        hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+        try {
+            hrBluetoothDevice.removeEventListener('gattserverdisconnected', hrDisconnectHandler);
+        } catch (e) {
+            console.warn('[HR] Error removing disconnect listener:', e);
+        }
         hrDisconnectHandler = null;
     }
     hrBluetoothDevice = null;
