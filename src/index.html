@@ -60,6 +60,9 @@
       <div class="menu-item" id="exportUtilsMenuItem">
         <span class="menu-item-text">🛠️ Utilities</span>
       </div>
+      <div class="menu-item" id="toggleLogMenuItem">
+        <span class="menu-item-text">📋 Toggle Connection Log</span>
+      </div>
       <div class="menu-item" id="showInfoMenuItem">
         <span class="menu-item-text">ℹ️ App Info</span>
       </div>
@@ -106,6 +109,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Connection Log Card (Hidden by default) -->
+    <section class="connection-log-section" id="connectionLogSection" style="display: none;">
+      <div class="connection-log-header">
+        <h3>Connection Log</h3>
+        <button class="clear-log-button" id="clearLogButton">Clear</button>
+      </div>
+      <div class="connection-log-content" id="connectionLogContent">
+        <div class="log-empty-message">No connection activity yet</div>
+      </div>
+    </section>
 
     <!-- Row 3: Power Averages Section - Always Visible -->
     <section class="power-averages-section" id="powerAveragesSection">

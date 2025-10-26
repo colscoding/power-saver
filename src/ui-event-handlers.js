@@ -4,6 +4,7 @@
  */
 
 import { showAppInfo } from './app-info-modal.js';
+import { toggleLog } from './connection-log.js';
 
 /**
  * Set up hamburger menu functionality
@@ -55,6 +56,19 @@ export function setupMenuItems(elements) {
         });
     } else {
         console.error('Show info menu item not found');
+    }
+
+    // Toggle log functionality
+    if (elements.toggleLogMenuItem) {
+        elements.toggleLogMenuItem.addEventListener('click', function () {
+            toggleLog();
+            // Close the menu after toggling log
+            if (elements.menuDropdown) {
+                elements.menuDropdown.classList.remove('active');
+            }
+        });
+    } else {
+        console.error('Toggle log menu item not found');
     }
 }
 
