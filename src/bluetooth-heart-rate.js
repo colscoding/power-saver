@@ -202,13 +202,34 @@ async function connectToHRDevice(device, callbacks, elements) {
             throw new Error('GATT server connection failed - device not connected');
         }
 
+        // CRITICAL: Mobile devices need a small delay after GATT connection
+        // before accessing services to allow the connection to fully stabilize
+        await new Promise(resolve => setTimeout(resolve, 300));
+
         callbacks.onStatusUpdate('Getting heart rate service...');
         addLogEntry('Getting heart rate service', 'info');
-        const hrService = await hrServer.getPrimaryService('heart_rate');
+
+        // Add timeout for service discovery (mobile can hang here)
+        const hrService = await Promise.race([
+            hrServer.getPrimaryService('heart_rate'),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Service discovery timeout - device may be out of range')), 10000)
+            )
+        ]);
+
+        // Small delay before getting characteristic (mobile compatibility)
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         callbacks.onStatusUpdate('Configuring notifications...');
         addLogEntry('Configuring heart rate notifications', 'info');
-        hrCharacteristic = await hrService.getCharacteristic('heart_rate_measurement');
+
+        // Add timeout for characteristic discovery
+        hrCharacteristic = await Promise.race([
+            hrService.getCharacteristic('heart_rate_measurement'),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Characteristic discovery timeout')), 10000)
+            )
+        ]);
 
         // Clean up any existing handler before adding a new one
         if (hrCharacteristicHandler) {
@@ -221,11 +242,20 @@ async function connectToHRDevice(device, callbacks, elements) {
 
         // Start notifications to receive heart rate data
         callbacks.onStatusUpdate('Starting heart rate notifications...');
-        await hrCharacteristic.startNotifications();
+        addLogEntry('Starting notifications...', 'info');
+
+        // Add timeout for startNotifications (can hang on mobile)
+        await Promise.race([
+            hrCharacteristic.startNotifications(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Notification start timeout - try reconnecting')), 10000)
+            )
+        ]);
 
         // Validate notifications started successfully (mobile compatibility)
         if (!hrCharacteristic || !hrCharacteristic.value) {
             callbacks.onStatusUpdate('Waiting for heart rate data...');
+            addLogEntry('Waiting for first heart rate reading...', 'info');
         }
 
         // Store the handler reference for proper cleanup
@@ -244,8 +274,13 @@ async function connectToHRDevice(device, callbacks, elements) {
     } catch (error) {
         console.error('[HR] Connection error:', error);
 
-        // Mobile-specific error messages
-        if (error.message && error.message.includes('GATT')) {
+        // Provide specific error messages for common mobile issues
+        if (error.message && error.message.includes('timeout')) {
+            const msg = error.message;
+            callbacks.onStatusUpdate(msg);
+            addLogEntry(msg, 'error');
+            console.error('[HR] Timeout - device may be out of range or connection is slow');
+        } else if (error.message && error.message.includes('GATT')) {
             const msg = 'GATT connection failed (check device is on and nearby)';
             callbacks.onStatusUpdate(msg);
             addLogEntry(msg, 'error');
