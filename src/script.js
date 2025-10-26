@@ -33,6 +33,7 @@ import {
   disconnectSpeedCadence
 } from "./bluetooth-connections.js";
 import { setupExportMenuListeners } from "./export-modals.js";
+import { setupUtilityMenuListeners } from "./utility-modals.js";
 import { showSessionRestoredNotification } from "./notifications.js";
 import {
   setupHamburgerMenu,
@@ -450,6 +451,7 @@ async function initializeApp() {
     setupMenuItems(elements);
     setupConnectionEventListeners();
     setupExportMenuListeners(dataStore);
+    setupUtilityMenuListeners(dataStore);
 
     // Initialize connect button visibility based on current connection states
     updateAllConnectButtonVisibility();    // Try to load previous session data
