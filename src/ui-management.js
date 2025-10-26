@@ -113,8 +113,8 @@ export function resetMetricDisplays() {
 }
 
 /**
- * Update connect button visibility based on device connection status
- * @param {Object} connectionStates - Object containing connection states for each device type
+ * Update connect button visibility based on connection states
+ * @param {Object} connectionStates - Object containing connection states
  * @param {boolean} connectionStates.powerMeter - Power meter connection state
  * @param {boolean} connectionStates.heartRate - Heart rate monitor connection state
  * @param {boolean} connectionStates.speedCadence - Speed/cadence sensor connection state
@@ -138,6 +138,17 @@ export function updateConnectButtonVisibility(connectionStates) {
     // Update power averages section visibility based on power meter connection
     if (elements.powerAveragesSection) {
         elements.powerAveragesSection.setAttribute('data-connected', connectionStates.powerMeter ? 'true' : 'false');
+    }
+}
+
+/**
+ * Set a button to connecting state
+ * @param {HTMLElement} button - The button element to update
+ * @param {boolean} isConnecting - Whether the button is in connecting state
+ */
+export function setButtonConnectingState(button, isConnecting) {
+    if (button) {
+        button.setAttribute('data-connecting', isConnecting ? 'true' : 'false');
     }
 }
 

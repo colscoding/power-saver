@@ -18,7 +18,8 @@ import {
   updatePowerValue,
   updateMetricDisplays,
   resetMetricDisplays,
-  updateConnectButtonVisibility
+  updateConnectButtonVisibility,
+  setButtonConnectingState
 } from "./ui-management.js";
 import {
   connectPowerMeter,
@@ -49,6 +50,11 @@ let sessionStartTime = null;
 let dataLoggerInterval = null;
 let periodicSaveInterval = null;
 let sessionRestored = false; // Track if session was restored
+
+// Connection state tracking
+let powerMeterConnecting = false;
+let heartRateConnecting = false;
+let speedCadenceConnecting = false;
 
 // Constants for data logging
 const DATA_LOGGER_INTERVAL_MS = 100; // Log data every 100ms
@@ -193,6 +199,14 @@ function setupConnectionEventListeners() {
   // Power meter connection
   if (elements.powerMeterConnectButton) {
     elements.powerMeterConnectButton.addEventListener('click', async () => {
+      // Check if currently connecting - if so, cancel the connection attempt
+      if (powerMeterConnecting) {
+        powerMeterConnecting = false;
+        setButtonConnectingState(elements.powerMeterConnectButton, false);
+        powerMeterCallbacks.onStatusUpdate('Connection cancelled');
+        return;
+      }
+
       // Check if already connected - if so, show disconnect confirmation
       if (isPowerMeterConnected()) {
         const shouldDisconnect = confirm('Disconnect power meter?');
@@ -213,7 +227,15 @@ function setupConnectionEventListeners() {
         clearInterval(dataLoggerInterval);
       }
 
+      // Set connecting state
+      powerMeterConnecting = true;
+      setButtonConnectingState(elements.powerMeterConnectButton, true);
+
       const connected = await connectPowerMeter(powerMeterCallbacks, elements);
+
+      // Clear connecting state
+      powerMeterConnecting = false;
+      setButtonConnectingState(elements.powerMeterConnectButton, false);
 
       if (connected) {
         // Start session if this is the first connection and no session was restored
@@ -248,6 +270,14 @@ function setupConnectionEventListeners() {
   // Heart rate monitor connection
   if (elements.hrConnectButton) {
     elements.hrConnectButton.addEventListener('click', async () => {
+      // Check if currently connecting - if so, cancel the connection attempt
+      if (heartRateConnecting) {
+        heartRateConnecting = false;
+        setButtonConnectingState(elements.hrConnectButton, false);
+        heartRateCallbacks.onStatusUpdate('Connection cancelled');
+        return;
+      }
+
       // Check if already connected - if so, show disconnect confirmation
       if (isHeartRateConnected()) {
         const shouldDisconnect = confirm('Disconnect heart rate monitor?');
@@ -257,7 +287,16 @@ function setupConnectionEventListeners() {
         return;
       }
 
+      // Set connecting state
+      heartRateConnecting = true;
+      setButtonConnectingState(elements.hrConnectButton, true);
+
       const connected = await connectHeartRateMonitor(heartRateCallbacks, elements);
+
+      // Clear connecting state
+      heartRateConnecting = false;
+      setButtonConnectingState(elements.hrConnectButton, false);
+
       if (connected) {
         updateAllConnectButtonVisibility();
       }
@@ -267,6 +306,14 @@ function setupConnectionEventListeners() {
   // Speed/cadence sensor connection
   if (elements.speedCadenceConnectButton) {
     elements.speedCadenceConnectButton.addEventListener('click', async () => {
+      // Check if currently connecting - if so, cancel the connection attempt
+      if (speedCadenceConnecting) {
+        speedCadenceConnecting = false;
+        setButtonConnectingState(elements.speedCadenceConnectButton, false);
+        speedCadenceCallbacks.onStatusUpdate('Connection cancelled');
+        return;
+      }
+
       // Check if already connected - if so, show disconnect confirmation
       if (isSpeedCadenceConnected()) {
         const shouldDisconnect = confirm('Disconnect cadence sensor?');
@@ -276,7 +323,16 @@ function setupConnectionEventListeners() {
         return;
       }
 
-      const connected = await connectSpeedCadenceSensor(cadenceCallbacks, elements);
+      // Set connecting state
+      speedCadenceConnecting = true;
+      setButtonConnectingState(elements.speedCadenceConnectButton, true);
+
+      const connected = await connectSpeedCadenceSensor(speedCadenceCallbacks, elements);
+
+      // Clear connecting state
+      speedCadenceConnecting = false;
+      setButtonConnectingState(elements.speedCadenceConnectButton, false);
+
       if (connected) {
         updateAllConnectButtonVisibility();
       }

@@ -70,7 +70,7 @@
     <!-- Row 1: Power Metric -->
     <div class="metric-card power-card">
       <div class="metric-display">
-        <button class="metric-connect-button" id="connectButton" data-connected="false"
+        <button class="metric-connect-button" id="connectButton" data-connected="false" data-connecting="false"
           aria-label="Connect Power Meter">
           <span class="emoji">⚡</span>
           <span class="connect-text">Connect</span>
@@ -84,7 +84,7 @@
     <div class="metrics-row">
       <div class="metric-card hr-card">
         <div class="metric-display">
-          <button class="metric-connect-button" id="hrConnectButton" data-connected="false"
+          <button class="metric-connect-button" id="hrConnectButton" data-connected="false" data-connecting="false"
             aria-label="Connect Heart Rate">
             <span class="emoji">❤️</span>
             <span class="connect-text">Connect</span>
@@ -97,7 +97,7 @@
       <div class="metric-card cadence-card">
         <div class="metric-display">
           <button class="metric-connect-button" id="speedCadenceConnectButton" data-connected="false"
-            aria-label="Connect Cadence">
+            data-connecting="false" aria-label="Connect Cadence">
             <span class="emoji">🚴</span>
             <span class="connect-text">Connect</span>
           </button>
