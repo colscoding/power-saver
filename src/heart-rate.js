@@ -1,10 +1,3 @@
-
-
-// Bluetooth Heart Rate Format Constants
-const HR_VALUE_FORMAT_FLAG = 0x01; // Bit 0: Heart Rate Value Format (0 = UINT8, 1 = UINT16)
-const HR_FLAGS_OFFSET = 0;
-const HR_VALUE_OFFSET = 1;
-
 /**
  * Parse heart rate measurement from Bluetooth characteristic value
  * 
@@ -20,6 +13,11 @@ const HR_VALUE_OFFSET = 1;
  * @throws {Error} If the value is invalid or malformed
  */
 function parseHeartRate(value) {
+    // Bluetooth Heart Rate Format Constants
+    const HR_VALUE_FORMAT_FLAG = 0x01; // Bit 0: Heart Rate Value Format (0 = UINT8, 1 = UINT16)
+    const HR_FLAGS_OFFSET = 0;
+    const HR_VALUE_OFFSET = 1;
+
     // Validate input
     if (!value || !(value instanceof DataView)) {
         throw new Error('Invalid heart rate data: value must be a DataView');
@@ -32,27 +30,17 @@ function parseHeartRate(value) {
 
     const flags = value.getUint8(HR_FLAGS_OFFSET);
     const isUint16Format = (flags & HR_VALUE_FORMAT_FLAG) !== 0;
-
-    if (isUint16Format) {
-        // Need at least 3 bytes for 16-bit format (flags + 2-byte value)
-        if (value.byteLength < 3) {
-            throw new Error(`Invalid heart rate data: insufficient data for UINT16 format (${value.byteLength} bytes)`);
-        }
-        const heartRate = value.getUint16(HR_VALUE_OFFSET, /* littleEndian= */ true);
-
-        // Validate reasonable heart rate range (0-300 BPM)
-        if (heartRate > 300) {
-            console.warn(`Unusually high heart rate detected: ${heartRate} BPM`);
-        }
-
-        return heartRate;
+    // Need at least 3 bytes for 16-bit format (flags + 2-byte value)
+    if (isUint16Format && value.byteLength < 3) {
+        throw new Error(`Invalid heart rate data: insufficient data for UINT16 format (${value.byteLength} bytes)`);
     }
 
-    const heartRate = value.getUint8(HR_VALUE_OFFSET);
+    const heartRate = isUint16Format
+        ? value.getUint16(HR_VALUE_OFFSET, /* littleEndian= */ true)
+        : value.getUint8(HR_VALUE_OFFSET);
 
-    // Validate reasonable heart rate range
-    if (heartRate > 250) {
-        console.warn(`Unusually high heart rate detected: ${heartRate} BPM`);
+    if (typeof heartRate !== 'number' || heartRate < 0 || heartRate > 300) {
+        throw new Error(`Invalid heart rate value: ${heartRate}`);
     }
 
     return heartRate;
