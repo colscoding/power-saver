@@ -311,7 +311,7 @@ function setupConnectionEventListeners() {
       if (speedCadenceConnecting) {
         speedCadenceConnecting = false;
         setButtonConnectingState(elements.speedCadenceConnectButton, false);
-        speedCadenceCallbacks.onStatusUpdate('Connection cancelled');
+        cadenceCallbacks.onStatusUpdate('Connection cancelled');
         return;
       }
 
@@ -328,7 +328,7 @@ function setupConnectionEventListeners() {
       speedCadenceConnecting = true;
       setButtonConnectingState(elements.speedCadenceConnectButton, true);
 
-      const connected = await connectSpeedCadenceSensor(speedCadenceCallbacks, elements);
+      const connected = await connectSpeedCadenceSensor(cadenceCallbacks, elements);
 
       // Clear connecting state
       speedCadenceConnecting = false;
